@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play-triangle inside a rounded hexagon "control" mark. 108dp canvas, art kept inside the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFAA5CC3"
+        android:strokeWidth="5"
+        android:strokeLineJoin="round"
+        android:pathData="M54,25 L79,39.5 L79,68.5 L54,83 L29,68.5 L29,39.5 Z" />
+    <path
+        android:fillColor="#FF00A4DC"
+        android:pathData="M47,41 L67,54 L47,67 Z" />
+</vector>
