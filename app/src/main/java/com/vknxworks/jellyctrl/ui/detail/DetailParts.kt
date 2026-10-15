@@ -141,7 +141,7 @@ fun PeopleRow(title: String, people: List<BaseItemPerson>, client: JellyfinClien
     if (people.isEmpty()) return
     SectionHeader(title)
     LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        items(people, key = { it.id + (it.role ?: "") + (it.type ?: "") }) { p ->
+        items(people.distinctBy { it.id + (it.role ?: "") + (it.type ?: "") }, key = { it.id + (it.role ?: "") + (it.type ?: "") }) { p ->
             Column(
                 Modifier.width(96.dp).clip(RoundedCornerShape(8.dp)).clickable { onPerson(p) },
                 horizontalAlignment = Alignment.CenterHorizontally,
