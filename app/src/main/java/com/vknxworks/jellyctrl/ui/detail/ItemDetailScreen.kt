@@ -231,7 +231,7 @@ fun ItemDetailScreen(id: String) {
 
 @Composable
 private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
-    val item = d.item
+    val cur = d.item
     val nav = LocalNavigator.current
     val ctx = LocalContext.current
     var menuItem by remember { mutableStateOf<BaseItemDto?>(null) }
@@ -240,14 +240,14 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
         val wide = maxWidth >= 720.dp
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
             item("hero") {
-                if (item.type == "Person") PersonHeader(item, client) else Hero(item, client, wide)
+                if (cur.type == "Person") PersonHeader(cur, client) else Hero(cur, client, wide)
             }
             item("actions") {
                 Column(Modifier.padding(horizontal = 16.dp).widthIn(max = 900.dp)) {
                     ActionsBar(d, reload)
                 }
             }
-            when (item.type) {
+            when (cur.type) {
                 "Series" -> seriesSections(d, client, nav::openItem) { menuItem = it }
                 "Season" -> episodeList(d.episodes, client, nav::openItem, nav::play) { menuItem = it }
                 "MusicAlbum", "Playlist" -> trackList(d, client, reload) { menuItem = it }
@@ -258,43 +258,43 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
                 "BoxSet" -> item("children") { ItemRow("In this collection", d.children, client, nav::openItem, onLongItem = { menuItem = it }) }
                 "Person" -> item("films") { ItemRow("Filmography", d.filmography, client, nav::openItem, onLongItem = { menuItem = it }) }
                 else -> {
-                    if (item.type == "Episode" && d.episodes.size > 1) {
+                    if (cur.type == "Episode" && d.episodes.size > 1) {
                         item("season") {
                             ItemRow(
-                                item.seasonName ?: "More from this season",
-                                d.episodes.filter { it.id != item.id }, client, nav::openItem, landscape = true,
-                                onMore = { item.seasonId?.let { nav.navigate(ItemRoute(it)) } },
+                                cur.seasonName ?: "More from this season",
+                                d.episodes.filter { it.id != cur.id }, client, nav::openItem, landscape = true,
+                                onMore = { cur.seasonId?.let { nav.navigate(ItemRoute(it)) } },
                             )
                         }
                     }
                     item("chapters") {
-                        ChaptersRow(item.id, item.chapters, client) { ch ->
-                            PlayerActivity.start(ctx, item.id, startMs = ch.startPositionTicks.ticksToMs())
+                        ChaptersRow(cur.id, cur.chapters, client) { ch ->
+                            PlayerActivity.start(ctx, cur.id, startMs = ch.startPositionTicks.ticksToMs())
                         }
                     }
                 }
             }
-            if (item.type != "Person") {
+            if (cur.type != "Person") {
                 item("cast") {
-                    PeopleRow("Cast & crew", item.people, client) { p -> nav.navigate(ItemRoute(p.id)) }
+                    PeopleRow("Cast & crew", cur.people, client) { p -> nav.navigate(ItemRoute(p.id)) }
                 }
             }
             item("extras") { ItemRow("Extras", d.extras, client, nav::openItem, landscape = true) }
             item("similar") { ItemRow("More like this", d.similar, client, nav::openItem, onLongItem = { menuItem = it }) }
             item("info") {
-                val source = item.mediaSources.firstOrNull()
-                if (source != null && item.mediaType == "Video") {
+                val source = cur.mediaSources.firstOrNull()
+                if (source != null && cur.mediaType == "Video") {
                     Column(Modifier.padding(16.dp)) {
                         MediaInfoCard(source.mediaStreams, source.container, source.size)
                     }
                 }
             }
-            if (item.externalUrls.isNotEmpty()) {
+            if (cur.externalUrls.isNotEmpty()) {
                 item("links") {
                     Column(Modifier.padding(horizontal = 16.dp)) {
                         SectionHeader("Links", Modifier.padding(start = 0.dp))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item.externalUrls.forEach { link ->
+                            cur.externalUrls.forEach { link ->
                                 TextButton(onClick = {
                                     link.url?.let { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) }
                                 }) { Text(link.name ?: "Link") }

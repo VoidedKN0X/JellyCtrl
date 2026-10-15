@@ -191,7 +191,7 @@ fun ItemRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        items(items, key = { it.id }) { item ->
+        items(items.distinctBy { it.id }, key = { it.id }) { item ->
             PosterCard(
                 item, client, cardWidth,
                 onClick = { onItem(item) },
