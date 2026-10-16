@@ -61,6 +61,7 @@ import com.vknxworks.jellyctrl.data.api.ticksToMs
 import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.LoadContent
 import com.vknxworks.jellyctrl.ui.components.MessageView
+import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.formatClock
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
 import com.vknxworks.jellyctrl.ui.components.landscapeImage
@@ -86,17 +87,13 @@ fun RemoteScreen(adminView: Boolean = false) {
     }
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = {
-            TopAppBar(
-                title = { Text(if (adminView) "Active devices" else "Control a device") },
-                navigationIcon = { IconButton(onClick = nav::back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
-            )
-        },
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = { ScreenTopBar(if (adminView) "Active devices" else "Control another device") },
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             LoadContent(loader) { sessions ->
                 if (sessions.isEmpty()) {
-                    MessageView(Icons.Filled.Devices, "No other devices", "Open Jellyfin on a TV or browser with this account and it will show up here.")
+                    MessageView(Icons.Filled.Devices, "No other devices", "Open Jellyfin on your TV or in a browser with this account and it shows up here.")
                 } else {
                     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(sessions, key = { it.id }) { s -> SessionCard(s, client, adminView) { loader.reload(silent = true) } }
@@ -122,7 +119,7 @@ fun SessionCard(s: SessionInfo, client: JellyfinClient, showUser: Boolean, onCha
         }
     }
 
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Devices, null, tint = MaterialTheme.colorScheme.primary)

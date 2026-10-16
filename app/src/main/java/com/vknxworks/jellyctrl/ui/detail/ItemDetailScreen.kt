@@ -3,22 +3,22 @@ package com.vknxworks.jellyctrl.ui.detail
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -26,57 +26,55 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.Subtitles
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -104,23 +102,36 @@ import com.vknxworks.jellyctrl.data.api.specialFeatures
 import com.vknxworks.jellyctrl.data.api.ticksToMs
 import com.vknxworks.jellyctrl.data.download.DownloadStatus
 import com.vknxworks.jellyctrl.player.PlayerActivity
+import com.vknxworks.jellyctrl.ui.components.AddToPlaylistDialog
 import com.vknxworks.jellyctrl.ui.components.ArtImage
+import com.vknxworks.jellyctrl.ui.components.ArtProgress
+import com.vknxworks.jellyctrl.ui.components.GroupRow
 import com.vknxworks.jellyctrl.ui.components.ItemActionsSheet
 import com.vknxworks.jellyctrl.ui.components.ItemRow
 import com.vknxworks.jellyctrl.ui.components.LoadContent
+import com.vknxworks.jellyctrl.ui.components.LoadingView
+import com.vknxworks.jellyctrl.ui.components.MetaRow
+import com.vknxworks.jellyctrl.ui.components.PillButton
+import com.vknxworks.jellyctrl.ui.components.RoundAction
 import com.vknxworks.jellyctrl.ui.components.SectionHeader
+import com.vknxworks.jellyctrl.ui.components.backdropImage
 import com.vknxworks.jellyctrl.ui.components.downloadItemWith
 import com.vknxworks.jellyctrl.ui.components.formatClock
 import com.vknxworks.jellyctrl.ui.components.formatRuntime
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
 import com.vknxworks.jellyctrl.ui.components.landscapeImage
+import com.vknxworks.jellyctrl.ui.components.logoImage
 import com.vknxworks.jellyctrl.ui.components.primaryImage
 import com.vknxworks.jellyctrl.ui.components.rememberLoader
 import com.vknxworks.jellyctrl.ui.components.resumeProgress
+import com.vknxworks.jellyctrl.ui.components.timeLeft
 import com.vknxworks.jellyctrl.ui.nav.EditMetadataRoute
 import com.vknxworks.jellyctrl.ui.nav.ItemRoute
 import com.vknxworks.jellyctrl.ui.nav.ListRoute
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
+import com.vknxworks.jellyctrl.ui.theme.ArtworkTint
+import com.vknxworks.jellyctrl.ui.theme.Gutter
+import com.vknxworks.jellyctrl.ui.theme.rememberArtworkColor
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -200,31 +211,26 @@ private suspend fun loadDetail(client: JellyfinClient, id: String): Detail = cor
     }
 }
 
+private val SQUARE_TYPES = setOf("MusicAlbum", "MusicArtist", "Playlist", "Audio")
+private val VIDEO_TYPES = setOf("Movie", "Episode", "Video", "MusicVideo", "Recording", "Trailer")
+
 @Composable
 fun ItemDetailScreen(id: String) {
     val c = LocalContext.current.container
     val client = c.api
-    val loader = rememberLoader("detail-$id") { loadDetail(client, id) }
     val nav = LocalNavigator.current
+    val loader = rememberLoader("detail-$id") { loadDetail(client, id) }
+    val item = loader.value?.item
+    val seed = rememberArtworkColor(item?.let { client.primaryImage(it, 300) })
 
-    Scaffold(
-        contentWindowInsets = WindowInsets(0),
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    FilledTonalIconButton(
-                        onClick = nav::back,
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = Color.Black.copy(alpha = 0.35f), contentColor = Color.White),
-                    ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
-                },
-                actions = { loader.value?.item?.let { DetailOverflow(it, onChanged = { loader.reload(silent = true) }) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-            )
-        },
-    ) { _ ->
-        LoadContent(loader) { d ->
-            DetailBody(d, client) { loader.reload(silent = true) }
+    ArtworkTint(seed) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            LoadContent(loader) { d -> DetailBody(d, client) { loader.reload(silent = true) } }
+            IconButton(
+                onClick = nav::back,
+                modifier = Modifier.statusBarsPadding().padding(start = 8.dp, top = 4.dp)
+                    .clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)),
+            ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White) }
         }
     }
 }
@@ -236,27 +242,55 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
     val ctx = LocalContext.current
     var menuItem by remember { mutableStateOf<BaseItemDto?>(null) }
 
+    // Series pages show one season's episodes at a time, starting with the season you're up to.
+    var seasonId by rememberSaveable(cur.id) { mutableStateOf(d.nextUp?.seasonId ?: d.seasons.firstOrNull()?.id) }
+    val seasonEpisodes = if (cur.type == "Series" && seasonId != null) {
+        rememberLoader("eps-${cur.id}-$seasonId") { client.episodes(cur.id, seasonId) }
+    } else null
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 720.dp
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
+        val widthDp = maxWidth.value
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 40.dp)) {
             item("hero") {
-                if (cur.type == "Person") PersonHeader(cur, client) else Hero(cur, client, wide)
+                when {
+                    cur.type == "Person" -> PersonHeader(cur, client)
+                    cur.type in SQUARE_TYPES -> SquareHeader(cur, client)
+                    else -> Hero(cur, client, wide, widthDp)
+                }
             }
             item("actions") {
-                Column(Modifier.padding(horizontal = 16.dp).widthIn(max = 900.dp)) {
-                    ActionsBar(d, reload)
+                Column(Modifier.padding(horizontal = Gutter).widthIn(max = 760.dp)) {
+                    ActionsBlock(d, reload)
                 }
             }
             when (cur.type) {
-                "Series" -> seriesSections(d, client, nav::openItem) { menuItem = it }
-                "Season" -> episodeList(d.episodes, client, nav::openItem, nav::play) { menuItem = it }
+                "Series" -> {
+                    if (d.seasons.isNotEmpty()) {
+                        item("season-chips") { SeasonChips(d.seasons, seasonId) { seasonId = it } }
+                        val eps = seasonEpisodes?.value
+                        if (eps == null) {
+                            item("eps-loading") { Box(Modifier.fillMaxWidth().height(160.dp)) { LoadingView() } }
+                        } else {
+                            items(eps, key = { "sep-" + it.id }) { ep ->
+                                EpisodeRow(ep, client, onClick = { nav.openItem(ep) }, onPlay = { nav.play(ep) }, onLong = { menuItem = ep })
+                            }
+                        }
+                    }
+                }
+                "Season" -> {
+                    item("eps-header") { SectionHeader(if (d.episodes.size == 1) "1 episode" else "${d.episodes.size} episodes") }
+                    items(d.episodes, key = { "ep-" + it.id }) { ep ->
+                        EpisodeRow(ep, client, onClick = { nav.openItem(ep) }, onPlay = { nav.play(ep) }, onLong = { menuItem = ep })
+                    }
+                }
                 "MusicAlbum", "Playlist" -> trackList(d, client, reload) { menuItem = it }
                 "MusicArtist" -> {
                     item("albums") { ItemRow("Albums", d.children, client, nav::openItem, onLongItem = { menuItem = it }) }
                     item("appears") { ItemRow("Appears on", d.filmography, client, nav::openItem) }
                 }
                 "BoxSet" -> item("children") { ItemRow("In this collection", d.children, client, nav::openItem, onLongItem = { menuItem = it }) }
-                "Person" -> item("films") { ItemRow("Filmography", d.filmography, client, nav::openItem, onLongItem = { menuItem = it }) }
+                "Person" -> item("films") { ItemRow("Known for", d.filmography, client, nav::openItem, onLongItem = { menuItem = it }) }
                 else -> {
                     if (cur.type == "Episode" && d.episodes.size > 1) {
                         item("season") {
@@ -275,29 +309,29 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
                 }
             }
             if (cur.type != "Person") {
-                item("cast") {
-                    PeopleRow("Cast & crew", cur.people, client) { p -> nav.navigate(ItemRoute(p.id)) }
-                }
+                item("cast") { PeopleRow("Cast and crew", cur.people, client) { p -> nav.navigate(ItemRoute(p.id)) } }
             }
             item("extras") { ItemRow("Extras", d.extras, client, nav::openItem, landscape = true) }
             item("similar") { ItemRow("More like this", d.similar, client, nav::openItem, onLongItem = { menuItem = it }) }
             item("info") {
                 val source = cur.mediaSources.firstOrNull()
-                if (source != null && cur.mediaType == "Video") {
-                    Column(Modifier.padding(16.dp)) {
-                        MediaInfoCard(source.mediaStreams, source.container, source.size)
-                    }
-                }
+                if (source != null && cur.mediaType == "Video") MediaInfoBlock(source.mediaStreams, source.container, source.size)
             }
             if (cur.externalUrls.isNotEmpty()) {
                 item("links") {
-                    Column(Modifier.padding(horizontal = 16.dp)) {
-                        SectionHeader("Links", Modifier.padding(start = 0.dp))
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            cur.externalUrls.forEach { link ->
-                                TextButton(onClick = {
-                                    link.url?.let { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) }
-                                }) { Text(link.name ?: "Link") }
+                    Column {
+                        SectionHeader("Links")
+                        LazyRow(contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(cur.externalUrls.filter { it.url != null }.distinctBy { it.url }, key = { it.url.orEmpty() }) { link ->
+                                Text(
+                                    link.name ?: "Link",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                        .clickable { link.url?.let { u -> runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u))) } } }
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                                )
                             }
                         }
                     }
@@ -309,85 +343,113 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
     menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }, onChanged = reload) }
 }
 
+// ---------- headers ----------
+
 @Composable
-private fun Hero(item: BaseItemDto, client: JellyfinClient, wide: Boolean) {
+private fun Hero(item: BaseItemDto, client: JellyfinClient, wide: Boolean, widthDp: Float) {
     val nav = LocalNavigator.current
-    val square = item.type == "MusicAlbum" || item.type == "MusicArtist" || item.type == "Playlist" || item.type == "Audio"
-    Column {
-        Backdrop(item, client)
-        Row(
-            Modifier.padding(horizontal = 16.dp).offset(y = if (wide) (-60).dp else (-40).dp),
-            verticalAlignment = Alignment.Bottom,
+    val bg = MaterialTheme.colorScheme.background
+    val image = if (item.type == "Episode") client.landscapeImage(item, 1280) else client.backdropImage(item, if (wide) 1920 else 1280)
+    val heightDp = if (wide) (widthDp * 0.45f).coerceIn(360f, 560f) else (widthDp * 1.05f).coerceIn(380f, 520f)
+    Box(Modifier.fillMaxWidth().height(heightDp.dp)) {
+        ArtImage(image ?: client.primaryImage(item, 900), Modifier.fillMaxSize())
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    0f to Color.Black.copy(alpha = 0.4f),
+                    0.22f to Color.Transparent,
+                    0.6f to bg.copy(alpha = 0.55f),
+                    1f to bg,
+                )
+            )
+        )
+        Column(
+            Modifier.align(Alignment.BottomStart).padding(horizontal = Gutter).padding(bottom = 12.dp).widthIn(max = 640.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val posterW = if (wide) 160.dp else 110.dp
-            Box(
-                Modifier
-                    .width(posterW)
-                    .aspectRatio(if (square) 1f else if (item.type == "Episode") 16f / 9f else 2f / 3f)
-                    .clip(RoundedCornerShape(10.dp)),
-            ) {
-                ArtImage(client.primaryImage(item, 500), Modifier.fillMaxSize(), placeholderText = item.name)
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                if (item.type == "Episode" || item.type == "Season") {
-                    Text(
-                        item.seriesName.orEmpty(),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { item.seriesId?.let { nav.navigate(ItemRoute(it)) } },
-                    )
-                }
-                if (item.type == "MusicAlbum") {
-                    val artist = item.albumArtists.firstOrNull()
-                    Text(
-                        artist?.name ?: item.albumArtist.orEmpty(),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { artist?.id?.let { nav.navigate(ItemRoute(it)) } },
-                    )
-                }
+            if (item.type == "Episode" || item.type == "Season") {
                 Text(
-                    buildString {
-                        if (item.type == "Episode") {
-                            item.parentIndexNumber?.let { append("S$it ") }
-                            item.indexNumber?.let { append("E$it · ") }
-                        }
-                        append(item.name.orEmpty())
-                    },
-                    style = if (wide) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    item.seriesName.orEmpty(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { item.seriesId?.let { nav.navigate(ItemRoute(it)) } },
+                )
+            }
+            val logo = if (item.type == "Episode") null else client.logoImage(item, 800)
+            if (logo != null) {
+                ArtImage(logo, Modifier.fillMaxWidth(if (wide) 0.55f else 0.7f).height(88.dp), contentScale = ContentScale.Fit)
+            } else {
+                Text(
+                    item.name.orEmpty(),
+                    style = if (wide) MaterialTheme.typography.displayMedium else MaterialTheme.typography.headlineLarge,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (item.originalTitle != null && item.originalTitle != item.name) {
-                    Text(item.originalTitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Spacer(Modifier.height(4.dp))
-                MetaLine(item)
             }
+            val episodeLine = if (item.type == "Episode") {
+                listOfNotNull(
+                    item.parentIndexNumber?.let { "Season $it" },
+                    item.indexNumber?.let { "Episode $it" },
+                ).joinToString(", ")
+            } else null
+            MetaRow(listOfNotNull(episodeLine) + metaParts(item))
         }
+    }
+}
+
+@Composable
+private fun SquareHeader(item: BaseItemDto, client: JellyfinClient) {
+    val nav = LocalNavigator.current
+    Column(
+        Modifier.fillMaxWidth().statusBarsPadding().padding(top = 56.dp, start = Gutter, end = Gutter, bottom = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            Modifier
+                .widthIn(max = 280.dp)
+                .fillMaxWidth(0.68f)
+                .aspectRatio(1f)
+                .clip(if (item.type == "MusicArtist") CircleShape else MaterialTheme.shapes.large),
+        ) {
+            ArtImage(client.primaryImage(item, 700), Modifier.fillMaxSize(), placeholderText = item.name)
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(item.name.orEmpty(), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center, maxLines = 3, overflow = TextOverflow.Ellipsis)
+        if (item.type == "MusicAlbum") {
+            val artist = item.albumArtists.firstOrNull()
+            Text(
+                artist?.name ?: item.albumArtist.orEmpty(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { artist?.id?.let { nav.navigate(ItemRoute(it)) } },
+            )
+        }
+        MetaRow(metaParts(item).filter { !it.startsWith("Ends") })
     }
 }
 
 @Composable
 private fun PersonHeader(item: BaseItemDto, client: JellyfinClient) {
     Column(
-        Modifier.fillMaxWidth().statusBarsPadding().padding(top = 56.dp, start = 16.dp, end = 16.dp),
+        Modifier.fillMaxWidth().statusBarsPadding().padding(top = 56.dp, start = Gutter, end = Gutter),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(160.dp).clip(CircleShape)) {
+        Box(Modifier.size(168.dp).clip(CircleShape)) {
             ArtImage(client.primaryImage(item, 400), Modifier.fillMaxSize(), placeholderText = item.name)
         }
-        Spacer(Modifier.height(12.dp))
-        Text(item.name.orEmpty(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        item.premiereDate?.let { airDateText(item)?.let { d -> Text("Born $d", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+        Spacer(Modifier.height(16.dp))
+        Text(item.name.orEmpty(), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+        airDateText(item)?.let {
+            Text("Born $it", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
-/** Play buttons, track pickers, played/favorite/download and the overview. */
+// ---------- actions ----------
+
 @Composable
-private fun ActionsBar(d: Detail, reload: () -> Unit) {
+private fun ActionsBlock(d: Detail, reload: () -> Unit) {
     val context = LocalContext.current
     val c = context.container
     val nav = LocalNavigator.current
@@ -395,8 +457,9 @@ private fun ActionsBar(d: Detail, reload: () -> Unit) {
     val scope = rememberCoroutineScope()
     val downloads by c.downloads.entries.collectAsStateWithLifecycle()
     val dl = downloads.firstOrNull { it.itemId == item.id }
+    var more by remember { mutableStateOf(false) }
+    var tracksOpen by remember { mutableStateOf(false) }
 
-    // Track selection for directly playable video
     val sources = item.mediaSources
     var source by remember(item.id) { mutableStateOf(sources.firstOrNull()) }
     val streams = source?.mediaStreams ?: item.mediaStreams
@@ -411,8 +474,9 @@ private fun ActionsBar(d: Detail, reload: () -> Unit) {
 
     val played = item.userData?.played == true
     val fav = item.userData?.isFavorite == true
-    val resumeMs = item.userData?.playbackPositionTicks?.ticksToMs() ?: 0
-    val isVideo = item.mediaType == "Video" || item.type in setOf("Movie", "Episode", "Video", "MusicVideo", "Recording", "Trailer")
+    val resumeMs = item.userData?.playbackPositionTicks?.ticksToMs() ?: 0L
+    val isVideo = item.mediaType == "Video" || item.type in VIDEO_TYPES
+    val isAudioSet = item.type in setOf("MusicAlbum", "Playlist") && d.children.firstOrNull()?.mediaType == "Audio"
 
     fun toggle(block: suspend () -> Unit) {
         scope.launch {
@@ -421,145 +485,325 @@ private fun ActionsBar(d: Detail, reload: () -> Unit) {
         }
     }
 
-    fun playVideo(fromStart: Boolean) {
-        PlayerActivity.start(
-            context, item.id,
-            startMs = if (fromStart) 0 else null,
-            mediaSourceId = source?.id,
-            audioIndex = audio?.index,
-            subtitleIndex = sub?.index ?: -1,
-        )
+    fun playVideo(fromStart: Boolean) = PlayerActivity.start(
+        context, item.id,
+        startMs = if (fromStart) 0 else null,
+        mediaSourceId = source?.id,
+        audioIndex = audio?.index,
+        subtitleIndex = sub?.index ?: -1,
+    )
+
+    fun download() {
+        if (dl?.status == DownloadStatus.DONE) {
+            Toast.makeText(context, "Already downloaded", Toast.LENGTH_SHORT).show()
+            return
+        }
+        (context as? MainActivity)?.ensureNotificationPermission()
+        scope.launch {
+            val n = runCatching { downloadItemWith(c, item) }.getOrElse { 0 }
+            Toast.makeText(context, if (n == 0) "Couldn't start the download" else if (n == 1) "Downloading" else "Downloading $n items", Toast.LENGTH_SHORT).show()
+        }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item.resumeProgress()?.let { p ->
-            Column {
-                LinearProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth(), drawStopIndicator = {})
-                val left = (item.runTimeTicks ?: 0).ticksToMs() - resumeMs
-                Text("${formatClock(left)} left", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            val playLabel = when {
-                item.type == "Series" && d.nextUp != null -> "Play ${d.nextUp.subtitleShort()}"
-                resumeMs > 0 -> "Resume"
+    Column(verticalArrangement = Arrangement.spacedBy(18.dp), modifier = Modifier.padding(top = 4.dp)) {
+        if (item.type != "Person") {
+            val label = when {
+                item.type == "Series" && d.nextUp != null -> {
+                    val n = d.nextUp
+                    if (n.parentIndexNumber != null && n.indexNumber != null) "Play S${n.parentIndexNumber} E${n.indexNumber}" else "Play"
+                }
+                resumeMs > 0 && isVideo -> "Resume from ${formatClock(resumeMs)}"
+                isAudioSet || item.type == "MusicArtist" -> "Play"
                 else -> "Play"
             }
-            val canPlay = item.isPlayable || item.isFolder || item.type == "Person"
-            if (canPlay && item.type != "Person") {
-                Button(onClick = {
-                    when {
-                        isVideo -> playVideo(false)
-                        item.type == "Series" && d.nextUp != null -> nav.play(d.nextUp)
-                        item.type in setOf("MusicAlbum", "Playlist") && d.children.isNotEmpty() && d.children.first().mediaType == "Audio" ->
-                            c.music.playItems(d.children, 0)
-                        else -> nav.play(item)
-                    }
-                }) {
-                    Icon(Icons.Filled.PlayArrow, null)
-                    Spacer(Modifier.width(6.dp))
-                    Text(playLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-            if (resumeMs > 0 && isVideo) {
-                FilledTonalIconButton(onClick = { playVideo(true) }) { Icon(Icons.Filled.Replay, "Play from beginning") }
-            }
-            if (item.isFolder && item.type != "Person") {
-                FilledTonalIconButton(onClick = { nav.shuffle(item) }) { Icon(Icons.Filled.Shuffle, "Shuffle") }
-            }
-            if (item.type == "MusicArtist" || item.type == "MusicAlbum" || item.mediaType == "Audio") {
-                FilledTonalIconButton(onClick = { c.music.instantMix(item) }) { Icon(Icons.Outlined.AutoAwesome, "Instant mix") }
-            }
-            if (item.type != "Person") {
-                FilledTonalIconButton(onClick = { toggle { c.api.setPlayed(item.id, !played) } }) {
-                    Icon(if (played) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle, if (played) "Mark unplayed" else "Mark played",
-                        tint = if (played) MaterialTheme.colorScheme.primary else androidx.compose.material3.LocalContentColor.current)
-                }
-            }
-            FilledTonalIconButton(onClick = { toggle { c.api.setFavorite(item.id, !fav) } }) {
-                Icon(if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, "Favorite",
-                    tint = if (fav) Color(0xFFFF6B81) else androidx.compose.material3.LocalContentColor.current)
-            }
-            if ((isVideo && item.canDownload) || item.type in setOf("Season", "Series", "MusicAlbum")) {
-                FilledTonalIconButton(onClick = {
-                    if (dl?.status == DownloadStatus.DONE) {
-                        Toast.makeText(context, "Already downloaded", Toast.LENGTH_SHORT).show()
-                    } else {
-                        (context as? MainActivity)?.ensureNotificationPermission()
-                        scope.launch {
-                            val n = runCatching { downloadItemWith(c, item) }.getOrElse { 0 }
-                            Toast.makeText(context, if (n > 0) "$n queued for download" else "Couldn't queue download", Toast.LENGTH_SHORT).show()
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                PillButton(
+                    label,
+                    icon = Icons.Filled.PlayArrow,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        when {
+                            isVideo -> playVideo(false)
+                            item.type == "Series" && d.nextUp != null -> nav.play(d.nextUp)
+                            isAudioSet -> c.music.playItems(d.children, 0)
+                            else -> nav.play(item)
                         }
+                    },
+                )
+                item.resumeProgress()?.let { p ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f).clip(CircleShape)) { ArtProgress(p) }
+                        Spacer(Modifier.width(12.dp))
+                        Text(item.timeLeft().orEmpty(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                }) {
-                    Icon(if (dl?.status == DownloadStatus.DONE) Icons.Filled.DownloadDone else Icons.Filled.Download, "Download")
                 }
             }
         }
 
-        if (isVideo && source != null) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (sources.size > 1) {
-                    Picker("Version", sources, source, { it?.name ?: "Default" }, { s -> source = s })
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            if (item.type != "Person") {
+                RoundAction(Icons.Filled.Check, if (played) "Watched" else "Mark watched", { toggle { c.api.setPlayed(item.id, !played) } }, active = played)
+            }
+            RoundAction(
+                if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                "Favourite",
+                { toggle { c.api.setFavorite(item.id, !fav) } },
+                active = fav,
+            )
+            if ((isVideo && item.canDownload) || item.type in setOf("Season", "Series", "MusicAlbum")) {
+                RoundAction(
+                    if (dl?.status == DownloadStatus.DONE) Icons.Filled.DownloadDone else Icons.Filled.Download,
+                    when (dl?.status) {
+                        DownloadStatus.DONE -> "Downloaded"
+                        DownloadStatus.RUNNING, DownloadStatus.QUEUED -> "Downloading"
+                        else -> "Download"
+                    },
+                    ::download,
+                    active = dl?.status == DownloadStatus.DONE,
+                )
+            }
+            if (item.remoteTrailers.isNotEmpty()) {
+                RoundAction(Icons.Outlined.Movie, "Trailer", {
+                    item.remoteTrailers.firstOrNull()?.url?.let { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) } }
+                })
+            }
+            RoundAction(Icons.Filled.MoreHoriz, "More", { more = true })
+        }
+
+        if (isVideo && source != null && (audioStreams.size > 1 || subStreams.isNotEmpty() || sources.size > 1)) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .clickable { tracksOpen = true }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Subtitles, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(audio?.label() ?: "Default audio", style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        sub?.let { "Subtitles: ${it.label()}" } ?: "Subtitles off",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
-                if (audioStreams.isNotEmpty()) {
-                    Picker("Audio", audioStreams, audio, { it?.label() ?: "Default" }, { a -> audio = a })
-                }
-                if (subStreams.isNotEmpty()) {
-                    Picker("Subtitles", subStreams, sub, { it?.label() ?: "Off" }, { s -> sub = s }, allowNone = true)
-                }
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
-        item.taglines.firstOrNull()?.let {
-            Text(it, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        }
+        item.taglines.firstOrNull()?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
         item.overview?.takeIf { it.isNotBlank() }?.let {
             ExpandableText(it.replace(Regex("<br\\s*/?>"), "\n").replace(Regex("<[^>]+>"), ""))
         }
-        if (item.genres.isNotEmpty()) {
-            ChipRow(item.genres) { g -> nav.navigate(ListRoute(g, "genre", g)) }
-        }
+        if (item.genres.isNotEmpty()) TagRow(item.genres) { g -> nav.navigate(ListRoute(g, "genre", g)) }
+
         val directors = item.people.filter { it.type == "Director" }.mapNotNull { it.name }
         val writers = item.people.filter { it.type == "Writer" }.mapNotNull { it.name }
-        if (directors.isNotEmpty()) LabelValue("Director", directors.joinToString())
-        if (writers.isNotEmpty()) LabelValue("Writers", writers.joinToString())
-        if (item.studios.isNotEmpty()) LabelValue("Studio", item.studios.mapNotNull { it.name }.joinToString())
-        if (item.type == "Episode") airDateText(item)?.let { LabelValue("Aired", it) }
+        val credits = listOfNotNull(
+            directors.takeIf { it.isNotEmpty() }?.let { "Directed by ${it.joinToString()}" },
+            writers.takeIf { it.isNotEmpty() }?.let { "Written by ${it.joinToString()}" },
+            item.studios.mapNotNull { it.name }.takeIf { it.isNotEmpty() }?.let { "From ${it.joinToString()}" },
+            if (item.type == "Episode") airDateText(item)?.let { "Aired $it" } else null,
+        )
+        if (credits.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                credits.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+        }
+    }
+
+    if (tracksOpen) {
+        TracksSheet(
+            sources, source, audioStreams, audio, subStreams, sub,
+            onSource = { source = it },
+            onAudio = { audio = it },
+            onSub = { sub = it },
+            onDismiss = { tracksOpen = false },
+        )
+    }
+    if (more) {
+        MoreSheet(
+            d, resumeMs = resumeMs, isVideo = isVideo,
+            onPlayFromStart = { playVideo(true) },
+            onChanged = reload,
+            onDismiss = { more = false },
+        )
     }
 }
-
-private fun BaseItemDto.subtitleShort(): String =
-    if (parentIndexNumber != null && indexNumber != null) "S${parentIndexNumber}:E$indexNumber" else name.orEmpty()
 
 @Composable
-private fun LabelValue(label: String, value: String) {
-    Row {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(80.dp))
-        Text(value, style = MaterialTheme.typography.bodySmall)
+private fun TracksSheet(
+    sources: List<MediaSourceInfo>,
+    source: MediaSourceInfo?,
+    audioStreams: List<MediaStream>,
+    audio: MediaStream?,
+    subStreams: List<MediaStream>,
+    sub: MediaStream?,
+    onSource: (MediaSourceInfo) -> Unit,
+    onAudio: (MediaStream) -> Unit,
+    onSub: (MediaStream?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+        Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
+            if (sources.size > 1) {
+                SheetTitle("Version")
+                sources.forEach { s -> CheckLine(s.name ?: "Default", s.id == source?.id) { onSource(s) } }
+            }
+            if (audioStreams.isNotEmpty()) {
+                SheetTitle("Audio")
+                audioStreams.forEach { a ->
+                    CheckLine(a.label(), a.index == audio?.index, a.channelLayout) { onAudio(a) }
+                }
+            }
+            if (subStreams.isNotEmpty()) {
+                SheetTitle("Subtitles")
+                CheckLine("Off", sub == null) { onSub(null) }
+                subStreams.forEach { s -> CheckLine(s.label(), s.index == sub?.index) { onSub(s) } }
+            }
+        }
     }
 }
 
-private fun LazyListScope.seriesSections(
-    d: Detail,
-    client: JellyfinClient,
-    onItem: (BaseItemDto) -> Unit,
-    onLong: (BaseItemDto) -> Unit,
-) {
-    d.nextUp?.let { n -> item("nextup") { ItemRow("Next up", listOf(n), client, onItem, landscape = true, onLongItem = onLong) } }
-    item("seasons") { ItemRow("Seasons", d.seasons, client, onItem, onLongItem = onLong) }
+@Composable
+private fun SheetTitle(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 4.dp),
+    )
 }
 
-private fun LazyListScope.episodeList(
-    episodes: List<BaseItemDto>,
-    client: JellyfinClient,
-    onItem: (BaseItemDto) -> Unit,
-    onPlay: (BaseItemDto, Boolean) -> Unit,
-    onLong: (BaseItemDto) -> Unit,
+@Composable
+private fun CheckLine(title: String, selected: Boolean, subtitle: String? = null, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (selected) Icon(Icons.Filled.Check, "Selected", tint = MaterialTheme.colorScheme.primary)
+    }
+}
+
+/** Everything that isn't the main action: shuffle, playlists, admin tools. */
+@Composable
+private fun MoreSheet(
+    d: Detail,
+    resumeMs: Long,
+    isVideo: Boolean,
+    onPlayFromStart: () -> Unit,
+    onChanged: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    item("eps-header") { SectionHeader("${episodes.size} episodes") }
-    items(episodes, key = { "ep-" + it.id }) { ep ->
-        EpisodeRow(ep, client, onClick = { onItem(ep) }, onPlay = { onPlay(ep, false) }, onLong = { onLong(ep) })
+    val context = LocalContext.current
+    val c = context.container
+    val nav = LocalNavigator.current
+    val item = d.item
+    val session by c.sessions.active.collectAsStateWithLifecycle()
+    val isAdmin = session?.account?.isAdmin == true
+    val scope = rememberCoroutineScope()
+    var playlist by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+
+    if (playlist) {
+        AddToPlaylistDialog(item, onDismiss = { playlist = false; onDismiss() })
+        return
+    }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+        Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
+            Text(
+                item.name.orEmpty(),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            fun act(block: () -> Unit) { block(); onDismiss() }
+            if (resumeMs > 0 && isVideo) SheetAction(Icons.Filled.Replay, "Play from the beginning") { act(onPlayFromStart) }
+            if (item.isFolder && item.type != "Person") SheetAction(Icons.Filled.Shuffle, "Shuffle") { act { nav.shuffle(item) } }
+            if (item.type in setOf("MusicArtist", "MusicAlbum", "Audio")) SheetAction(Icons.Outlined.AutoAwesome, "Instant mix") { act { c.music.instantMix(item) } }
+            if (item.type != "Playlist" && item.type != "Person") SheetAction(Icons.AutoMirrored.Filled.PlaylistAdd, "Add to playlist") { playlist = true }
+            if (item.type == "Episode" && item.seriesId != null) SheetAction(Icons.Filled.Tv, "Go to show") { act { nav.navigate(ItemRoute(item.seriesId)) } }
+            if (isAdmin) {
+                SheetAction(Icons.Filled.Edit, "Edit details") { act { nav.navigate(EditMetadataRoute(item.id)) } }
+                SheetAction(Icons.Filled.Refresh, "Refresh metadata") {
+                    act {
+                        scope.launch {
+                            runCatching { c.api.refreshItem(item.id, replaceAll = false) }
+                                .onSuccess { Toast.makeText(context, "Refreshing metadata", Toast.LENGTH_SHORT).show(); onChanged() }
+                                .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
+                        }
+                    }
+                }
+            }
+            if (item.canDelete) {
+                SheetAction(Icons.Filled.Delete, "Delete from server", destructive = true) { confirmDelete = true }
+            }
+        }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete ${item.name}?") },
+            text = { Text("This removes the files from the server's disk for everyone. It can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDelete = false
+                    onDismiss()
+                    scope.launch {
+                        runCatching { c.api.deleteItem(item.id) }
+                            .onSuccess { Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show(); nav.back() }
+                            .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
+                    }
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Keep") } },
+        )
+    }
+}
+
+@Composable
+private fun SheetAction(icon: ImageVector, label: String, destructive: Boolean = false, onClick: () -> Unit) {
+    GroupRow(
+        label,
+        icon = icon,
+        iconTint = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        titleColor = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+        onClick = onClick,
+    )
+}
+
+// ---------- seasons, episodes, tracks ----------
+
+@Composable
+private fun SeasonChips(seasons: List<BaseItemDto>, selected: String?, onSelect: (String) -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(start = Gutter, end = Gutter, top = 24.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(seasons, key = { it.id }) { s ->
+            val isSel = s.id == selected
+            Text(
+                s.name ?: "Season ${s.indexNumber ?: ""}",
+                style = MaterialTheme.typography.labelLarge,
+                color = if (isSel) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (isSel) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .clickable { onSelect(s.id) }
+                    .padding(horizontal = 16.dp, vertical = 9.dp),
+            )
+        }
     }
 }
 
@@ -569,44 +813,39 @@ fun EpisodeRow(ep: BaseItemDto, client: JellyfinClient, onClick: () -> Unit, onP
         Modifier
             .fillMaxWidth()
             .combinedClickable(onClick = onClick, onLongClick = onLong)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = Gutter, vertical = 10.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Box(Modifier.width(150.dp).aspectRatio(16f / 9f).clip(RoundedCornerShape(8.dp))) {
+        Box(Modifier.width(148.dp).aspectRatio(16f / 9f).clip(MaterialTheme.shapes.small).clickable(onClick = onPlay)) {
             ArtImage(client.landscapeImage(ep, 400), Modifier.fillMaxSize(), placeholderText = ep.name)
-            ep.resumeProgress()?.let { p ->
-                LinearProgressIndicator(
-                    progress = { p },
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(3.dp),
-                    drawStopIndicator = {},
-                )
-            }
-            IconButton(onClick = onPlay, modifier = Modifier.align(Alignment.Center)) {
-                Icon(Icons.Filled.PlayArrow, "Play", tint = Color.White)
-            }
-            if (ep.userData?.played == true) {
-                Icon(
-                    Icons.Filled.CheckCircle, "Played",
-                    Modifier.align(Alignment.TopEnd).padding(4.dp).size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
+            Box(
+                Modifier.align(Alignment.Center).size(36.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.PlayArrow, "Play", tint = Color.White, modifier = Modifier.size(22.dp)) }
+            ep.resumeProgress()?.let { ArtProgress(it, Modifier.align(Alignment.BottomCenter)) }
         }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    listOfNotNull(ep.indexNumber?.let { "$it." }, ep.name).joinToString(" "),
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (ep.userData?.played == true) {
+                    Spacer(Modifier.width(6.dp))
+                    Icon(Icons.Filled.Check, "Watched", Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                }
+            }
             Text(
-                "${ep.indexNumber ?: ""}. ${ep.name.orEmpty()}",
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                listOfNotNull(formatRuntime(ep.runTimeTicks), airDateText(ep)).joinToString("  ·  "),
-                style = MaterialTheme.typography.labelSmall,
+                listOfNotNull(ep.timeLeft() ?: formatRuntime(ep.runTimeTicks), airDateText(ep)).joinToString("   "),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             ep.overview?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -614,7 +853,7 @@ fun EpisodeRow(ep: BaseItemDto, client: JellyfinClient, onClick: () -> Unit, onP
 
 private fun LazyListScope.trackList(d: Detail, client: JellyfinClient, reload: () -> Unit, onLong: (BaseItemDto) -> Unit) {
     val isPlaylist = d.item.type == "Playlist"
-    item("tracks-header") { SectionHeader(if (isPlaylist) "${d.children.size} items" else "Tracks") }
+    item("tracks-gap") { Spacer(Modifier.height(16.dp)) }
     itemsIndexed(d.children, key = { i, t -> "t-$i-" + t.id }) { i, track ->
         TrackRow(d, i, track, client, isPlaylist, reload, onLong)
     }
@@ -626,129 +865,66 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
     val c = context.container
     val nav = LocalNavigator.current
     val scope = rememberCoroutineScope()
+    val music by c.music.state.collectAsStateWithLifecycle()
+    val playing = music.itemId == track.id
     val multiDisc = d.children.mapNotNull { it.parentIndexNumber }.distinct().size > 1
     if (multiDisc && !isPlaylist && (index == 0 || d.children[index - 1].parentIndexNumber != track.parentIndexNumber)) {
         Text(
             "Disc ${track.parentIndexNumber ?: 1}",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = Gutter, top = 16.dp, bottom = 4.dp),
         )
     }
-    ListItem(
-        headlineContent = { Text(track.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        supportingContent = {
+    val audioTracks = d.children.filter { it.mediaType == "Audio" }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 60.dp)
+            .combinedClickable(
+                onClick = {
+                    if (track.mediaType == "Audio") c.music.playItems(audioTracks, audioTracks.indexOf(track).coerceAtLeast(0))
+                    else nav.play(track)
+                },
+                onLongClick = { onLong(track) },
+            )
+            .padding(horizontal = Gutter, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (isPlaylist) {
+            Box(Modifier.size(44.dp).clip(MaterialTheme.shapes.extraSmall)) { ArtImage(client.primaryImage(track, 120), Modifier.fillMaxSize()) }
+        } else {
+            Text(
+                "${track.indexNumber ?: index + 1}",
+                style = MaterialTheme.typography.labelLarge,
+                color = if (playing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(28.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                track.name.orEmpty(),
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (playing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             val sub = if (isPlaylist) track.artists.joinToString().ifBlank { track.seriesName ?: track.productionYear?.toString() ?: "" }
             else track.artists.joinToString().takeIf { it != d.item.albumArtist } ?: ""
-            if (sub.isNotBlank()) Text(sub, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        },
-        leadingContent = {
-            if (isPlaylist) {
-                Box(Modifier.size(44.dp).clip(RoundedCornerShape(6.dp))) { ArtImage(client.primaryImage(track, 120), Modifier.fillMaxSize()) }
-            } else {
-                Text("${track.indexNumber ?: index + 1}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(28.dp))
-            }
-        },
-        trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(formatClock((track.runTimeTicks ?: 0).ticksToMs()), style = MaterialTheme.typography.labelSmall)
-                if (isPlaylist && track.playlistItemId != null) {
-                    IconButton(onClick = {
-                        scope.launch {
-                            runCatching { c.api.removeFromPlaylist(d.item.id, listOf(track.playlistItemId)) }
-                                .onSuccess { reload() }
-                                .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
-                        }
-                    }) { Icon(Icons.Filled.Delete, "Remove from playlist") }
-                }
-            }
-        },
-        modifier = Modifier.combinedClickable(
-            onClick = {
-                if (track.mediaType == "Audio") c.music.playItems(d.children.filter { it.mediaType == "Audio" }, d.children.filter { it.mediaType == "Audio" }.indexOf(track).coerceAtLeast(0))
-                else nav.play(track)
-            },
-            onLongClick = { onLong(track) },
-        ),
-    )
-}
-
-/** Overflow: edit/refresh/delete for admins and owners. */
-@Composable
-private fun DetailOverflow(item: BaseItemDto, onChanged: () -> Unit) {
-    val context = LocalContext.current
-    val c = context.container
-    val nav = LocalNavigator.current
-    val session by c.sessions.active.collectAsStateWithLifecycle()
-    val isAdmin = session?.account?.isAdmin == true
-    val scope = rememberCoroutineScope()
-    var open by remember { mutableStateOf(false) }
-    var confirmDelete by remember { mutableStateOf(false) }
-
-    if (!isAdmin && !item.canDelete && item.remoteTrailers.isEmpty()) return
-
-    Box {
-        FilledTonalIconButton(
-            onClick = { open = true },
-            colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = Color.Black.copy(alpha = 0.35f), contentColor = Color.White),
-        ) { Icon(Icons.Filled.MoreVert, "More") }
-        DropdownMenu(open, onDismissRequest = { open = false }) {
-            item.remoteTrailers.firstOrNull()?.url?.let { url ->
-                DropdownMenuItem(
-                    text = { Text("Watch trailer") },
-                    leadingIcon = { Icon(Icons.Filled.Movie, null) },
-                    onClick = {
-                        open = false
-                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-                    },
-                )
-            }
-            if (isAdmin) {
-                DropdownMenuItem(
-                    text = { Text("Edit metadata") },
-                    leadingIcon = { Icon(Icons.Filled.Edit, null) },
-                    onClick = { open = false; nav.navigate(EditMetadataRoute(item.id)) },
-                )
-                DropdownMenuItem(
-                    text = { Text("Refresh metadata") },
-                    leadingIcon = { Icon(Icons.Filled.Refresh, null) },
-                    onClick = {
-                        open = false
-                        scope.launch {
-                            runCatching { c.api.refreshItem(item.id, replaceAll = false) }
-                                .onSuccess { Toast.makeText(context, "Refresh queued", Toast.LENGTH_SHORT).show() }
-                                .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
-                        }
-                    },
-                )
-            }
-            if (item.canDelete) {
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text("Delete from server", color = MaterialTheme.colorScheme.error) },
-                    leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                    onClick = { open = false; confirmDelete = true },
-                )
+            if (sub.isNotBlank()) {
+                Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
-    }
-
-    if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete ${item.name}?") },
-            text = { Text("This deletes the files from the server's disk. It can't be undone.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    scope.launch {
-                        runCatching { c.api.deleteItem(item.id) }
-                            .onSuccess { Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show(); nav.back() }
-                            .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
-                    }
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
-        )
+        Text(formatClock((track.runTimeTicks ?: 0).ticksToMs()), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (isPlaylist && track.playlistItemId != null) {
+            IconButton(onClick = {
+                scope.launch {
+                    runCatching { c.api.removeFromPlaylist(d.item.id, listOf(track.playlistItemId)) }
+                        .onSuccess { reload() }
+                        .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
+                }
+            }) { Icon(Icons.Filled.Delete, "Remove from playlist", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
     }
 }

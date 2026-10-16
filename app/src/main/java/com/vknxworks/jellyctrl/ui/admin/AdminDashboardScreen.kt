@@ -1,6 +1,14 @@
 package com.vknxworks.jellyctrl.ui.admin
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import com.vknxworks.jellyctrl.ui.components.Group
+import com.vknxworks.jellyctrl.ui.components.GroupRow
+import com.vknxworks.jellyctrl.ui.components.RoundAction
+import com.vknxworks.jellyctrl.ui.components.SectionHeader
+import com.vknxworks.jellyctrl.ui.theme.Gutter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -12,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Subject
 import androidx.compose.material.icons.filled.Devices
@@ -84,12 +91,12 @@ private val LINKS = listOf(
     AdminLink(Icons.Filled.Storage, "Libraries", AdminLibrariesRoute),
     AdminLink(Icons.Filled.Schedule, "Scheduled tasks", AdminTasksRoute),
     AdminLink(Icons.Filled.Extension, "Plugins", AdminPluginsRoute),
-    AdminLink(Icons.Filled.History, "Activity", AdminActivityRoute),
+    AdminLink(Icons.Filled.History, "Activity log", AdminActivityRoute),
     AdminLink(Icons.AutoMirrored.Filled.Subject, "Logs", AdminLogsRoute),
     AdminLink(Icons.Filled.Devices, "Devices", AdminDevicesRoute),
     AdminLink(Icons.Filled.Key, "API keys", AdminKeysRoute),
-    AdminLink(Icons.Filled.Settings, "General", AdminConfigRoute("", "General settings")),
-    AdminLink(Icons.Filled.Movie, "Playback & transcoding", AdminConfigRoute("encoding", "Playback & transcoding")),
+    AdminLink(Icons.Filled.Settings, "General", AdminConfigRoute("", "General")),
+    AdminLink(Icons.Filled.Movie, "Playback and transcoding", AdminConfigRoute("encoding", "Playback and transcoding")),
     AdminLink(Icons.Filled.Lan, "Networking", AdminConfigRoute("network", "Networking")),
     AdminLink(Icons.Filled.Search, "Metadata", AdminConfigRoute("metadata", "Metadata")),
     AdminLink(Icons.Filled.LiveTv, "Live TV", AdminConfigRoute("livetv", "Live TV")),
@@ -117,70 +124,75 @@ fun AdminDashboardScreen() {
         while (true) { delay(10_000); loader.reload(silent = true) }
     }
 
-    AdminScaffold("Dashboard", actions, loader.refreshing, { loader.reload(silent = true) }) {
+    AdminScaffold("Server", actions, loader.refreshing, { loader.reload(silent = true) }) {
         LoadContent(loader) { d ->
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(160.dp),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(d.info.serverName ?: "Jellyfin", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            Text("Jellyfin ${d.info.version.orEmpty()}  ·  ${d.info.operatingSystemDisplayName ?: d.info.operatingSystem.orEmpty()}  ·  ${d.info.systemArchitecture.orEmpty()}",
-                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            if (d.info.hasPendingRestart) Text("Restart pending to apply changes", color = MaterialTheme.colorScheme.error)
-                            if (d.info.hasUpdateAvailable) Text("An update is available", color = MaterialTheme.colorScheme.primary)
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                                FilledTonalButton(onClick = { actions.run("Library scan started") { client.scanAllLibraries() } }) {
-                                    Icon(Icons.Filled.Search, null); Text("  Scan libraries")
-                                }
-                                FilledTonalButton(onClick = { confirm = "restart" }, enabled = d.info.canSelfRestart) {
-                                    Icon(Icons.Filled.RestartAlt, null); Text("  Restart")
-                                }
-                                FilledTonalButton(onClick = { confirm = "shutdown" }) {
-                                    Icon(Icons.Filled.PowerSettingsNew, null); Text("  Shut down")
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
+                item("server") {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = Gutter, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(d.info.serverName ?: "Jellyfin", style = MaterialTheme.typography.headlineMedium)
+                        Text(
+                            listOfNotNull(
+                                "Jellyfin ${d.info.version.orEmpty()}",
+                                d.info.operatingSystemDisplayName ?: d.info.operatingSystem,
+                                d.info.systemArchitecture,
+                            ).joinToString(", "),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (d.info.hasPendingRestart) Text("Restart the server to finish applying changes", color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.bodyMedium)
+                        if (d.info.hasUpdateAvailable) Text("A Jellyfin update is available", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                        Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                            RoundAction(Icons.Filled.Search, "Scan libraries", { actions.run("Scanning libraries") { client.scanAllLibraries() } })
+                            if (d.info.canSelfRestart) RoundAction(Icons.Filled.RestartAlt, "Restart", { confirm = "restart" })
+                            RoundAction(Icons.Filled.PowerSettingsNew, "Shut down", { confirm = "shutdown" })
+                        }
+                    }
+                }
+                if (d.tasks.isNotEmpty()) {
+                    item("tasks") {
+                        Group("Running now") {
+                            d.tasks.forEach { t ->
+                                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                                    Row {
+                                        Text(t.name.orEmpty(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                                        Text(t.currentProgressPercentage?.let { "%.0f%%".format(it) }.orEmpty(), style = MaterialTheme.typography.labelLarge)
+                                    }
+                                    LinearProgressIndicator(
+                                        progress = { ((t.currentProgressPercentage ?: 0.0) / 100).toFloat() },
+                                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                        drawStopIndicator = {},
+                                    )
                                 }
                             }
                         }
                     }
                 }
-                if (d.tasks.isNotEmpty()) {
-                    item(span = { GridItemSpan(maxLineSpan) }) { SectionTitle("Running tasks") }
-                    items(d.tasks, key = { "task-" + it.id }, span = { GridItemSpan(maxLineSpan) }) { t ->
-                        Column(Modifier.fillMaxWidth()) {
-                            Text("${t.name}  ${t.currentProgressPercentage?.let { "%.0f%%".format(it) } ?: ""}")
-                            LinearProgressIndicator(progress = { ((t.currentProgressPercentage ?: 0.0) / 100).toFloat() }, modifier = Modifier.fillMaxWidth(), drawStopIndicator = {})
-                        }
+                item("manage") {
+                    Group("Manage") {
+                        LINKS.take(4).forEach { l -> GroupRow(l.label, icon = l.icon, showChevron = true, onClick = { nav.navigate(l.route) }) }
+                    }
+                    Group("Activity and access") {
+                        LINKS.drop(4).take(4).forEach { l -> GroupRow(l.label, icon = l.icon, showChevron = true, onClick = { nav.navigate(l.route) }) }
+                    }
+                    Group("Settings") {
+                        LINKS.drop(8).forEach { l -> GroupRow(l.label, icon = l.icon, showChevron = true, onClick = { nav.navigate(l.route) }) }
                     }
                 }
-                item(span = { GridItemSpan(maxLineSpan) }) { SectionTitle("Manage") }
-                items(LINKS, key = { it.label }) { link ->
-                    OutlinedCard(Modifier.fillMaxWidth().clickable { nav.navigate(link.route) }) {
-                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(link.icon, null, tint = MaterialTheme.colorScheme.primary)
-                            Text(link.label, modifier = Modifier.padding(start = 10.dp), style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
+                item("sessions-title") {
+                    SectionHeader(if (d.sessions.isEmpty()) "Nobody's watching right now" else "Watching now")
                 }
-                item(span = { GridItemSpan(maxLineSpan) }) { SectionTitle("Active devices (${d.sessions.size})") }
-                items(d.sessions, key = { "s-" + it.id }, span = { GridItemSpan(maxLineSpan) }) { s ->
-                    SessionCard(s, client, showUser = true) { loader.reload(silent = true) }
+                items(d.sessions, key = { "s-" + it.id }) { s ->
+                    Box(Modifier.padding(horizontal = Gutter, vertical = 6.dp)) {
+                        SessionCard(s, client, showUser = true) { loader.reload(silent = true) }
+                    }
                 }
                 if (d.activity.isNotEmpty()) {
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            SectionTitle("Recent activity")
-                            TextButton(onClick = { nav.navigate(AdminActivityRoute) }) { Text("See all") }
-                        }
-                    }
-                    items(d.activity, key = { "a-" + it.id }, span = { GridItemSpan(maxLineSpan) }) { a ->
-                        Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            Text(a.name.orEmpty(), style = MaterialTheme.typography.bodyMedium)
-                            Text(formatDateTime(a.date).orEmpty(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    item("activity") {
+                        SectionHeader("Recent activity", onMore = { nav.navigate(AdminActivityRoute) })
+                        Group(modifier = Modifier.padding(top = 0.dp)) {
+                            d.activity.forEach { a ->
+                                GroupRow(a.name.orEmpty(), formatDateTime(a.date))
+                            }
                         }
                     }
                 }
@@ -191,18 +203,18 @@ fun AdminDashboardScreen() {
     confirm?.let { what ->
         AlertDialog(
             onDismissRequest = { confirm = null },
-            title = { Text(if (what == "restart") "Restart server?" else "Shut down server?") },
+            title = { Text(if (what == "restart") "Restart the server?" else "Shut down the server?") },
             text = {
                 Text(
-                    if (what == "restart") "Playback on all devices stops while it restarts."
-                    else "The server stops completely. You'll need access to the machine to start it again."
+                    if (what == "restart") "Everyone's playback stops for a minute or two while it restarts."
+                    else "The server stops completely. You'll need to start it again on the machine it runs on."
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     confirm = null
-                    if (what == "restart") actions.run("Restarting…") { client.restartServer() }
-                    else actions.run("Shutting down…") { client.shutdownServer() }
+                    if (what == "restart") actions.run("Restarting") { client.restartServer() }
+                    else actions.run("Shutting down") { client.shutdownServer() }
                 }) { Text(if (what == "restart") "Restart" else "Shut down", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },

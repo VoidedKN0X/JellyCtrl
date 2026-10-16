@@ -5,20 +5,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -67,7 +66,8 @@ import com.vknxworks.jellyctrl.ui.photo.PhotoViewerScreen
 import com.vknxworks.jellyctrl.ui.remote.RemoteScreen
 import com.vknxworks.jellyctrl.ui.search.SearchScreen
 import com.vknxworks.jellyctrl.ui.settings.AccountsScreen
-import com.vknxworks.jellyctrl.ui.settings.MoreScreen
+import com.vknxworks.jellyctrl.ui.settings.ProfileScreen
+import com.vknxworks.jellyctrl.ui.library.LibrariesScreen
 import com.vknxworks.jellyctrl.ui.settings.QuickConnectApproveScreen
 import com.vknxworks.jellyctrl.ui.settings.SettingsScreen
 
@@ -90,9 +90,8 @@ private data class TopDest(val route: Any, val label: String, val icon: ImageVec
 private val topDestinations = listOf(
     TopDest(HomeRoute, "Home", Icons.Outlined.Home, Icons.Filled.Home),
     TopDest(SearchRoute, "Search", Icons.Outlined.Search, Icons.Filled.Search),
-    TopDest(FavoritesRoute, "Favorites", Icons.Outlined.FavoriteBorder, Icons.Filled.Favorite),
-    TopDest(DownloadsRoute, "Downloads", Icons.Outlined.Download, Icons.Filled.Download),
-    TopDest(MoreRoute, "More", Icons.Outlined.Menu, Icons.Filled.Menu),
+    TopDest(LibrariesRoute, "Library", Icons.Outlined.VideoLibrary, Icons.Filled.VideoLibrary),
+    TopDest(ProfileRoute, "You", Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle),
 )
 
 @Composable
@@ -122,6 +121,11 @@ private fun MainScaffold() {
                     )
                 }
             },
+            navigationSuiteColors = NavigationSuiteDefaults.colors(
+                navigationBarContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                navigationRailContainerColor = MaterialTheme.colorScheme.background,
+            ),
+            containerColor = MaterialTheme.colorScheme.background,
         ) {
             Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -142,7 +146,8 @@ private fun AppNavHost(navController: androidx.navigation.NavHostController) {
         composable<SearchRoute> { SearchScreen() }
         composable<FavoritesRoute> { FavoritesScreen() }
         composable<DownloadsRoute> { DownloadsScreen() }
-        composable<MoreRoute> { MoreScreen() }
+        composable<LibrariesRoute> { LibrariesScreen() }
+        composable<ProfileRoute> { ProfileScreen() }
         composable<LibraryRoute> { LibraryScreen(it.toRoute()) }
         composable<ListRoute> { ListScreen(it.toRoute()) }
         composable<ItemRoute> { ItemDetailScreen(it.toRoute<ItemRoute>().id) }

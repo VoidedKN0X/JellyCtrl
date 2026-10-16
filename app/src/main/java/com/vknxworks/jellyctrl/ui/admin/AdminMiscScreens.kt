@@ -157,7 +157,7 @@ fun AdminPluginsScreen() {
 
     AdminScaffold(
         "Plugins", actions, loader.refreshing, { loader.reload(silent = true) },
-        floating = { ExtendedFloatingActionButton(onClick = { nav.navigate(AdminCatalogRoute) }, icon = { Icon(Icons.Filled.Store, null) }, text = { Text("Catalog") }) },
+        floating = { ExtendedFloatingActionButton(onClick = { nav.navigate(AdminCatalogRoute) }, icon = { Icon(Icons.Filled.Store, null) }, text = { Text("Get plugins") }) },
     ) {
         LoadContent(loader) { plugins ->
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {

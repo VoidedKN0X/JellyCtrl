@@ -1,6 +1,10 @@
 package com.vknxworks.jellyctrl.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -176,7 +180,7 @@ fun LoadingView(modifier: Modifier = Modifier) {
 
 @Composable
 fun ErrorView(message: String, modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null) {
-    MessageView(Icons.Outlined.ErrorOutline, "Couldn't load", message, modifier, actionLabel = onRetry?.let { "Retry" }, onAction = onRetry)
+    MessageView(Icons.Outlined.ErrorOutline, "Couldn't load this", message, modifier, actionLabel = onRetry?.let { "Retry" }, onAction = onRetry)
 }
 
 @Composable
@@ -188,10 +192,19 @@ fun MessageView(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
 ) {
-    Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(icon, null, Modifier.size(44.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+    Box(modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier.widthIn(max = 360.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                Modifier.size(72.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
             if (body != null) {
                 Text(
                     body,
@@ -201,7 +214,7 @@ fun MessageView(
                 )
             }
             if (actionLabel != null && onAction != null) {
-                FilledTonalButton(onClick = onAction) { Text(actionLabel) }
+                FilledTonalButton(onClick = onAction, shape = CircleShape) { Text(actionLabel) }
             }
         }
     }

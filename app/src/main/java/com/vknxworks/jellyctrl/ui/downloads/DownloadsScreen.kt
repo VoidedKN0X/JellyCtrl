@@ -45,6 +45,7 @@ import com.vknxworks.jellyctrl.data.download.DownloadStatus
 import com.vknxworks.jellyctrl.player.PlayerActivity
 import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.MessageView
+import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.formatBytes
 
 @Composable
@@ -58,27 +59,23 @@ fun DownloadsScreen() {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Downloads")
-                        if (entries.isNotEmpty()) {
-                            Text(
-                                "${entries.count { it.status == DownloadStatus.DONE }} ready  ·  ${formatBytes(c.downloads.usedBytes())} used",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                },
-            )
+            ScreenTopBar("Downloads") {
+                if (entries.isNotEmpty()) {
+                    Text(
+                        formatBytes(c.downloads.usedBytes()),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 16.dp),
+                    )
+                }
+            }
         },
     ) { padding ->
         if (entries.isEmpty()) {
             MessageView(
                 Icons.Outlined.DownloadForOffline,
-                "No downloads",
-                "Use the download button on a movie, episode, season or album to watch it offline.",
+                "Nothing downloaded",
+                "Download a film, an episode, a whole season or an album to watch it without a connection.",
                 Modifier.padding(padding),
             )
             return@Scaffold

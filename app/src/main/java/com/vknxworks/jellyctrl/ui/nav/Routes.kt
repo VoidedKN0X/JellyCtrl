@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object SearchRoute
 @Serializable data object FavoritesRoute
 @Serializable data object DownloadsRoute
-@Serializable data object MoreRoute
+@Serializable data object LibrariesRoute
+@Serializable data object ProfileRoute
 
 @Serializable data class LibraryRoute(val id: String, val name: String, val collectionType: String? = null)
 

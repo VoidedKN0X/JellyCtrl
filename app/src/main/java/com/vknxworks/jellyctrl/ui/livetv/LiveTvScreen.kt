@@ -66,6 +66,7 @@ import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.ItemGrid
 import com.vknxworks.jellyctrl.ui.components.LoadContent
 import com.vknxworks.jellyctrl.ui.components.MessageView
+import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.formatDateTime
 import com.vknxworks.jellyctrl.ui.components.formatTime
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
@@ -85,12 +86,9 @@ fun LiveTvScreen() {
         contentWindowInsets = WindowInsets(0),
         topBar = {
             Column {
-                TopAppBar(
-                    title = { Text("Live TV") },
-                    navigationIcon = { IconButton(onClick = nav::back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
-                )
+                ScreenTopBar("Live TV")
                 PrimaryTabRow(selectedTabIndex = tab) {
-                    listOf("Channels", "Guide", "Recordings", "Scheduled").forEachIndexed { i, t ->
+                    listOf("Channels", "Guide", "Recorded", "Scheduled").forEachIndexed { i, t ->
                         Tab(tab == i, onClick = { tab = i }, text = { Text(t) })
                     }
                 }

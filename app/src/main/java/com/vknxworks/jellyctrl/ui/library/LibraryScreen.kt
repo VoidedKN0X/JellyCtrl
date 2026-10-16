@@ -1,6 +1,16 @@
 package com.vknxworks.jellyctrl.ui.library
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.draw.clip
+import com.vknxworks.jellyctrl.ui.components.ChoiceSheet
+import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
+import com.vknxworks.jellyctrl.ui.theme.Gutter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -56,22 +66,22 @@ import com.vknxworks.jellyctrl.ui.nav.LibraryRoute
 import com.vknxworks.jellyctrl.ui.nav.ListRoute
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 
-enum class SortOption(val label: String, val fields: List<String>, val defaultDescending: Boolean = false) {
-    NAME("Name", listOf("SortName")),
-    ADDED("Date added", listOf("DateCreated", "SortName"), true),
-    RELEASED("Release date", listOf("PremiereDate", "ProductionYear", "SortName"), true),
-    RATING("Community rating", listOf("CommunityRating", "SortName"), true),
-    CRITIC("Critic rating", listOf("CriticRating", "SortName"), true),
-    PLAYED("Date played", listOf("DatePlayed", "SortName"), true),
-    RUNTIME("Runtime", listOf("Runtime", "SortName")),
-    PLAYCOUNT("Play count", listOf("PlayCount", "SortName"), true),
-    RANDOM("Random", listOf("Random")),
+enum class SortOption(val label: String, val fields: List<String>, val ascLabel: String, val descLabel: String) {
+    NAME("Name", listOf("SortName"), "A to Z", "Z to A"),
+    ADDED("Date added", listOf("DateCreated", "SortName"), "oldest first", "newest first"),
+    RELEASED("Release date", listOf("PremiereDate", "ProductionYear", "SortName"), "oldest first", "newest first"),
+    RATING("Rating", listOf("CommunityRating", "SortName"), "lowest first", "highest first"),
+    CRITIC("Critic rating", listOf("CriticRating", "SortName"), "lowest first", "highest first"),
+    PLAYED("Last watched", listOf("DatePlayed", "SortName"), "longest ago", "most recent"),
+    RUNTIME("Length", listOf("Runtime", "SortName"), "shortest first", "longest first"),
+    PLAYCOUNT("Times played", listOf("PlayCount", "SortName"), "fewest first", "most first"),
+    RANDOM("Random", listOf("Random"), "", ""),
 }
 
 enum class FilterOption(val label: String, val value: String) {
-    UNPLAYED("Unplayed", "IsUnplayed"),
-    PLAYED("Played", "IsPlayed"),
-    FAVORITES("Favorites", "IsFavorite"),
+    UNPLAYED("Unwatched", "IsUnplayed"),
+    PLAYED("Watched", "IsPlayed"),
+    FAVORITES("Favourites", "IsFavorite"),
     RESUMABLE("In progress", "IsResumable"),
 }
 
@@ -109,65 +119,62 @@ fun LibraryScreen(route: LibraryRoute) {
     var descending by rememberSaveable { mutableStateOf(false) }
     var filters by rememberSaveable { mutableStateOf(setOf<FilterOption>()) }
     var showSort by remember { mutableStateOf(false) }
-    var showFilter by remember { mutableStateOf(false) }
     val canSortFilter = tab.kind == "items" || tab.kind == "playlists"
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text(route.name) },
-                    navigationIcon = { IconButton(onClick = nav::back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
-                    actions = {
-                        if (canSortFilter) {
-                            IconButton(onClick = {
-                                nav.shuffle(BaseItemDto(id = route.id, type = "CollectionFolder", collectionType = route.collectionType, isFolder = true))
-                            }) { Icon(Icons.Filled.Shuffle, "Shuffle") }
-                            Box {
-                                IconButton(onClick = { showSort = true }) { Icon(Icons.AutoMirrored.Filled.Sort, "Sort") }
-                                DropdownMenu(showSort, onDismissRequest = { showSort = false }) {
-                                    SortOption.entries.forEach { opt ->
-                                        DropdownMenuItem(
-                                            text = { Text(opt.label) },
-                                            leadingIcon = { if (opt == sort) Icon(Icons.Filled.Check, null) },
-                                            onClick = {
-                                                if (sort == opt) descending = !descending else {
-                                                    sort = opt
-                                                    descending = opt.defaultDescending
-                                                }
-                                                showSort = false
-                                            },
-                                        )
-                                    }
-                                    HorizontalDivider()
-                                    DropdownMenuItem(
-                                        text = { Text(if (descending) "Descending" else "Ascending") },
-                                        onClick = { descending = !descending; showSort = false },
-                                    )
-                                }
-                            }
-                            IconButton(onClick = { showFilter = !showFilter }) { Icon(Icons.Filled.FilterList, "Filter") }
-                        }
-                    },
-                )
+            Column(Modifier.background(MaterialTheme.colorScheme.background)) {
+                ScreenTopBar(route.name) {
+                    if (canSortFilter) {
+                        IconButton(onClick = {
+                            nav.shuffle(BaseItemDto(id = route.id, type = "CollectionFolder", collectionType = route.collectionType, isFolder = true))
+                        }) { Icon(Icons.Filled.Shuffle, "Shuffle") }
+                    }
+                }
                 if (tabs.size > 1) {
-                    PrimaryScrollableTabRow(selectedTabIndex = tabIndex, edgePadding = 8.dp) {
-                        tabs.forEachIndexed { i, t ->
-                            Tab(selected = i == tabIndex, onClick = { tabIndex = i }, text = { Text(t.label) })
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = Gutter),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(tabs.size) { i ->
+                            val selected = i == tabIndex
+                            Text(
+                                tabs[i].label,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceContainerHigh)
+                                    .clickable { tabIndex = i }
+                                    .padding(horizontal = 16.dp, vertical = 9.dp),
+                            )
                         }
                     }
                 }
-                if (showFilter && canSortFilter) {
+                if (canSortFilter) {
                     LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                        contentPadding = PaddingValues(start = Gutter, end = Gutter, top = 10.dp, bottom = 6.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        item {
+                            FilterChip(
+                                selected = sort != SortOption.NAME || descending,
+                                onClick = { showSort = true },
+                                label = { Text(sort.label) },
+                                leadingIcon = {
+                                    Icon(if (descending) Icons.Filled.ArrowDownward else Icons.Filled.ArrowUpward, null, Modifier.size(16.dp))
+                                },
+                                shape = CircleShape,
+                            )
+                        }
                         items(FilterOption.entries) { f ->
                             FilterChip(
                                 selected = f in filters,
                                 onClick = { filters = if (f in filters) filters - f else filters + f },
                                 label = { Text(f.label) },
+                                shape = CircleShape,
                             )
                         }
                     }
@@ -181,6 +188,18 @@ fun LibraryScreen(route: LibraryRoute) {
                 "artists" -> ArtistsGrid(route.id)
                 else -> LibraryGrid(route.id, tab, sort, descending, filters)
             }
+        }
+    }
+
+    if (showSort) {
+        val options = SortOption.entries.flatMap { o ->
+            if (o == SortOption.RANDOM) listOf((o to false) to o.label)
+            else listOf((o to false) to "${o.label}, ${o.ascLabel}", (o to true) to "${o.label}, ${o.descLabel}")
+        }
+        ChoiceSheet("Sort by", options, sort to descending, onDismiss = { showSort = false }) { (o, d) ->
+            sort = o
+            descending = d
+            showSort = false
         }
     }
 }

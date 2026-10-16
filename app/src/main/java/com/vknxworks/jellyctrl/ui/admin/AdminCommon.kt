@@ -28,6 +28,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import kotlinx.coroutines.CoroutineScope
@@ -78,12 +79,9 @@ fun AdminScaffold(
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            TopAppBar(
-                title = { Text(title) },
-                navigationIcon = { IconButton(onClick = nav::back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
-                actions = topActions,
-            )
+            ScreenTopBar(title, actions = topActions)
         },
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(actions.snackbar) },
         floatingActionButton = floating,
     ) { padding ->
