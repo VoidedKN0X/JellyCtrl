@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vknxworks.jellyctrl.ui.components.LocalBottomClearance
 import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.userViews
 import com.vknxworks.jellyctrl.data.download.DownloadStatus
@@ -62,7 +63,7 @@ fun LibrariesScreen() {
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(300.dp),
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = Gutter, end = Gutter, bottom = 32.dp),
+                contentPadding = PaddingValues(start = Gutter, end = Gutter, bottom = 32.dp + LocalBottomClearance.current),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {

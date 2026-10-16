@@ -67,6 +67,7 @@ import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.Load
 import com.vknxworks.jellyctrl.ui.components.MessageView
 import com.vknxworks.jellyctrl.ui.components.SeekBar
+import com.vknxworks.jellyctrl.ui.components.glass
 import com.vknxworks.jellyctrl.ui.components.formatClock
 import com.vknxworks.jellyctrl.ui.components.rememberLoader
 import com.vknxworks.jellyctrl.ui.nav.ItemRoute
@@ -85,10 +86,11 @@ fun MiniPlayer(onOpen: () -> Unit) {
     if (!s.hasMedia) return
     val seed = rememberArtworkColor(s.artworkUri)
     ArtworkTint(seed) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 2.dp)
+                .glass(MaterialTheme.shapes.large, elevation = 12.dp, tint = MaterialTheme.colorScheme.surfaceContainerHighest),
         ) {
             Box {
                 Row(

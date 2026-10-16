@@ -59,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vknxworks.jellyctrl.ui.components.LocalBottomClearance
 import com.vknxworks.jellyctrl.BuildConfig
 import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.changeOwnPassword
@@ -102,7 +103,7 @@ fun ProfileScreen() {
     val ready = downloads.count { it.status == DownloadStatus.DONE }
     val hasLiveTv = views.value?.any { it.collectionType == "livetv" } == true
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(bottom = 24.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(bottom = 24.dp + LocalBottomClearance.current)) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = Gutter, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

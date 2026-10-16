@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vknxworks.jellyctrl.ui.components.LocalBottomClearance
 import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
@@ -137,7 +138,7 @@ fun HomeScreen() {
                 return@LoadContent
             }
             Box(Modifier.fillMaxSize()) {
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
+                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp + LocalBottomClearance.current)) {
                     if (data.featured.isNotEmpty()) {
                         item("hero") { Hero(data.featured, client) }
                     } else {
