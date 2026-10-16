@@ -1,17 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Play-triangle inside a rounded hexagon "control" mark. 108dp canvas, art kept inside the 66dp safe zone. -->
+<!-- Widescreen key: a 16:9 screen with a play symbol, set into a keycap. 108dp adaptive canvas, art inside the 66dp safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Keycap body -->
     <path
-        android:fillColor="#00000000"
+        android:fillColor="#FF2B3038"
+        android:pathData="M37,31 H71 A13,13 0 0 1 84,44 V65 A13,13 0 0 1 71,78 H37 A13,13 0 0 1 24,65 V44 A13,13 0 0 1 37,31 Z" />
+    <!-- Screen face -->
+    <path
+        android:fillColor="#FF1A1D23"
         android:strokeColor="#FFA8BBFF"
-        android:strokeWidth="5"
-        android:strokeLineJoin="round"
-        android:pathData="M54,25 L79,39.5 L79,68.5 L54,83 L29,68.5 L29,39.5 Z" />
+        android:strokeWidth="3"
+        android:pathData="M37,32 H71 A9,9 0 0 1 80,41 V57 A9,9 0 0 1 71,66 H37 A9,9 0 0 1 28,57 V41 A9,9 0 0 1 37,32 Z" />
+    <!-- Play -->
     <path
-        android:fillColor="#FFECEEF2"
-        android:pathData="M47,41 L67,54 L47,67 Z" />
+        android:fillColor="#FFA8BBFF"
+        android:strokeColor="#FFA8BBFF"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round"
+        android:pathData="M50,43 L60,49 L50,55 Z" />
+    <!-- Stand, as a bar on the front of the key -->
+    <path
+        android:strokeColor="#FF5A616C"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M47,72.5 H61" />
 </vector>
