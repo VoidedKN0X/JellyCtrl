@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -160,6 +161,21 @@ private fun ServerStep(vm: ServerSetupViewModel) {
     } else {
         PillButton("Continue", onClick = { vm.connect() }, enabled = vm.address.isNotBlank(), modifier = Modifier.fillMaxWidth())
     }
+    vm.httpFallbackFor?.let { host ->
+        AlertDialog(
+            onDismissRequest = { vm.dismissHttpFallback() },
+            icon = { Icon(Icons.Outlined.LockOpen, null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Use an unencrypted connection?") },
+            text = {
+                Text(
+                    "$host didn't answer over HTTPS. JellyCtrl can try plain HTTP instead, but then your password, " +
+                        "sign-in token and everything you watch are sent unencrypted. Only do this on a network you trust."
+                )
+            },
+            confirmButton = { TextButton(onClick = { vm.acceptHttpFallback() }) { Text("Use HTTP", color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { vm.dismissHttpFallback() }) { Text("Cancel") } },
+        )
+    }
 
     Spacer(Modifier.height(8.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -214,7 +230,7 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
             Text(server.url, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 if (secure) "Jellyfin ${server.info.version.orEmpty()}, encrypted connection"
-                else "Not encrypted. Fine on your home network, risky anywhere else.",
+                else "Not encrypted (HTTP). Your password is sent in the clear. Fine on your home network, risky anywhere else.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

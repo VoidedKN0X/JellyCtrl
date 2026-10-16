@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
+import com.vknxworks.jellyctrl.data.api.ServerAuthInterceptor
 import com.vknxworks.jellyctrl.data.auth.SessionManager
 import com.vknxworks.jellyctrl.data.download.DownloadRepository
 import com.vknxworks.jellyctrl.data.settings.SettingsRepository
@@ -30,6 +31,14 @@ class AppContainer(val context: Context) {
                     .build()
             )
         }
+        // Media, image and trickplay requests to the signed-in server get the token as a header, never in the URL.
+        // (runCatching: a request can start while this container is still being constructed.)
+        .addInterceptor(
+            ServerAuthInterceptor(
+                { runCatching { sessions.active.value?.client }.getOrNull() },
+                { url -> runCatching { sessions.isCleartextAllowed(url) }.getOrDefault(false) },
+            )
+        )
         .build()
 
     val sessions = SessionManager(context, http, appScope)

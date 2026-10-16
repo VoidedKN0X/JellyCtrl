@@ -80,6 +80,7 @@ fun AdminLibrariesScreen() {
     var addPathTo by remember { mutableStateOf<String?>(null) }
     var renaming by remember { mutableStateOf<VirtualFolderInfo?>(null) }
     var removing by remember { mutableStateOf<VirtualFolderInfo?>(null) }
+    var removingPath by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     // Poll while any library is scanning so progress updates.
     LaunchedEffect(loader.value) {
@@ -145,9 +146,7 @@ fun AdminLibrariesScreen() {
                                     Icon(Icons.Filled.Folder, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(path, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f).padding(start = 8.dp))
                                     if (lib.locations.size > 1) {
-                                        IconButton(onClick = {
-                                            actions.run("Folder removed", after = { loader.reload(silent = true) }) { client.removeLibraryPath(lib.name.orEmpty(), path) }
-                                        }) { Icon(Icons.Filled.Delete, "Remove folder") }
+                                        IconButton(onClick = { removingPath = lib.name.orEmpty() to path }) { Icon(Icons.Filled.Delete, "Remove folder") }
                                     }
                                 }
                             }
@@ -183,6 +182,20 @@ fun AdminLibrariesScreen() {
                 }) { Text("Rename") }
             },
             dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancel") } },
+        )
+    }
+    removingPath?.let { (libName, path) ->
+        AlertDialog(
+            onDismissRequest = { removingPath = null },
+            title = { Text("Remove folder?") },
+            text = { Text("$path will no longer be part of $libName, and its items will drop out of the library. The files on disk are not touched.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    removingPath = null
+                    actions.run("Folder removed", after = { loader.reload(silent = true) }) { client.removeLibraryPath(libName, path) }
+                }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { removingPath = null }) { Text("Cancel") } },
         )
     }
     removing?.let { lib ->

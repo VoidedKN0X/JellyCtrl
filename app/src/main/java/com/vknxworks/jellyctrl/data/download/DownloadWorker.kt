@@ -42,17 +42,17 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
         // Poster, best effort.
         runCatching {
-            val poster = File(repo.dir, entry.posterFile ?: "${itemId}.jpg")
-            if (!poster.exists()) {
-                val req = Request.Builder().url(client.imageUrl(itemId, maxWidth = 500)).build()
+            val poster = repo.safeFile(entry.posterFile ?: "${DownloadRepository.localBaseName(itemId)}.jpg")
+            if (poster != null && !poster.exists()) {
+                val req = Request.Builder().url(client.imageUrl(itemId, maxWidth = 500)).header("Authorization", client.authHeader).build()
                 client.http.newCall(req).await().use { r ->
                     if (r.isSuccessful) r.body?.byteStream()?.use { input -> poster.outputStream().use { input.copyTo(it) } }
                 }
             }
         }
 
-        val target = File(repo.dir, entry.fileName)
-        val part = File(repo.dir, entry.fileName + ".part")
+        val target = repo.safeFile(entry.fileName) ?: return@withContext fail(itemId, "Invalid file name")
+        val part = repo.safeFile(entry.fileName + ".part") ?: return@withContext fail(itemId, "Invalid file name")
         try {
             val existing = if (part.exists()) part.length() else 0L
             val reqBuilder = Request.Builder()

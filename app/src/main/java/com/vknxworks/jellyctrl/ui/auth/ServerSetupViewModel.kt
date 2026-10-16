@@ -68,22 +68,51 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
         }
     }
 
-    /** Try the address as typed, and if it has no scheme also try http and the default port. */
+    /** Set when https failed to connect and the server might only speak plain HTTP; the UI asks before using it. */
+    var httpFallbackFor by mutableStateOf<String?>(null)
+        private set
+
+    /**
+     * Try the address as typed. With no scheme, only https is tried automatically; if that can't connect
+     * (and it wasn't a certificate problem) the user is asked before falling back to unencrypted http.
+     */
     fun connect(input: String = address) {
         val raw = input.trim()
         if (raw.isEmpty()) return
         error = null
+        httpFallbackFor = null
+        val explicit = raw.startsWith("http://", true) || raw.startsWith("https://", true)
+        if (explicit) {
+            // An http:// address the user typed (or picked from discovery) is their choice; the sign-in
+            // step shows the "Not encrypted" warning before any password is sent.
+            if (raw.startsWith("http://", true)) c.sessions.approveCleartext(raw)
+            probe(listOf(raw))
+        } else {
+            probe(listOf("https://$raw"), offerHttpFor = raw)
+        }
+    }
+
+    /** The user confirmed they want to use the server over plain HTTP. */
+    fun acceptHttpFallback() {
+        val raw = httpFallbackFor ?: return
+        httpFallbackFor = null
+        val candidates = buildList {
+            add("http://$raw")
+            if (!raw.substringAfter("]").contains(':')) add("http://$raw:8096")
+        }
+        candidates.forEach { c.sessions.approveCleartext(it) }
+        probe(candidates)
+    }
+
+    fun dismissHttpFallback() {
+        httpFallbackFor = null
+        error = "Couldn't connect securely. Check the address, or type http:// in front of it to use an unencrypted connection."
+    }
+
+    private fun probe(candidates: List<String>, offerHttpFor: String? = null) {
+        error = null
         checking = true
         viewModelScope.launch {
-            val candidates = buildList {
-                if (raw.startsWith("http://", true) || raw.startsWith("https://", true)) {
-                    add(raw)
-                } else {
-                    add("https://$raw")
-                    add("http://$raw")
-                    if (!raw.substringAfter("]").contains(':')) add("http://$raw:8096")
-                }
-            }
             var lastError: Throwable? = null
             for (url in candidates) {
                 try {
@@ -99,8 +128,15 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
                     lastError = e
                 }
             }
-            error = lastError?.friendlyMessage() ?: "Couldn't connect"
             checking = false
+            val err = lastError
+            // Never downgrade after a certificate/TLS failure: that's exactly what an attacker would cause.
+            val tlsProblem = generateSequence(err) { it.cause }.any { it is javax.net.ssl.SSLException || it is java.security.cert.CertificateException }
+            if (offerHttpFor != null && !tlsProblem && err is java.io.IOException && err !is com.vknxworks.jellyctrl.data.api.ApiException && err !is java.net.UnknownHostException) {
+                httpFallbackFor = offerHttpFor
+            } else {
+                error = err?.friendlyMessage() ?: "Couldn't connect"
+            }
         }
     }
 

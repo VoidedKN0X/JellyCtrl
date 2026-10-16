@@ -66,8 +66,18 @@ class DownloadRepository(private val context: Context, private val scope: Corout
         }
     }
 
-    fun file(entry: DownloadEntry): File = File(dir, entry.fileName)
-    fun poster(entry: DownloadEntry): File? = entry.posterFile?.let { File(dir, it) }
+    fun file(entry: DownloadEntry): File = safeFile(entry.fileName) ?: File(dir, "invalid")
+    fun poster(entry: DownloadEntry): File? = entry.posterFile?.let { safeFile(it) }
+
+    /**
+     * Resolves a stored file name inside [dir], or null if it would escape it. Existing downloads were saved
+     * as "<itemId>.<ext>" and keep working as long as that name stays inside the downloads folder.
+     */
+    fun safeFile(name: String): File? {
+        if (name.isBlank() || name == "." || name == ".." || name.contains('/') || name.contains('\\') || name.contains('\u0000')) return null
+        val f = File(dir, name)
+        return f.takeIf { it.canonicalPath.startsWith(dir.canonicalPath + File.separator) }
+    }
 
     fun find(itemId: String): DownloadEntry? = _entries.value.firstOrNull { it.itemId == itemId }
 
@@ -76,6 +86,11 @@ class DownloadRepository(private val context: Context, private val scope: Corout
 
     fun enqueue(item: BaseItemDto, accountKey: String, wifiOnly: Boolean) {
         val ext = (item.container ?: item.mediaSources.firstOrNull()?.container ?: "mkv").substringBefore(',')
+            .trim().lowercase().takeIf { EXT_RE.matches(it) } ?: "mkv"
+        // Local names come from a hash of the server's item id, never from the raw id, so a hostile server can't
+        // point a download outside the folder. Re-downloads of an existing entry keep its stored names.
+        val existing = find(item.id)
+        val base = localBaseName(item.id)
         val entry = DownloadEntry(
             itemId = item.id,
             accountKey = accountKey,
@@ -83,8 +98,8 @@ class DownloadRepository(private val context: Context, private val scope: Corout
             type = item.type,
             seriesName = item.seriesName,
             itemJson = JellyfinJson.encodeToString(BaseItemDto.serializer(), item),
-            fileName = "${item.id}.$ext",
-            posterFile = "${item.id}.jpg",
+            fileName = existing?.fileName?.takeIf { safeFile(it) != null } ?: "$base.$ext",
+            posterFile = existing?.posterFile?.takeIf { safeFile(it) != null } ?: "$base.jpg",
         )
         scope.launch {
             upsert(entry)
@@ -116,9 +131,9 @@ class DownloadRepository(private val context: Context, private val scope: Corout
         scope.launch {
             val e = find(itemId) ?: return@launch
             WorkManager.getInstance(context).cancelUniqueWork(workName(itemId))
-            File(dir, e.fileName).delete()
-            File(dir, e.fileName + ".part").delete()
-            e.posterFile?.let { File(dir, it).delete() }
+            safeFile(e.fileName)?.delete()
+            safeFile(e.fileName + ".part")?.delete()
+            e.posterFile?.let { safeFile(it)?.delete() }
             mutex.withLock {
                 _entries.update { list -> list.filterNot { it.itemId == itemId } }
                 save()
@@ -147,6 +162,12 @@ class DownloadRepository(private val context: Context, private val scope: Corout
     }
 
     companion object {
+        private val EXT_RE = Regex("^[a-z0-9]{1,5}$")
+
+        fun localBaseName(itemId: String): String =
+            java.security.MessageDigest.getInstance("SHA-256").digest(itemId.toByteArray())
+                .joinToString("") { "%02x".format(it) }.take(32)
+
         fun workName(itemId: String) = "download-$itemId"
     }
 }

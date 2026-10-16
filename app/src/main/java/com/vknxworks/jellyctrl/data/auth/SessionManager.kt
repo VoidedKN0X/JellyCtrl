@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import java.util.UUID
 
@@ -58,6 +60,27 @@ class SessionManager(
     val ready: StateFlow<Boolean> = _ready.asStateFlow()
 
     private var installId: String = ""
+
+    /** Servers (scheme://host:port) the user agreed to reach over plain HTTP during this run of the app. */
+    private val cleartextApproved = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    private fun originOf(u: HttpUrl): String = "${u.scheme}://${u.host.lowercase()}:${u.port}"
+
+    /** Lets the sign-in flow reach an http:// server once the user has confirmed the unencrypted connection. */
+    fun approveCleartext(serverUrl: String) {
+        JellyfinClient.normalizeBaseUrl(serverUrl).toHttpUrlOrNull()?.let { cleartextApproved += originOf(it) }
+    }
+
+    /**
+     * Plain-HTTP requests that carry credentials are only allowed to a server the user explicitly chose to use
+     * without encryption: a saved http:// account, or one approved in the sign-in flow.
+     */
+    fun isCleartextAllowed(url: HttpUrl): Boolean {
+        if (url.isHttps) return true
+        val origin = originOf(url)
+        if (origin in cleartextApproved) return true
+        return _accounts.value.any { a -> a.serverUrl.toHttpUrlOrNull()?.let { originOf(it) } == origin }
+    }
 
     val deviceName: String = (Build.MODEL ?: "Android").trim()
 

@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vknxworks.jellyctrl.AppContainer
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.ItemQuery
 import com.vknxworks.jellyctrl.data.api.MediaSegment
@@ -225,14 +226,23 @@ class PlayerViewModel(
     private fun createEngine(kind: EngineKind): PlayerEngine = when (kind) {
         EngineKind.MEDIA3 -> Media3Engine(appContext, c.http)
         EngineKind.MPV -> try {
-            MpvEngine(appContext, settings.hwDecoding)
+            MpvEngine(appContext, settings.hwDecoding, ::mpvAuthHeader)
         } catch (e: Throwable) {
-            notice = "mpv unavailable, using Media3"
+            notice = e.message?.let { "mpv unavailable ($it), using Media3" } ?: "mpv unavailable, using Media3"
             Media3Engine(appContext, c.http)
         }
     }
 
-    private fun PlayerEngine.kind() = if (this is MpvEngine) EngineKind.MPV else EngineKind.MEDIA3
+    /** Header line for mpv: only for the signed-in server, never for third-party or unapproved HTTP URLs. */
+    private fun mpvAuthHeader(url: String): String? {
+        val cl = client ?: return null
+        val token = cl.accessToken?.takeIf { it.isNotBlank() } ?: return null
+        val parsed = url.toHttpUrlOrNull() ?: return null
+        if (!cl.ownsUrl(parsed) || !c.sessions.isCleartextAllowed(parsed)) return null
+        return "X-Emby-Token: $token"
+    }
+
+        private fun PlayerEngine.kind() = if (this is MpvEngine) EngineKind.MPV else EngineKind.MEDIA3
 
     private suspend fun loadExtras(it: BaseItemDto, resolved: ResolvedPlayback) {
         val cl = client ?: return

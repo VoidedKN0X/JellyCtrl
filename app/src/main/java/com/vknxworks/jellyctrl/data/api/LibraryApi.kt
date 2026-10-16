@@ -281,4 +281,5 @@ suspend fun JellyfinClient.refreshItem(id: String, replaceAll: Boolean) = postUn
 
 suspend fun JellyfinClient.updateItem(id: String, raw: JsonObject) = postUnit("Items/$id", body = raw)
 
-fun JellyfinClient.downloadUrl(id: String): String = authedUrl("Items/$id/Download")
+/** Download URL; the worker authenticates it with the Authorization header. */
+fun JellyfinClient.downloadUrl(id: String): String = url("Items/$id/Download").toString()

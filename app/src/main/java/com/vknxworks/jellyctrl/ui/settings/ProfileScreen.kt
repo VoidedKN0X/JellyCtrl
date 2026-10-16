@@ -122,6 +122,13 @@ fun ProfileScreen() {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (acc?.serverUrl?.startsWith("http://", true) == true) {
+                Text(
+                    "Not encrypted (HTTP)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
         }
 
         Group {
@@ -220,7 +227,8 @@ fun AccountsScreen() {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
             accounts.groupBy { it.serverName to it.serverUrl }.forEach { (server, list) ->
-                Group(server.first, footer = server.second) {
+                val footer = if (server.second.startsWith("http://", true)) "${server.second}  ·  Not encrypted (HTTP)" else server.second
+                Group(server.first, footer = footer) {
                     list.forEach { a ->
                         val isActive = a.key == active?.account?.key
                         GroupRow(
