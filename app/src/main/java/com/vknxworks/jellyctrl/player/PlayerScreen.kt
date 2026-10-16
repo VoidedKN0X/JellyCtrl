@@ -411,12 +411,15 @@ private fun Controls(
         Column(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
-            val live = st.durationMs <= 0 || pb?.source?.isInfiniteStream == true
+            // Only real live streams (TV channels) count as live. Before the player knows the file's
+            // length, fall back to the runtime from the server so the seek bar shows straight away.
+            val live = pb?.source?.isInfiniteStream == true || item?.type == "TvChannel" || item?.type == "Program"
+            val duration = st.durationMs.takeIf { it > 0 } ?: (item?.runTimeTicks?.ticksToMs() ?: 0L)
             val shown = scrubMs ?: st.positionMs
             val trick = vm.trickplay
             if (scrubMs != null && trick != null && item != null) {
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val frac = if (st.durationMs > 0) scrubMs.toFloat() / st.durationMs else 0f
+                    val frac = if (duration > 0) scrubMs.toFloat() / duration else 0f
                     val previewW = 184.dp
                     val x = (maxWidth - previewW) * frac
                     TrickplayPreview(trick, item.id, pb?.source?.id, scrubMs, previewW, Modifier.offset(x = x))
@@ -438,7 +441,7 @@ private fun Controls(
                         Text(chapter, color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.weight(1f))
                     }
-                    Text("−" + formatClock(st.durationMs - shown), color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelLarge)
+                    Text("−" + formatClock((duration - shown).coerceAtLeast(0)), color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelLarge)
                     if (vm.nextItem != null) {
                         Spacer(Modifier.width(12.dp))
                         TextButton(onClick = { vm.playNext(); onPoke() }) {
@@ -450,7 +453,7 @@ private fun Controls(
                 }
                 SeekBar(
                     positionMs = shown,
-                    durationMs = st.durationMs,
+                    durationMs = duration,
                     bufferedMs = st.bufferedMs,
                     onScrub = onScrub,
                     onSeek = onSeek,
