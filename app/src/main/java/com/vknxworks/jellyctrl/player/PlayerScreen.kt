@@ -476,7 +476,8 @@ private fun TrickplayPreview(info: TrickplayInfo, itemId: String, sourceId: Stri
     val row = within / info.tileWidth
     val scale = width / info.width.toFloat() // dp per source pixel
     val height = scale * info.height.toFloat()
-    val url = client.authedUrl("Videos/$itemId/Trickplay/${info.width}/$imageIndex.jpg", mapOf("mediaSourceId" to sourceId))
+    // Authenticated by the app-wide OkHttp interceptor (Coil shares that client), so no token in the URL.
+    val url = client.url("Videos/$itemId/Trickplay/${info.width}/$imageIndex.jpg", mapOf("mediaSourceId" to sourceId)).toString()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.width(width).height(height).clip(RoundedCornerShape(10.dp)).clipToBounds().background(Color.Black)) {
             AsyncImage(

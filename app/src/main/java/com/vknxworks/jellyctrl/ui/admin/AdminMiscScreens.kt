@@ -1,8 +1,10 @@
 package com.vknxworks.jellyctrl.ui.admin
 
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.PersistableBundle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -374,6 +376,7 @@ fun AdminDevicesScreen() {
     val actions = rememberAdminActions()
     val client = c.api
     val loader = rememberLoader("admin-devices") { client.devices().sortedByDescending { it.dateLastActivity } }
+    var signingOut by remember { mutableStateOf<com.vknxworks.jellyctrl.data.api.DeviceInfo?>(null) }
     AdminScaffold("Devices", actions, loader.refreshing, { loader.reload(silent = true) }) {
         LoadContent(loader) { devices ->
             LazyColumn(Modifier.fillMaxSize()) {
@@ -386,15 +389,28 @@ fun AdminDevicesScreen() {
                         },
                         trailingContent = {
                             if (!isThis && d.id != null) {
-                                IconButton(onClick = {
-                                    actions.run("Device signed out", after = { loader.reload(silent = true) }) { client.deleteDevice(d.id) }
-                                }) { Icon(Icons.Filled.Delete, "Sign out device") }
+                                IconButton(onClick = { signingOut = d }) { Icon(Icons.Filled.Delete, "Sign out device") }
                             }
                         },
                     )
                 }
             }
         }
+    }
+    signingOut?.let { d ->
+        val id = d.id
+        AlertDialog(
+            onDismissRequest = { signingOut = null },
+            title = { Text("Sign out ${(d.customName ?: d.name).orEmpty()}?") },
+            text = { Text("The device's session is ended and ${d.lastUserName ?: "its user"} will need to sign in again on it.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    signingOut = null
+                    if (id != null) actions.run("Device signed out", after = { loader.reload(silent = true) }) { client.deleteDevice(id) }
+                }) { Text("Sign out", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { signingOut = null }) { Text("Cancel") } },
+        )
     }
 }
 
@@ -406,6 +422,7 @@ fun AdminKeysScreen() {
     val client = c.api
     val loader = rememberLoader("admin-keys") { client.apiKeys() }
     var creating by remember { mutableStateOf(false) }
+    var revoking by remember { mutableStateOf<com.vknxworks.jellyctrl.data.api.AuthenticationInfo?>(null) }
     AdminScaffold(
         "API keys", actions, loader.refreshing, { loader.reload(silent = true) },
         floating = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("New key") }) },
@@ -423,18 +440,32 @@ fun AdminKeysScreen() {
                         trailingContent = {
                             Row {
                                 IconButton(onClick = {
-                                    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                                        .setPrimaryClip(ClipData.newPlainText("API key", k.accessToken))
+                                    val clip = ClipData.newPlainText("API key", k.accessToken).apply {
+                                        description.extras = PersistableBundle().apply { putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) }
+                                    }
+                                    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
                                 }) { Icon(Icons.Filled.ContentCopy, "Copy key") }
-                                IconButton(onClick = {
-                                    actions.run("Key revoked", after = { loader.reload(silent = true) }) { client.revokeApiKey(k.accessToken) }
-                                }) { Icon(Icons.Filled.Delete, "Revoke") }
+                                IconButton(onClick = { revoking = k }) { Icon(Icons.Filled.Delete, "Revoke") }
                             }
                         },
                     )
                 }
             }
         }
+    }
+    revoking?.let { k ->
+        AlertDialog(
+            onDismissRequest = { revoking = null },
+            title = { Text("Revoke ${k.appName ?: "this key"}?") },
+            text = { Text("Any app or script using this key will stop working immediately. This can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    revoking = null
+                    actions.run("Key revoked", after = { loader.reload(silent = true) }) { client.revokeApiKey(k.accessToken) }
+                }) { Text("Revoke", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { revoking = null }) { Text("Cancel") } },
+        )
     }
     if (creating) {
         var app by remember { mutableStateOf("") }

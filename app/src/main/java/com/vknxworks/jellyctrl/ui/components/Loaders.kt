@@ -45,7 +45,9 @@ sealed interface Load<out T> {
     data class Err(val message: String) : Load<Nothing>
 }
 
-fun Throwable.friendlyMessage(): String = when (this) {
+fun Throwable.friendlyMessage(): String = com.vknxworks.jellyctrl.data.api.JellyfinClient.redact(rawFriendlyMessage())
+
+private fun Throwable.rawFriendlyMessage(): String = when (this) {
     is ApiException -> message ?: "Server error"
     is UnknownHostException -> "Can't reach the server - check the address and your connection"
     is java.net.ConnectException -> "Connection refused - is the server running?"

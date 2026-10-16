@@ -101,7 +101,7 @@ fun JellyfinClient.directStreamUrl(
     audio: Boolean = false,
 ): String {
     val path = if (audio) "Audio/$itemId/stream" else "Videos/$itemId/stream"
-    return authedUrl(
+    return url(
         path,
         mapOf(
             "static" to true,
@@ -111,11 +111,11 @@ fun JellyfinClient.directStreamUrl(
             "tag" to source.eTag,
             "liveStreamId" to source.liveStreamId,
         ),
-    )
+    ).toString()
 }
 
 /** Audio stream for the music player: the server direct-plays or transcodes to what the device supports. */
-fun JellyfinClient.universalAudioUrl(itemId: String, maxBitrate: Long): String = authedUrl(
+fun JellyfinClient.universalAudioUrl(itemId: String, maxBitrate: Long): String = url(
     "Audio/$itemId/universal",
     mapOf(
         "userId" to userId,
@@ -128,7 +128,7 @@ fun JellyfinClient.universalAudioUrl(itemId: String, maxBitrate: Long): String =
         "enableRedirection" to true,
         "enableRemoteMedia" to false,
     ),
-)
+).toString()
 
 // ---------- remote control of other sessions ----------
 

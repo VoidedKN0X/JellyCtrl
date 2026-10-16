@@ -108,7 +108,45 @@ class MusicService : MediaSessionService() {
         report(player, id) { reportStopped(it) }
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
+    /**
+     * Only hand the session to this app, controllers the platform marks as trusted (system UI,
+     * Bluetooth/media button handling, apps holding MEDIA_CONTENT_CONTROL) and Android Auto.
+     * Any other app that binds to the exported service is refused.
+     */
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+        session?.takeIf { isAllowedController(controllerInfo) }
+
+    private fun isAllowedController(info: MediaSession.ControllerInfo): Boolean {
+        val pkg = info.packageName
+        if (pkg == packageName) return true
+        if (info.isTrusted) return true
+        if (info.uid == android.os.Process.SYSTEM_UID || info.uid == android.os.Process.myUid()) return true
+        // Named system components only count when they really are system apps, so a sideloaded
+        // app can't claim one of these package names on a device that doesn't ship it.
+        // Android Auto ships as a Play Store app on many phones, so accept it from the Play Store too.
+        return pkg in TRUSTED_PACKAGES && (isSystemApp(pkg) || (pkg == ANDROID_AUTO && fromPlayStore(pkg)))
+    }
+
+    private fun fromPlayStore(pkg: String): Boolean = runCatching {
+        packageManager.getInstallSourceInfo(pkg).installingPackageName == "com.android.vending"
+    }.getOrDefault(false)
+
+    private fun isSystemApp(pkg: String): Boolean = runCatching {
+        val ai = packageManager.getApplicationInfo(pkg, 0)
+        ai.flags and (android.content.pm.ApplicationInfo.FLAG_SYSTEM or android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+    }.getOrDefault(false)
+
+    companion object {
+        private const val ANDROID_AUTO = "com.google.android.projection.gearhead"
+        private val TRUSTED_PACKAGES = setOf(
+            "com.android.systemui",
+            "com.android.bluetooth",
+            "com.google.android.bluetooth",
+            "com.google.android.projection.gearhead", // Android Auto
+            "com.google.android.carassistant",
+            "com.google.android.googlequicksearchbox", // Assistant voice controls
+        )
+    }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         val player = session?.player

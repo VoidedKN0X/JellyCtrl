@@ -12,11 +12,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import java.io.File
 
 /** libmpv-backed engine. Handles formats Media3 can't (styled ASS subtitles, DTS/TrueHD audio, odd containers) without transcoding. */
-class MpvEngine(private val context: Context, hwDecoding: Boolean) : PlayerEngine {
+class MpvEngine(
+    private val context: Context,
+    hwDecoding: Boolean,
+    /** Returns an HTTP header line ("Name: value") authenticating [url], or null when it isn't our server. */
+    private val authHeaderFor: (url: String) -> String? = { null },
+) : PlayerEngine {
     override val name = "mpv"
+
+    // mpv does its own TLS. Never run it without certificate verification: no CA bundle, no mpv.
+    private val caFile: File = caBundle(context)
+        ?: throw IllegalStateException("mpv can't verify secure connections on this device (no CA certificates found)")
 
     private val _state = MutableStateFlow(EngineState())
     override val state: StateFlow<EngineState> = _state.asStateFlow()
@@ -75,7 +85,7 @@ class MpvEngine(private val context: Context, hwDecoding: Boolean) : PlayerEngin
     @Volatile private var lastError: String? = null
     private val logObserver = object : MPVLib.LogObserver {
         override fun logMessage(prefix: String, level: Int, text: String) {
-            if (level <= MPVLib.MpvLogLevel.MPV_LOG_LEVEL_ERROR) lastError = "$prefix: ${text.trim()}"
+            if (level <= MPVLib.MpvLogLevel.MPV_LOG_LEVEL_ERROR) lastError = JellyfinClient.redact("$prefix: ${text.trim()}")
         }
     }
 
@@ -105,11 +115,8 @@ class MpvEngine(private val context: Context, hwDecoding: Boolean) : PlayerEngin
             setOptionString("sub-scale-with-window", "yes")
             setOptionString("sub-use-margins", "no")
             setOptionString("user-agent", "JellyCtrl mpv")
-            val ca = caBundle(context)
-            if (ca != null) {
-                setOptionString("tls-verify", "yes")
-                setOptionString("tls-ca-file", ca.path)
-            }
+            setOptionString("tls-verify", "yes")
+            setOptionString("tls-ca-file", caFile.path)
             init()
             addObserver(observer)
             addLogObserver(logObserver)
@@ -132,6 +139,7 @@ class MpvEngine(private val context: Context, hwDecoding: Boolean) : PlayerEngin
         _state.value = EngineState()
         mpv.setPropertyString("start", if (request.startMs > 0) "%.3f".format(java.util.Locale.US, request.startMs / 1000.0) else "none")
         mpv.setPropertyBoolean("pause", false)
+        setAuthFor(request.url)
         mpv.command(arrayOf("loadfile", request.url, "replace"))
     }
 
@@ -139,10 +147,17 @@ class MpvEngine(private val context: Context, hwDecoding: Boolean) : PlayerEngin
         mpv.setPropertyString("start", "none")
         request.externalSubs.forEach { s ->
             val title = s.title ?: s.language ?: "External"
+            setAuthFor(s.url)
             mpv.command(arrayOf("sub-add", s.url, "auto", title, s.language ?: ""))
         }
+        pending?.let { setAuthFor(it.url) }
         request.audioOrdinal?.let { selectAudio(it) }
         selectSubtitle(request.subtitle)
+    }
+
+    /** The token goes in a request header, and only to the signed-in server - never into the URL. */
+    private fun setAuthFor(url: String) {
+        mpv.setPropertyString("http-header-fields", authHeaderFor(url) ?: "")
     }
 
     private data class Track(val id: Int, val type: String, val external: Boolean, val externalFile: String?)
@@ -245,28 +260,70 @@ class MpvEngine(private val context: Context, hwDecoding: Boolean) : PlayerEngin
     }
 
     companion object {
+        private val USER_CA_DIR = File("/data/misc/user/0/cacerts-added")
+        private const val PEM_BEGIN = "-----BEGIN CERTIFICATE-----"
+        private const val PEM_END = "-----END CERTIFICATE-----"
+
+        /** System CA files are PEM (with a text dump in front); user-added ones are stored as raw DER. */
+        private fun toPem(bytes: ByteArray): String? {
+            val text = String(bytes, Charsets.ISO_8859_1)
+            val begin = text.indexOf(PEM_BEGIN)
+            val end = text.indexOf(PEM_END)
+            if (begin >= 0 && end > begin) return text.substring(begin, end + PEM_END.length)
+            val cert = java.security.cert.CertificateFactory.getInstance("X.509")
+                .generateCertificate(bytes.inputStream()) as java.security.cert.X509Certificate
+            val b64 = android.util.Base64.encodeToString(cert.encoded, android.util.Base64.NO_WRAP).chunked(64).joinToString("\n")
+            return "$PEM_BEGIN\n$b64\n$PEM_END"
+        }
+
+        /**
+         * User-installed CAs, which the app's network security config trusts. Read through AndroidCAStore
+         * (entries prefixed "user:"); the raw cacerts-added directory is tried too but is usually not readable.
+         * Any failure just means no user CAs, never a weaker check.
+         */
+        private fun userCaPems(): List<String> {
+            val fromStore = runCatching {
+                val ks = java.security.KeyStore.getInstance("AndroidCAStore").apply { load(null) }
+                ks.aliases().toList().filter { it.startsWith("user:") }.mapNotNull { alias ->
+                    (ks.getCertificate(alias) as? java.security.cert.X509Certificate)?.let { runCatching { toPem(it.encoded) }.getOrNull() }
+                }
+            }.getOrNull().orEmpty()
+            val fromDir = runCatching {
+                USER_CA_DIR.listFiles()?.mapNotNull { f -> runCatching { toPem(f.readBytes()) }.getOrNull() }
+            }.getOrNull().orEmpty()
+            return (fromStore + fromDir).distinct()
+        }
+
         /**
          * mpv uses its own TLS stack and can't see Android's trust store, so build a PEM bundle
-         * from the system CA directory once and point mpv at it.
+         * from the system CA directory (plus user-installed CAs when readable, matching the app's
+         * network security config) and point mpv at it.
          */
         fun caBundle(context: Context): File? {
             val out = File(context.filesDir, "mpv/cacert.pem")
-            if (out.exists() && out.length() > 0 && System.currentTimeMillis() - out.lastModified() < 30L * 24 * 3600 * 1000) return out
+            val stamp = File(context.filesDir, "mpv/cacert.user")
+            val userPems = userCaPems()
+            val userHash = userPems.sorted().joinToString("|").hashCode().toString()
+            val sameUser = runCatching { stamp.readText() }.getOrNull() == userHash
+            if (out.exists() && out.length() > 0 && sameUser && System.currentTimeMillis() - out.lastModified() < 30L * 24 * 3600 * 1000) return out
             val dirs = listOf(File("/apex/com.android.conscrypt/cacerts"), File("/system/etc/security/cacerts"))
             val certs = dirs.firstOrNull { it.isDirectory && (it.listFiles()?.isNotEmpty() == true) }?.listFiles() ?: return null
             return runCatching {
                 out.parentFile?.mkdirs()
-                out.bufferedWriter().use { w ->
+                val tmp = File(out.parentFile, "cacert.pem.tmp")
+                tmp.bufferedWriter().use { w ->
                     certs.forEach { f ->
-                        val text = runCatching { f.readText() }.getOrNull() ?: return@forEach
-                        val begin = text.indexOf("-----BEGIN CERTIFICATE-----")
-                        val end = text.indexOf("-----END CERTIFICATE-----")
-                        if (begin >= 0 && end > begin) {
-                            w.write(text.substring(begin, end + "-----END CERTIFICATE-----".length))
-                            w.write("\n")
-                        }
+                        val pem = runCatching { toPem(f.readBytes()) }.getOrNull() ?: return@forEach
+                        w.write(pem)
+                        w.write("\n")
+                    }
+                    userPems.forEach { pem ->
+                        w.write(pem)
+                        w.write("\n")
                     }
                 }
+                if (!tmp.renameTo(out)) { tmp.copyTo(out, overwrite = true); tmp.delete() }
+                runCatching { stamp.writeText(userHash) }
                 out
             }.getOrNull()?.takeIf { it.length() > 0 }
         }

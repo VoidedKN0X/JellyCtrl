@@ -13,6 +13,7 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -86,18 +87,25 @@ class JellyfinClient(
         return b.build()
     }
 
-    /** URL with api_key attached, for players, image loaders and download managers. */
-    fun authedUrl(path: String, params: Map<String, Any?> = emptyMap()): String =
-        url(path, params + ("api_key" to accessToken)).toString()
+    /** True when [u] points at this server: exact scheme, host and port, under the server's base path. */
+    fun ownsUrl(u: HttpUrl): Boolean {
+        if (!u.scheme.equals(base.scheme, true) || !u.host.equals(base.host, true) || u.port != base.port) return false
+        val basePath = base.encodedPath.trimEnd('/')
+        return basePath.isEmpty() || u.encodedPath == basePath || u.encodedPath.startsWith("$basePath/")
+    }
 
-    /** A server-provided relative URL (e.g. TranscodingUrl, DeliveryUrl) made absolute. */
+    fun ownsUrl(u: String): Boolean = u.toHttpUrlOrNull()?.let { ownsUrl(it) } == true
+
+    /**
+     * A server-provided relative URL (e.g. TranscodingUrl, DeliveryUrl) made absolute. Any token the server
+     * embedded in the query is removed: requests to this server are authenticated with a header instead.
+     */
     fun absolute(relative: String): String {
-        if (relative.startsWith("http://") || relative.startsWith("https://")) return relative
-        val sep = if (relative.startsWith("/")) "" else "/"
-        val full = baseUrl + sep + relative
-        return if (accessToken != null && !full.contains("api_key=", ignoreCase = true)) {
-            full + (if (full.contains('?')) "&" else "?") + "api_key=" + accessToken
-        } else full
+        val full = if (relative.startsWith("http://", true) || relative.startsWith("https://", true)) relative
+        else baseUrl + (if (relative.startsWith("/")) "" else "/") + relative
+        val parsed = full.toHttpUrlOrNull() ?: return full
+        if (!ownsUrl(parsed)) return full
+        return stripTokenParams(parsed).toString()
     }
 
     fun imageUrl(
@@ -193,6 +201,21 @@ class JellyfinClient(
         }
 
         fun enc(s: String): String = URLEncoder.encode(s, "UTF-8")
+
+        private val TOKEN_PARAMS = setOf("api_key", "apikey")
+
+        fun stripTokenParams(u: HttpUrl): HttpUrl {
+            val names = u.queryParameterNames.filter { it.lowercase() in TOKEN_PARAMS }
+            if (names.isEmpty()) return u
+            val b = u.newBuilder()
+            names.forEach { b.removeAllQueryParameters(it) }
+            return b.build()
+        }
+
+        private val SECRET_RE = Regex("(?i)(api_?key|token)(\"?\\s*[=:]\\s*\"?)[^&\\s\",]+")
+
+        /** Removes access tokens from text that may be shown to the user (player errors, exception messages). */
+        fun redact(text: String): String = SECRET_RE.replace(text) { m -> m.groupValues[1] + m.groupValues[2] + "***" }
     }
 }
 

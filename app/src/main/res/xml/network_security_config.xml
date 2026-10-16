@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Many Jellyfin servers run on plain HTTP on the home network, so cleartext is allowed.
-     The sign-in screen warns when a non-HTTPS address is used. User-installed CAs are trusted
-     so servers behind a self-signed reverse proxy work. -->
+<!-- The server address is typed in by the user and many Jellyfin servers run on plain HTTP on the
+     home network, so cleartext can't be limited to fixed domains here. Instead the app enforces it:
+     https is always tried first, http is only used after the user explicitly confirms it for that
+     server (no silent downgrade), credentials are never sent over http to any other host
+     (ServerAuthInterceptor), and http accounts carry a "Not encrypted (HTTP)" badge.
+     User-installed CAs stay trusted so servers behind a private CA / self-signed reverse proxy work. -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
