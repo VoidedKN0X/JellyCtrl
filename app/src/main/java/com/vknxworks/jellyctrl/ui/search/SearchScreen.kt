@@ -21,6 +21,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
+import com.vknxworks.jellyctrl.ui.components.LocalBottomClearance
 import com.vknxworks.jellyctrl.ui.components.TabTitle
 import com.vknxworks.jellyctrl.ui.theme.Gutter
 import androidx.compose.material3.Text
@@ -137,7 +138,7 @@ fun SearchScreen() {
             error != null -> MessageView(Icons.Outlined.SearchOff, "Search didn't work", error)
             r == null -> MessageView(Icons.Filled.Search, "Find anything on your server", "Start typing a title, actor, artist or song.")
             r.isEmpty() -> MessageView(Icons.Outlined.SearchOff, "No matches", "Nothing on your server matches \"${query.trim()}\". Check the spelling or try fewer words.")
-            else -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+            else -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp + LocalBottomClearance.current)) {
                 items(r, key = { it.first }) { (label, items) ->
                     ItemRow(label, items, client, nav::openItem, landscape = label == "Episodes" || label == "Videos", onLongItem = { menuItem = it })
                 }

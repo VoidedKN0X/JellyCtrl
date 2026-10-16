@@ -123,4 +123,5 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.libmpv)
     implementation(libs.androidx.palette)
+    implementation(libs.haze)
 }
