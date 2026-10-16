@@ -25,6 +25,7 @@ import com.vknxworks.jellyctrl.data.api.nextUp
 import com.vknxworks.jellyctrl.data.api.resumeItems
 import com.vknxworks.jellyctrl.ui.components.ItemActionsSheet
 import com.vknxworks.jellyctrl.ui.components.PagedItemGrid
+import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.rememberPagedLoader
 import com.vknxworks.jellyctrl.ui.nav.ListRoute
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
@@ -63,12 +64,7 @@ fun ListScreen(route: ListRoute) {
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = {
-            TopAppBar(
-                title = { Text(route.title) },
-                navigationIcon = { IconButton(onClick = nav::back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
-            )
-        },
+        topBar = { ScreenTopBar(route.title) },
     ) { padding ->
         PagedItemGrid(
             loader, client,

@@ -28,6 +28,7 @@ import com.vknxworks.jellyctrl.ui.components.ItemActionsSheet
 import com.vknxworks.jellyctrl.ui.components.ItemRow
 import com.vknxworks.jellyctrl.ui.components.LoadContent
 import com.vknxworks.jellyctrl.ui.components.MessageView
+import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.rememberLoader
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 
@@ -62,12 +63,12 @@ fun FavoritesScreen() {
     }
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = { TopAppBar(title = { Text("Favorites") }) },
+        topBar = { ScreenTopBar("Favourites") },
     ) { padding ->
         PullToRefreshBox(loader.refreshing, onRefresh = { loader.reload(silent = true) }, modifier = Modifier.padding(padding).fillMaxSize()) {
             LoadContent(loader) { groups ->
                 if (groups.isEmpty()) {
-                    MessageView(Icons.Outlined.FavoriteBorder, "No favorites yet", "Tap the heart on anything to keep it here.")
+                    MessageView(Icons.Outlined.FavoriteBorder, "No favourites yet", "Tap the heart on any film, show or song to find it here.")
                 } else {
                     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
                         items(groups, key = { it.first }) { (label, items) ->

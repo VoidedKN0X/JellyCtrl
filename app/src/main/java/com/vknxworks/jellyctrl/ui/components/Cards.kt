@@ -1,6 +1,7 @@
 package com.vknxworks.jellyctrl.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,17 +18,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,13 +30,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
+import com.vknxworks.jellyctrl.data.api.ticksToMs
+import com.vknxworks.jellyctrl.ui.theme.Gutter
 
 @Composable
 fun ArtImage(
@@ -52,14 +48,14 @@ fun ArtImage(
 ) {
     val fallback: @Composable () -> Unit = {
         Box(
-            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) {
             if (placeholderText != null) {
                 Text(
                     placeholderText,
-                    modifier = Modifier.padding(8.dp),
-                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(10.dp),
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
@@ -78,9 +74,42 @@ fun ArtImage(
             modifier = modifier,
             contentScale = contentScale,
             error = { fallback() },
-            loading = { Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHigh)) },
+            loading = { Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainer)) },
         )
     }
+}
+
+/** Thin progress line drawn along the bottom edge of artwork. */
+@Composable
+fun ArtProgress(progress: Float, modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth().height(3.dp).background(Color.Black.copy(alpha = 0.45f))) {
+        Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(3.dp).background(MaterialTheme.colorScheme.primary))
+    }
+}
+
+@Composable
+private fun PlayedMark(modifier: Modifier) {
+    Box(
+        modifier.size(22.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.55f)),
+        contentAlignment = Alignment.Center,
+    ) { Icon(Icons.Filled.Check, "Watched", Modifier.size(14.dp), tint = Color.White) }
+}
+
+@Composable
+private fun UnplayedCount(count: Int, modifier: Modifier) {
+    Box(
+        modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primary).padding(horizontal = 7.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text("$count", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary) }
+}
+
+/** Minutes left on a partly watched item, e.g. "23m left". */
+fun BaseItemDto.timeLeft(): String? {
+    val pos = userData?.playbackPositionTicks ?: return null
+    val total = runTimeTicks ?: return null
+    if (pos <= 0 || total <= 0) return null
+    val min = ((total - pos).ticksToMs() / 60_000).coerceAtLeast(1)
+    return if (min >= 60) "${min / 60}h ${min % 60}m left" else "${min}m left"
 }
 
 @Composable
@@ -97,35 +126,31 @@ fun PosterCard(
     val aspect = if (landscape) 16f / 9f else item.posterAspect()
     val url = if (landscape) client.landscapeImage(item) else client.primaryImage(item)
     val base = if (width != null) modifier.width(width) else modifier.fillMaxWidth()
-    Column(
-        base
-            .clip(RoundedCornerShape(10.dp))
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
-    ) {
-        Box(Modifier.fillMaxWidth().aspectRatio(aspect).clip(RoundedCornerShape(10.dp))) {
+    val shape = MaterialTheme.shapes.small
+    Column(base.clip(shape).combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(aspect).clip(shape)) {
             ArtImage(url, Modifier.fillMaxSize(), placeholderText = item.name)
-            CardBadges(item, Modifier.align(Alignment.TopEnd).padding(6.dp))
-            item.resumeProgress()?.let { p ->
-                LinearProgressIndicator(
-                    progress = { p },
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(4.dp),
-                    trackColor = Color.Black.copy(alpha = 0.5f),
-                    drawStopIndicator = {},
-                )
+            val ud = item.userData
+            val unplayed = ud?.unplayedItemCount
+            when {
+                item.isFolder && unplayed != null && unplayed > 0 -> UnplayedCount(unplayed, Modifier.align(Alignment.TopEnd).padding(8.dp))
+                ud?.played == true -> PlayedMark(Modifier.align(Alignment.TopEnd).padding(8.dp))
             }
+            item.resumeProgress()?.let { ArtProgress(it, Modifier.align(Alignment.BottomCenter)) }
         }
         Text(
             if (landscape && item.type == "Episode") item.seriesName ?: item.name.orEmpty() else item.cardTitle(),
-            modifier = Modifier.padding(top = 6.dp, start = 2.dp, end = 2.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 8.dp, start = 2.dp, end = 2.dp),
+            style = MaterialTheme.typography.labelLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         if (showSubtitle) {
-            item.subtitleLine()?.let {
+            val sub = if (landscape) listOfNotNull(item.episodeCode(), item.timeLeft()).joinToString("  ").ifBlank { item.subtitleLine() }
+            else item.subtitleLine()
+            if (!sub.isNullOrBlank()) {
                 Text(
-                    it,
+                    sub,
                     modifier = Modifier.padding(horizontal = 2.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -137,35 +162,31 @@ fun PosterCard(
     }
 }
 
-@Composable
-fun CardBadges(item: BaseItemDto, modifier: Modifier = Modifier) {
-    val ud = item.userData ?: return
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (ud.isFavorite) Badge { Icon(Icons.Filled.Favorite, null, Modifier.size(12.dp), tint = Color(0xFFFF6B81)) }
-        val unplayed = ud.unplayedItemCount
-        when {
-            unplayed != null && unplayed > 0 && item.isFolder -> Badge { Text("$unplayed", style = MaterialTheme.typography.labelSmall, color = Color.White) }
-            ud.played -> Badge { Icon(Icons.Filled.Check, null, Modifier.size(12.dp), tint = Color.White) }
-        }
+/** "S2 E4" for episodes. */
+fun BaseItemDto.episodeCode(): String? {
+    if (type != "Episode") return null
+    val s = parentIndexNumber
+    val e = indexNumber
+    return when {
+        s != null && e != null -> "S$s E$e"
+        e != null -> "E$e"
+        else -> null
     }
 }
 
-@Composable
-private fun Badge(content: @Composable () -> Unit) {
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)) {
-        Box(Modifier.padding(horizontal = 6.dp, vertical = 3.dp), contentAlignment = Alignment.Center) { content() }
-    }
-}
-
+/** Row heading. When [onMore] is set the whole heading opens the full list. */
 @Composable
 fun SectionHeader(title: String, modifier: Modifier = Modifier, onMore: (() -> Unit)? = null) {
     Row(
-        modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 4.dp),
+        modifier
+            .fillMaxWidth()
+            .then(if (onMore != null) Modifier.clickable(onClick = onMore) else Modifier)
+            .padding(start = Gutter, end = Gutter, top = 20.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (onMore != null) {
-            IconButton(onClick = onMore) { Icon(Icons.AutoMirrored.Filled.ArrowForward, "See all") }
+            Text("See all", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -182,14 +203,14 @@ fun ItemRow(
 ) {
     if (items.isEmpty()) return
     SectionHeader(title, onMore = onMore)
-    val cardWidth = if (landscape) 240.dp else when (items.firstOrNull()?.posterAspect()) {
-        1f -> 140.dp
-        16f / 9f -> 220.dp
-        else -> 120.dp
+    val cardWidth = if (landscape) 260.dp else when (items.firstOrNull()?.posterAspect()) {
+        1f -> 148.dp
+        16f / 9f -> 240.dp
+        else -> 124.dp
     }
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(horizontal = Gutter),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         items(items.distinctBy { it.id }, key = { it.id }) { item ->
             PosterCard(

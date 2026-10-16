@@ -16,12 +16,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -30,40 +32,36 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AspectRatio
-import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.ScreenLockRotation
-import androidx.compose.material.icons.filled.ScreenRotation
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Subtitles
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,6 +72,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,7 +83,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -92,13 +90,17 @@ import coil3.compose.AsyncImage
 import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.TrickplayInfo
 import com.vknxworks.jellyctrl.data.api.ticksToMs
+import com.vknxworks.jellyctrl.ui.components.ArtImage
+import com.vknxworks.jellyctrl.ui.components.ChoiceSheet
+import com.vknxworks.jellyctrl.ui.components.GroupRow
+import com.vknxworks.jellyctrl.ui.components.SeekBar
 import com.vknxworks.jellyctrl.ui.components.formatClock
 import com.vknxworks.jellyctrl.ui.components.landscapeImage
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private val Scrim = Color.Black.copy(alpha = 0.55f)
+private val Scrim = Color.Black.copy(alpha = 0.6f)
 
 @Composable
 fun PlayerScreen(
@@ -127,10 +129,9 @@ fun PlayerScreen(
 
     BackHandler { onBack() }
 
-    // Auto-hide controls while playing.
     LaunchedEffect(controls, lastInteraction, st.playWhenReady, sheet, scrubMs) {
         if (controls && st.playWhenReady && sheet == null && scrubMs == null) {
-            delay(4000)
+            delay(3500)
             controls = false
         }
     }
@@ -148,7 +149,7 @@ fun PlayerScreen(
                 onTap = { if (controls) controls = false else poke() },
                 onDoubleTapSide = { forward ->
                     vm.seekBy(if (forward) seekStep else -seekStep)
-                    gestureHint = if (forward) "+${settings.seekStepSeconds}s" else "-${settings.seekStepSeconds}s"
+                    gestureHint = if (forward) "+${settings.seekStepSeconds}s" else "−${settings.seekStepSeconds}s"
                 },
                 onHint = { gestureHint = it },
                 positionMs = st.positionMs,
@@ -159,12 +160,12 @@ fun PlayerScreen(
         }
 
         if (vm.loading || (st.buffering && vm.error == null && !st.ended)) {
-            CircularProgressIndicator(Modifier.align(Alignment.Center).size(56.dp), color = Color.White)
+            CircularProgressIndicator(Modifier.align(Alignment.Center).size(48.dp), color = Color.White, strokeWidth = 3.dp)
         }
 
         gestureHint?.let {
-            Surface(Modifier.align(Alignment.Center), shape = RoundedCornerShape(12.dp), color = Scrim) {
-                Text(it, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
+            Surface(Modifier.align(Alignment.Center), shape = CircleShape, color = Scrim) {
+                Text(it, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
             }
         }
 
@@ -177,53 +178,53 @@ fun PlayerScreen(
                     seekStepMs = seekStep,
                     onBack = onBack,
                     onScrub = { scrubMs = it; poke() },
-                    onScrubEnd = { vm.seekTo(it); scrubMs = null; poke() },
+                    onSeek = { vm.seekTo(it); scrubMs = null; poke() },
                     onSheet = { sheet = it; poke() },
-                    onPip = onEnterPip,
                     onPoke = { poke() },
-                    rotationLocked = rotationLocked,
-                    onToggleRotationLock = { onToggleRotationLock(); poke() },
                 )
             }
 
-            vm.activeSegment?.let { seg ->
-                Button(
-                    onClick = { vm.skipSegment() },
-                    modifier = Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(end = 24.dp, bottom = 96.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
-                ) {
-                    Text(
-                        when (seg.type) {
-                            "Intro" -> "Skip intro"
-                            "Outro" -> if (vm.nextItem != null) "Next episode" else "Skip credits"
-                            "Recap" -> "Skip recap"
-                            "Preview" -> "Skip preview"
-                            else -> "Skip"
-                        }
-                    )
-                }
-            }
-
-            if (vm.showUpNext && vm.activeSegment == null) {
-                vm.nextItem?.let { next ->
-                    UpNextCard(
+            // Skip and up-next sit above the seek bar whether or not the controls are showing.
+            Box(
+                Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(end = 24.dp, bottom = 104.dp),
+            ) {
+                val seg = vm.activeSegment
+                val next = vm.nextItem
+                when {
+                    seg != null -> Button(
+                        onClick = { vm.skipSegment() },
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                        contentPadding = PaddingValues(horizontal = 22.dp, vertical = 12.dp),
+                    ) {
+                        Text(
+                            when (seg.type) {
+                                "Intro" -> "Skip intro"
+                                "Outro" -> if (next != null) "Next episode" else "Skip credits"
+                                "Recap" -> "Skip recap"
+                                "Preview" -> "Skip preview"
+                                else -> "Skip"
+                            },
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                    }
+                    vm.showUpNext && next != null -> UpNextCard(
                         title = next.name.orEmpty(),
-                        subtitle = if (next.type == "Episode") "S${next.parentIndexNumber ?: "?"}:E${next.indexNumber ?: "?"}" else next.productionYear?.toString(),
+                        subtitle = if (next.type == "Episode") "Season ${next.parentIndexNumber ?: "?"}, episode ${next.indexNumber ?: "?"}" else next.productionYear?.toString(),
                         imageUrl = c.sessions.active.value?.client?.landscapeImage(next, 400),
                         remainingMs = (st.durationMs - st.positionMs).coerceAtLeast(0),
                         onPlay = { vm.playNext() },
                         onDismiss = { vm.dismissUpNext() },
-                        modifier = Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(end = 24.dp, bottom = 96.dp),
                     )
                 }
             }
 
             vm.notice?.let {
                 Surface(
-                    Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(top = 64.dp),
-                    shape = RoundedCornerShape(20.dp),
+                    Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(top = 72.dp),
+                    shape = CircleShape,
                     color = Scrim,
-                ) { Text(it, color = Color.White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
+                ) { Text(it, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp)) }
             }
 
             vm.error?.let { err ->
@@ -234,7 +235,13 @@ fun PlayerScreen(
 
     when (sheet) {
         "tracks" -> TracksSheet(vm, onDismiss = { sheet = null })
-        "settings" -> SettingsSheet(vm, st, onDismiss = { sheet = null })
+        "settings" -> SettingsSheet(
+            vm, st,
+            rotationLocked = rotationLocked,
+            onToggleRotationLock = onToggleRotationLock,
+            onPip = { sheet = null; onEnterPip() },
+            onDismiss = { sheet = null },
+        )
     }
 }
 
@@ -257,8 +264,8 @@ private fun GestureLayer(
     var dragStartPos by remember { mutableLongStateOf(0L) }
     var dragTarget by remember { mutableLongStateOf(0L) }
     var accum by remember { mutableFloatStateOf(0f) }
-    val currentPos by androidx.compose.runtime.rememberUpdatedState(positionMs)
-    val currentDur by androidx.compose.runtime.rememberUpdatedState(durationMs)
+    val currentPos by rememberUpdatedState(positionMs)
+    val currentDur by rememberUpdatedState(durationMs)
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val widthPx = constraints.maxWidth.toFloat()
@@ -318,7 +325,7 @@ private fun GestureLayer(
                             dragTarget = (dragStartPos + delta).coerceIn(0, currentDur)
                             onScrub(dragTarget)
                             val d = delta / 1000
-                            onHint("${if (d >= 0) "+" else ""}${d}s  (${formatClock(dragTarget)})")
+                            onHint("${if (d >= 0) "+" else "−"}${abs(d)}s  to ${formatClock(dragTarget)}")
                         },
                     )
                 }
@@ -335,33 +342,30 @@ private fun Controls(
     seekStepMs: Long,
     onBack: () -> Unit,
     onScrub: (Long) -> Unit,
-    onScrubEnd: (Long) -> Unit,
+    onSeek: (Long) -> Unit,
     onSheet: (String) -> Unit,
-    onPip: () -> Unit,
     onPoke: () -> Unit,
-    rotationLocked: Boolean,
-    onToggleRotationLock: () -> Unit,
 ) {
     val item = vm.item
     val pb = vm.playback
     Box(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(0f to Scrim, 0.25f to Color.Transparent, 0.7f to Color.Transparent, 1f to Scrim)),
+            .background(Brush.verticalGradient(0f to Scrim, 0.22f to Color.Transparent, 0.68f to Color.Transparent, 1f to Scrim)),
     ) {
-        // Top bar
+        // Top: back, title, and two buttons.
         Row(
-            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(8.dp),
+            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White) }
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f).padding(start = 4.dp)) {
                 val title = if (item?.type == "Episode") item.seriesName ?: item.name.orEmpty() else item?.name.orEmpty()
                 Text(title, color = Color.White, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (item?.type == "Episode") {
                     Text(
-                        "S${item.parentIndexNumber ?: "?"}:E${item.indexNumber ?: "?"} · ${item.name.orEmpty()}",
-                        color = Color.White.copy(alpha = 0.8f),
+                        "S${item.parentIndexNumber ?: "?"} E${item.indexNumber ?: "?"}  ${item.name.orEmpty()}",
+                        color = Color.White.copy(alpha = 0.75f),
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -369,52 +373,43 @@ private fun Controls(
                 }
             }
             if (pb != null && (pb.audioStreams.size > 1 || pb.subtitleStreams.isNotEmpty())) {
-                IconButton(onClick = { onSheet("tracks") }) { Icon(Icons.Filled.ClosedCaption, "Audio and subtitles", tint = Color.White) }
+                IconButton(onClick = { onSheet("tracks") }) { Icon(Icons.Filled.Subtitles, "Audio and subtitles", tint = Color.White) }
             }
-            IconButton(onClick = onToggleRotationLock) {
-                Icon(if (rotationLocked) Icons.Filled.ScreenLockRotation else Icons.Filled.ScreenRotation, "Rotation lock", tint = Color.White)
-            }
-            IconButton(onClick = onPip) { Icon(Icons.Filled.PictureInPictureAlt, "Picture in picture", tint = Color.White) }
-            IconButton(onClick = { onSheet("settings") }) { Icon(Icons.Filled.Settings, "Playback settings", tint = Color.White) }
+            IconButton(onClick = { onSheet("settings") }) { Icon(Icons.Filled.Tune, "Playback options", tint = Color.White) }
         }
 
-        // Centre transport
+        // Centre: back, play/pause, forward.
         Row(
             Modifier.align(Alignment.Center),
-            horizontalArrangement = Arrangement.spacedBy(28.dp),
+            horizontalArrangement = Arrangement.spacedBy(40.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (vm.hasPrevious()) {
-                IconButton(onClick = { vm.playPrevious(); onPoke() }) { Icon(Icons.Filled.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(36.dp)) }
-            }
             IconButton(onClick = { vm.seekBy(-seekStepMs); onPoke() }, modifier = Modifier.size(56.dp)) {
-                Icon(Icons.Filled.Replay10, "Back", tint = Color.White, modifier = Modifier.size(40.dp))
+                Icon(Icons.Filled.Replay10, "Back ${seekStepMs / 1000} seconds", tint = Color.White, modifier = Modifier.size(36.dp))
             }
-            Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.18f)) {
-                IconButton(onClick = { vm.togglePlay(); onPoke() }, modifier = Modifier.size(76.dp)) {
-                    Icon(
-                        when {
-                            st.ended -> Icons.Filled.Replay
-                            st.playWhenReady -> Icons.Filled.Pause
-                            else -> Icons.Filled.PlayArrow
-                        },
-                        if (st.playWhenReady) "Pause" else "Play",
-                        tint = Color.White,
-                        modifier = Modifier.size(52.dp),
-                    )
-                }
+            IconButton(
+                onClick = { vm.togglePlay(); onPoke() },
+                modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.16f)),
+            ) {
+                Icon(
+                    when {
+                        st.ended -> Icons.Filled.Replay
+                        st.playWhenReady -> Icons.Filled.Pause
+                        else -> Icons.Filled.PlayArrow
+                    },
+                    if (st.playWhenReady) "Pause" else "Play",
+                    tint = Color.White,
+                    modifier = Modifier.size(48.dp),
+                )
             }
             IconButton(onClick = { vm.seekBy(seekStepMs); onPoke() }, modifier = Modifier.size(56.dp)) {
-                Icon(Icons.Filled.Forward10, "Forward", tint = Color.White, modifier = Modifier.size(40.dp))
-            }
-            if (vm.nextItem != null) {
-                IconButton(onClick = { vm.playNext(); onPoke() }) { Icon(Icons.Filled.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(36.dp)) }
+                Icon(Icons.Filled.Forward10, "Forward ${seekStepMs / 1000} seconds", tint = Color.White, modifier = Modifier.size(36.dp))
             }
         }
 
-        // Bottom seek bar
+        // Bottom: time, seek bar, next.
         Column(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp, vertical = 8.dp),
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
             val live = st.durationMs <= 0 || pb?.source?.isInfiniteStream == true
             val shown = scrubMs ?: st.positionMs
@@ -422,32 +417,45 @@ private fun Controls(
             if (scrubMs != null && trick != null && item != null) {
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val frac = if (st.durationMs > 0) scrubMs.toFloat() / st.durationMs else 0f
-                    val previewW = 176.dp
+                    val previewW = 184.dp
                     val x = (maxWidth - previewW) * frac
                     TrickplayPreview(trick, item.id, pb?.source?.id, scrubMs, previewW, Modifier.offset(x = x))
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
             }
             if (live) {
-                Text("LIVE", color = Color.Red, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+                    Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFFF5252)))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Live", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                }
             } else {
-                Slider(
-                    value = shown.toFloat(),
-                    onValueChange = { onScrub(it.toLong()) },
-                    onValueChangeFinished = { scrubMs?.let(onScrubEnd) },
-                    valueRange = 0f..st.durationMs.toFloat().coerceAtLeast(1f),
-                    colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary, inactiveTrackColor = Color.White.copy(alpha = 0.3f)),
-                )
-                Row(Modifier.fillMaxWidth()) {
-                    Text(formatClock(shown), color = Color.White, style = MaterialTheme.typography.labelMedium)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(formatClock(shown), color = Color.White, style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.weight(1f))
                     val chapter = item?.chapters?.lastOrNull { it.startPositionTicks.ticksToMs() <= shown }?.name
                     if (chapter != null && (item?.chapters?.size ?: 0) > 1) {
-                        Text(chapter, color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(chapter, color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.weight(1f))
                     }
-                    Text("-" + formatClock(st.durationMs - shown), color = Color.White, style = MaterialTheme.typography.labelMedium)
+                    Text("−" + formatClock(st.durationMs - shown), color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelLarge)
+                    if (vm.nextItem != null) {
+                        Spacer(Modifier.width(12.dp))
+                        TextButton(onClick = { vm.playNext(); onPoke() }) {
+                            Icon(Icons.Filled.SkipNext, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Next", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
                 }
+                SeekBar(
+                    positionMs = shown,
+                    durationMs = st.durationMs,
+                    bufferedMs = st.bufferedMs,
+                    onScrub = onScrub,
+                    onSeek = onSeek,
+                    activeColor = Color.White,
+                )
             }
         }
     }
@@ -467,7 +475,7 @@ private fun TrickplayPreview(info: TrickplayInfo, itemId: String, sourceId: Stri
     val height = scale * info.height.toFloat()
     val url = client.authedUrl("Videos/$itemId/Trickplay/${info.width}/$imageIndex.jpg", mapOf("mediaSourceId" to sourceId))
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.width(width).height(height).clip(RoundedCornerShape(6.dp)).clipToBounds().background(Color.Black)) {
+        Box(Modifier.width(width).height(height).clip(RoundedCornerShape(10.dp)).clipToBounds().background(Color.Black)) {
             AsyncImage(
                 model = url,
                 contentDescription = null,
@@ -478,7 +486,8 @@ private fun TrickplayPreview(info: TrickplayInfo, itemId: String, sourceId: Stri
                     .size(scale * (info.width * info.tileWidth).toFloat(), scale * (info.height * info.tileHeight).toFloat()),
             )
         }
-        Text(formatClock(positionMs), color = Color.White, style = MaterialTheme.typography.labelMedium)
+        Spacer(Modifier.height(4.dp))
+        Text(formatClock(positionMs), color = Color.White, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -490,21 +499,21 @@ private fun UpNextCard(
     remainingMs: Long,
     onPlay: () -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier,
 ) {
-    Surface(modifier.width(300.dp), shape = RoundedCornerShape(12.dp), color = Color(0xEE1B1A21)) {
+    Surface(Modifier.width(320.dp), shape = RoundedCornerShape(20.dp), color = Color(0xF01A1C20)) {
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(110.dp).height(62.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onPlay)) {
-                com.vknxworks.jellyctrl.ui.components.ArtImage(imageUrl, Modifier.fillMaxSize())
+            Box(Modifier.width(112.dp).height(64.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onPlay)) {
+                ArtImage(imageUrl, Modifier.fillMaxSize())
                 Icon(Icons.Filled.PlayArrow, null, tint = Color.White, modifier = Modifier.align(Alignment.Center))
             }
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("Up next in ${remainingMs / 1000}s", color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall)
-                Text(title, color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                subtitle?.let { Text(it, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall) }
+                Text("Up next in ${remainingMs / 1000}s", color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelMedium)
+                Text(title, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                subtitle?.let { Text(it, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.bodySmall, maxLines = 1) }
                 Row {
-                    TextButton(onClick = onPlay) { Text("Play now") }
+                    TextButton(onClick = onPlay, contentPadding = PaddingValues(horizontal = 0.dp)) { Text("Play now", color = Color.White) }
+                    Spacer(Modifier.width(8.dp))
                     TextButton(onClick = onDismiss) { Text("Hide", color = Color.White.copy(alpha = 0.7f)) }
                 }
             }
@@ -514,17 +523,17 @@ private fun UpNextCard(
 
 @Composable
 private fun ErrorOverlay(message: String, onRetry: () -> Unit, onSwitch: () -> Unit, onBack: () -> Unit, engineName: String?) {
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)), contentAlignment = Alignment.Center) {
-        Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Playback problem", color = Color.White, style = MaterialTheme.typography.titleLarge)
-            Text(message, color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.bodyMedium)
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.88f)), contentAlignment = Alignment.Center) {
+        Column(Modifier.padding(32.dp).width(420.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text("This won't play right now", color = Color.White, style = MaterialTheme.typography.titleLarge)
+            Text(message, color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.bodyMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onRetry) { Text("Retry") }
+                Button(onClick = onRetry, shape = CircleShape) { Text("Try again") }
                 if (engineName != null) {
-                    OutlinedButton(onClick = onSwitch) { Text(if (engineName == "mpv") "Try Media3" else "Try mpv") }
+                    OutlinedButton(onClick = onSwitch, shape = CircleShape) { Text(if (engineName == "mpv") "Use Media3" else "Use mpv", color = Color.White) }
                 }
-                TextButton(onClick = onBack) { Text("Close") }
             }
+            TextButton(onClick = onBack) { Text("Close", color = Color.White.copy(alpha = 0.7f)) }
         }
     }
 }
@@ -532,14 +541,14 @@ private fun ErrorOverlay(message: String, onRetry: () -> Unit, onSwitch: () -> U
 @Composable
 private fun TracksSheet(vm: PlayerViewModel, onDismiss: () -> Unit) {
     val pb = vm.playback ?: return
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        LazyColumn(Modifier.padding(bottom = 24.dp)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+        LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
             if (pb.audioStreams.isNotEmpty()) {
                 item { SheetHeader("Audio") }
                 items(pb.audioStreams, key = { "a" + it.index }) { s ->
                     CheckRow(
                         s.displayTitle ?: s.language ?: "Track ${s.index}",
-                        listOfNotNull(s.codec?.uppercase(), s.channelLayout).joinToString(" · "),
+                        listOfNotNull(s.codec?.uppercase(), s.channelLayout).joinToString(" "),
                         pb.audioIndex == s.index,
                     ) { vm.selectAudio(s.index); onDismiss() }
                 }
@@ -549,7 +558,7 @@ private fun TracksSheet(vm: PlayerViewModel, onDismiss: () -> Unit) {
             items(pb.subtitleStreams, key = { "s" + it.index }) { s ->
                 CheckRow(
                     s.displayTitle ?: s.language ?: "Track ${s.index}",
-                    listOfNotNull(s.codec?.uppercase(), if (s.isExternal) "External" else null, if (s.isForced) "Forced" else null).joinToString(" · "),
+                    listOfNotNull(s.codec?.uppercase(), if (s.isExternal) "external file" else null, if (s.isForced) "forced" else null).joinToString(", "),
                     pb.subtitleIndex == s.index,
                 ) { vm.selectSubtitle(s.index); onDismiss() }
             }
@@ -557,8 +566,8 @@ private fun TracksSheet(vm: PlayerViewModel, onDismiss: () -> Unit) {
     }
 }
 
-private val QUALITY = listOf(
-    null to "Maximum",
+private val QUALITY: List<Pair<Long?, String>> = listOf(
+    null to "Best available",
     40_000_000L to "40 Mbps",
     20_000_000L to "20 Mbps",
     10_000_000L to "10 Mbps",
@@ -569,69 +578,105 @@ private val QUALITY = listOf(
     420_000L to "420 kbps",
 )
 
+private val SPEEDS = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
+
 @Composable
-private fun SettingsSheet(vm: PlayerViewModel, st: EngineState, onDismiss: () -> Unit) {
+private fun SettingsSheet(
+    vm: PlayerViewModel,
+    st: EngineState,
+    rotationLocked: Boolean,
+    onToggleRotationLock: () -> Unit,
+    onPip: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     val pb = vm.playback
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        LazyColumn(Modifier.padding(bottom = 24.dp)) {
+    var quality by remember { mutableStateOf(false) }
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+        LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
                 SheetHeader("Speed")
-                Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f).forEach { s ->
-                        FilterChip(selected = abs(st.speed - s) < 0.01f, onClick = { vm.setSpeed(s) }, label = { Text("${s}x") })
-                    }
-                }
+                ChipLine(SPEEDS.map { if (it == 1f) "Normal" else "${it}×" }, SPEEDS.indexOfFirst { abs(st.speed - it) < 0.01f }) { vm.setSpeed(SPEEDS[it]) }
             }
             item {
                 SheetHeader("Picture")
-                Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    ResizeMode.entries.forEach { m ->
-                        FilterChip(
-                            selected = vm.resizeMode == m,
-                            onClick = { vm.resizeMode = m },
-                            label = { Text(m.label) },
-                            leadingIcon = { Icon(Icons.Filled.AspectRatio, null, Modifier.size(16.dp)) },
-                        )
-                    }
-                }
+                ChipLine(ResizeMode.entries.map { it.label }, vm.resizeMode.ordinal) { vm.resizeMode = ResizeMode.entries[it] }
             }
+            item { Spacer(Modifier.height(12.dp)) }
             if (pb != null && !pb.offline) {
-                item { SheetHeader("Quality") }
-                items(QUALITY, key = { it.second }) { (bps, label) ->
-                    CheckRow(label, null, vm.maxBitrateOverride == bps) { vm.setMaxBitrate(bps); onDismiss() }
+                item {
+                    GroupRow(
+                        "Quality",
+                        QUALITY.firstOrNull { it.first == vm.maxBitrateOverride }?.second ?: "Best available",
+                        icon = Icons.Filled.HighQuality,
+                        showChevron = true,
+                        onClick = { quality = true },
+                    )
                 }
             }
             item {
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                ListItem(
-                    headlineContent = { Text("Player engine: ${if (pb?.engine == EngineKind.MPV) "mpv" else "Media3"}") },
-                    supportingContent = { Text("Tap to switch to ${if (pb?.engine == EngineKind.MPV) "Media3" else "mpv"}") },
-                    leadingContent = { Icon(Icons.Filled.Brightness6, null) },
-                    modifier = Modifier.clickable { vm.switchEngine(); onDismiss() },
+                GroupRow("Picture in picture", icon = Icons.Filled.PictureInPictureAlt, onClick = onPip)
+            }
+            item {
+                GroupRow("Lock rotation", icon = Icons.Filled.ScreenLockRotation, onClick = onToggleRotationLock) {
+                    Switch(rotationLocked, onCheckedChange = { onToggleRotationLock() })
+                }
+            }
+            item {
+                GroupRow(
+                    "Player: ${if (pb?.engine == EngineKind.MPV) "mpv" else "Media3"}",
+                    "Switch to ${if (pb?.engine == EngineKind.MPV) "Media3" else "mpv"} if this file has problems",
+                    icon = Icons.Filled.Memory,
+                    onClick = { vm.switchEngine(); onDismiss() },
                 )
             }
             if (pb != null) {
                 item {
                     val video = pb.source.mediaStreams.firstOrNull { it.type == "Video" }
                     val audio = pb.audioStreams.firstOrNull { it.index == pb.audioIndex }
-                    ListItem(
-                        headlineContent = { Text("Playback info") },
-                        supportingContent = {
-                            Text(
-                                listOfNotNull(
-                                    when (pb.playMethod) { "DirectPlay" -> "Direct play"; "DirectStream" -> "Direct stream"; else -> "Transcoding" },
-                                    pb.source.container?.uppercase(),
-                                    video?.let { v -> listOfNotNull(v.codec?.uppercase(), v.width?.let { "${it}x${v.height}" }, v.videoRangeType).joinToString(" ") },
-                                    audio?.let { a -> listOfNotNull(a.codec?.uppercase(), a.channelLayout).joinToString(" ") },
-                                    pb.source.bitrate?.let { "${it / 1_000_000} Mbps" },
-                                    if (pb.offline) "Offline file" else null,
-                                ).joinToString("  ·  ")
-                            )
+                    GroupRow(
+                        when (pb.playMethod) {
+                            "DirectPlay" -> "Playing the original file"
+                            "DirectStream" -> "Streaming the original video"
+                            else -> "Converted by the server"
                         },
-                        leadingContent = { Icon(Icons.AutoMirrored.Filled.VolumeUp, null) },
+                        listOfNotNull(
+                            pb.source.container?.uppercase(),
+                            video?.let { v -> listOfNotNull(v.codec?.uppercase(), v.width?.let { "${it}×${v.height}" }, v.videoRangeType).joinToString(" ") },
+                            audio?.let { a -> listOfNotNull(a.codec?.uppercase(), a.channelLayout).joinToString(" ") },
+                            pb.source.bitrate?.let { "${it / 1_000_000} Mbps" },
+                            if (pb.offline) "downloaded" else null,
+                        ).joinToString(", "),
+                        icon = Icons.Filled.Info,
+                        iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
+        }
+    }
+    if (quality) {
+        ChoiceSheet("Quality", QUALITY, vm.maxBitrateOverride, onDismiss = { quality = false }) {
+            vm.setMaxBitrate(it)
+            quality = false
+            onDismiss()
+        }
+    }
+}
+
+@Composable
+private fun ChipLine(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(labels.size) { i ->
+            val isSel = i == selected
+            Text(
+                labels[i],
+                style = MaterialTheme.typography.labelLarge,
+                color = if (isSel) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (isSel) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .clickable { onSelect(i) }
+                    .padding(horizontal = 16.dp, vertical = 9.dp),
+            )
         }
     }
 }
@@ -640,18 +685,23 @@ private fun SettingsSheet(vm: PlayerViewModel, st: EngineState, onDismiss: () ->
 private fun SheetHeader(text: String) {
     Text(
         text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 6.dp),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 10.dp),
     )
 }
 
 @Composable
 private fun CheckRow(title: String, subtitle: String?, selected: Boolean, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = if (!subtitle.isNullOrBlank()) { { Text(subtitle) } } else null,
-        trailingContent = { if (selected) Icon(Icons.Filled.Check, "Selected", tint = MaterialTheme.colorScheme.primary) },
-        modifier = Modifier.clickable(onClick = onClick),
-    )
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+            if (!subtitle.isNullOrBlank()) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (selected) Icon(Icons.Filled.Check, "Selected", tint = MaterialTheme.colorScheme.primary)
+    }
 }

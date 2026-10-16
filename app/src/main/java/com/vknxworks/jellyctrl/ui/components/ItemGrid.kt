@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
+import com.vknxworks.jellyctrl.ui.theme.Gutter
 
 /** Adaptive poster grid that pages in more items as you scroll. More columns appear on tablets and unfolded foldables. */
 @Composable
@@ -69,9 +70,9 @@ fun PagedItemGrid(
         columns = GridCells.Adaptive(minCell),
         state = state,
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(start = Gutter, end = Gutter, top = 8.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         if (header != null) {
             item(span = { GridItemSpan(maxLineSpan) }, key = "header") { header() }
@@ -97,7 +98,7 @@ fun PagedItemGrid(
         if (loader.total > 0) {
             item(span = { GridItemSpan(maxLineSpan) }, key = "count") {
                 Text(
-                    "${loader.total} items",
+                    if (loader.total == 1) "1 item" else "${loader.total} items",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -129,9 +130,9 @@ fun ItemGrid(
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minCell),
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(start = Gutter, end = Gutter, top = 8.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(items, key = { it.id + (it.playlistItemId ?: "") }) { item ->
             PosterCard(item, client, null, onClick = { onItem(item) }, onLongClick = onLongItem?.let { { it(item) } })

@@ -75,11 +75,11 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
         return
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
             Text(
                 item.name.orEmpty(),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -90,7 +90,7 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
                 Action(Icons.Filled.PlayArrow, "Play") { nav.play(item); onDismiss() }
             }
             if ((item.userData?.playbackPositionTicks ?: 0) > 0) {
-                Action(Icons.Filled.Replay, "Play from beginning") { nav.play(item, fromStart = true); onDismiss() }
+                Action(Icons.Filled.Replay, "Play from the beginning") { nav.play(item, fromStart = true); onDismiss() }
             }
             if (item.isFolder) {
                 Action(Icons.Filled.Shuffle, "Shuffle") { nav.shuffle(item); onDismiss() }
@@ -103,23 +103,23 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
             }
             Action(
                 if (played) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
-                if (played) "Mark unplayed" else "Mark played",
+                if (played) "Mark as unwatched" else "Mark as watched",
             ) { act { c.api.setPlayed(item.id, !played) } }
-            Action(if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, if (fav) "Remove from favorites" else "Add to favorites") {
+            Action(if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, if (fav) "Remove from favourites" else "Add to favourites") {
                 act { c.api.setFavorite(item.id, !fav) }
             }
             if (item.type != "Playlist" && (item.isPlayable || item.isFolder)) {
                 Action(Icons.AutoMirrored.Filled.PlaylistAdd, "Add to playlist") { playlistPicker = true }
             }
             if (item.type == "Episode" && item.seriesId != null) {
-                Action(Icons.Filled.Tv, "Go to series") { nav.navigate(ItemRoute(item.seriesId)); onDismiss() }
+                Action(Icons.Filled.Tv, "Go to show") { nav.navigate(ItemRoute(item.seriesId)); onDismiss() }
             }
             if (item.isPlayable && item.mediaType == "Video" || item.type in DOWNLOADABLE_FOLDERS) {
                 Action(Icons.Filled.Download, "Download") {
                     (context as? MainActivity)?.ensureNotificationPermission()
                     scope.launch {
                         val n = downloadItemWith(c, item)
-                        Toast.makeText(context, if (n == 1) "Download queued" else "$n downloads queued", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, if (n == 1) "Downloading" else "Downloading $n items", Toast.LENGTH_SHORT).show()
                         onDismiss()
                     }
                 }
@@ -133,11 +133,7 @@ private val DOWNLOADABLE_FOLDERS = setOf("Season", "Series", "MusicAlbum")
 
 @Composable
 private fun Action(icon: ImageVector, label: String, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(label) },
-        leadingContent = { Icon(icon, null) },
-        modifier = Modifier.clickable(onClick = onClick),
-    )
+    GroupRow(label, icon = icon, iconTint = MaterialTheme.colorScheme.onSurfaceVariant, onClick = onClick)
 }
 
 /** Queue an item (or every playable child of a season/series/album) for offline use. Returns how many were queued. */

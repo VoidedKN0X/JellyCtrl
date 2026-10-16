@@ -16,7 +16,13 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import com.vknxworks.jellyctrl.ui.components.TabTitle
+import com.vknxworks.jellyctrl.ui.theme.Gutter
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,8 +82,6 @@ fun SearchScreen() {
     val focus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
 
-    LaunchedEffect(Unit) { if (query.isEmpty()) focus.requestFocus() }
-
     LaunchedEffect(query) {
         val q = query.trim()
         if (q.length < 2) {
@@ -106,25 +110,33 @@ fun SearchScreen() {
     }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        OutlinedTextField(
+        TabTitle("Search")
+        TextField(
             value = query,
             onValueChange = { query = it },
-            placeholder = { Text("Search movies, shows, music, people…") },
+            placeholder = { Text("Films, shows, music, people") },
             leadingIcon = { Icon(Icons.Filled.Search, null) },
             trailingIcon = {
-                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Clear, "Clear") }
+                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Clear, "Clear search") }
             },
             singleLine = true,
+            shape = CircleShape,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
-            modifier = Modifier.fillMaxWidth().padding(16.dp).focusRequester(focus),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Gutter, vertical = 4.dp).focusRequester(focus),
         )
         val r = results
         when {
             loading && r == null -> LoadingView()
-            error != null -> MessageView(Icons.Outlined.SearchOff, "Search failed", error)
-            r == null -> MessageView(Icons.Filled.Search, "Search your library", "Type at least two letters")
-            r.isEmpty() -> MessageView(Icons.Outlined.SearchOff, "No results", "Nothing matches \"${query.trim()}\"")
+            error != null -> MessageView(Icons.Outlined.SearchOff, "Search didn't work", error)
+            r == null -> MessageView(Icons.Filled.Search, "Find anything on your server", "Start typing a title, actor, artist or song.")
+            r.isEmpty() -> MessageView(Icons.Outlined.SearchOff, "No matches", "Nothing on your server matches \"${query.trim()}\". Check the spelling or try fewer words.")
             else -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                 items(r, key = { it.first }) { (label, items) ->
                     ItemRow(label, items, client, nav::openItem, landscape = label == "Episodes" || label == "Videos", onLongItem = { menuItem = it })
