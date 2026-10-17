@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vknxworks.jellyctrl.container
+import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import com.vknxworks.jellyctrl.data.api.PackageInfo
 import com.vknxworks.jellyctrl.data.api.activityLog
 import com.vknxworks.jellyctrl.data.api.apiKeys
@@ -250,6 +251,11 @@ fun AdminCatalogScreen() {
                     Text("Latest: ${latest?.version ?: "?"}  ·  for Jellyfin ${latest?.targetAbi ?: "?"}", style = MaterialTheme.typography.bodySmall)
                     p.owner?.let { Text("By $it", style = MaterialTheme.typography.bodySmall) }
                     latest?.changelog?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    Text(
+                        "Plugins run on the server with full access to it and to your media. Only install plugins from repositories you trust.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
                 }
             },
             confirmButton = {
@@ -291,14 +297,22 @@ fun AdminLogScreen(name: String) {
     val context = LocalContext.current
     val c = context.container
     val actions = rememberAdminActions()
-    val loader = rememberLoader("admin-log-$name") { c.api.serverLog(name).lines().takeLast(3000) }
+    // Server logs can contain access tokens and API keys from request URLs and headers; they're masked here.
+    val loader = rememberLoader("admin-log-$name") {
+        val text = c.api.serverLog(name)
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { text.lines().takeLast(3000).map { JellyfinClient.redact(it) } }
+    }
     var filter by remember { mutableStateOf("") }
     AdminScaffold(
         name, actions, loader.refreshing, { loader.reload(silent = true) },
         topActions = {
             IconButton(onClick = {
                 val text = loader.value?.joinToString("\n").orEmpty()
-                (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText(name, text))
+                // Logs hold user names, IP addresses and file paths: keep them out of clipboard previews.
+                val clip = ClipData.newPlainText(name, text).apply {
+                    description.extras = PersistableBundle().apply { putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) }
+                }
+                (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
             }) { Icon(Icons.Filled.ContentCopy, "Copy") }
         },
     ) {
@@ -573,7 +587,7 @@ fun EditMetadataScreen(id: String) {
                         "Studios" to JsonArray(list("Studios").map { s -> JsonObject(mapOf("Name" to JsonPrimitive(s))) }),
                     )
                     val updated = raw.withValues(changes)
-                    actions.run("Saved", after = { nav.back() }) { client.updateItem(id, updated) }
+                    actions.run("Saved", after = { nav.close(com.vknxworks.jellyctrl.ui.nav.EditMetadataRoute::class) }) { client.updateItem(id, updated) }
                 }, modifier = Modifier.fillMaxWidth()) { Text("Save") }
             }
         }

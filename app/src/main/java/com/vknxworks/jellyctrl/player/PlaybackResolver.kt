@@ -87,7 +87,7 @@ object PlaybackResolver {
                     PlayerEngineChoice.MEDIA3 -> EngineKind.MEDIA3
                     PlayerEngineChoice.AUTO -> if (CodecSupport.media3CanPlay(source, audio, sub)) EngineKind.MEDIA3 else EngineKind.MPV
                 }
-                val u = if (source.isRemote && source.path?.startsWith("http") == true && source.protocol == "Http") {
+                val u = if (source.isRemote && (source.path?.startsWith("https://", true) == true || source.path?.startsWith("http://", true) == true) && source.protocol == "Http") {
                     source.path.orEmpty()
                 } else client.directStreamUrl(itemId, source, info.playSessionId)
                 Quad(engine, u, false, if (source.supportsDirectPlay) "DirectPlay" else "DirectStream")

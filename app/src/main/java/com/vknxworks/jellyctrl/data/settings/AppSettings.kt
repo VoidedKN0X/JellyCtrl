@@ -39,6 +39,8 @@ data class AppSettings(
     val downloadWifiOnly: Boolean = true,
     val musicBitrateKbps: Int = 320,
     val hwDecoding: Boolean = true,
+    /** Server dashboard screens are hidden from screenshots, screen recording and the recent-apps preview. */
+    val protectAdminScreens: Boolean = true,
 ) {
     fun maxBitrateBps(onCellular: Boolean): Long {
         val mbps = if (onCellular && cellularBitrateMbps > 0) cellularBitrateMbps else maxBitrateMbps
@@ -62,6 +64,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val wifiOnly = booleanPreferencesKey("download_wifi_only")
         val musicBitrate = intPreferencesKey("music_bitrate")
         val hwDec = booleanPreferencesKey("hw_decoding")
+        val protectAdmin = booleanPreferencesKey("protect_admin_screens")
     }
 
     val settings: StateFlow<AppSettings> = context.appDataStore.data
@@ -83,6 +86,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         downloadWifiOnly = this[K.wifiOnly] ?: true,
         musicBitrateKbps = this[K.musicBitrate] ?: 320,
         hwDecoding = this[K.hwDec] ?: true,
+        protectAdminScreens = this[K.protectAdmin] ?: true,
     )
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
@@ -102,6 +106,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             p[K.wifiOnly] = s.downloadWifiOnly
             p[K.musicBitrate] = s.musicBitrateKbps
             p[K.hwDec] = s.hwDecoding
+            p[K.protectAdmin] = s.protectAdminScreens
         }
     }
 

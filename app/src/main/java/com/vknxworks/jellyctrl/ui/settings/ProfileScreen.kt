@@ -276,6 +276,23 @@ fun QuickConnectApproveScreen() {
     val scope = rememberCoroutineScope()
     var code by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    var confirming by remember { mutableStateOf(false) }
+    val active by c.sessions.active.collectAsStateWithLifecycle()
+    val account = active?.account
+
+    fun approve() {
+        busy = true
+        scope.launch {
+            runCatching { c.api.quickConnectAuthorize(code) }
+                .onSuccess { ok ->
+                    Toast.makeText(context, if (ok) "Device signed in" else "That code wasn't accepted. Check it and try again.", Toast.LENGTH_LONG).show()
+                    if (ok) nav.close(com.vknxworks.jellyctrl.ui.nav.QuickConnectApproveRoute::class)
+                }
+                .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_LONG).show() }
+            busy = false
+        }
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         containerColor = MaterialTheme.colorScheme.background,
@@ -289,6 +306,12 @@ fun QuickConnectApproveScreen() {
                 "On the other device, choose Quick Connect when signing in. Type the six-digit code it shows and it signs in as you.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "Only enter a code from a device you're holding yourself. Never use a code someone sent you" +
+                    if (account?.isAdmin == true) ": it would give them full control of your server." else ".",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
             )
             OutlinedTextField(
                 code, { code = it.filter(Char::isDigit).take(6) },
@@ -304,20 +327,25 @@ fun QuickConnectApproveScreen() {
                     if (busy) "Approving" else "Approve",
                     enabled = code.length == 6 && !busy,
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        busy = true
-                        scope.launch {
-                            runCatching { c.api.quickConnectAuthorize(code) }
-                                .onSuccess { ok ->
-                                    Toast.makeText(context, if (ok) "Device signed in" else "That code wasn't accepted. Check it and try again.", Toast.LENGTH_LONG).show()
-                                    if (ok) nav.back()
-                                }
-                                .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_LONG).show() }
-                            busy = false
-                        }
-                    },
+                    onClick = { confirming = true },
                 )
             }
         }
+    }
+
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text("Sign in another device as ${account?.userName ?: "you"}?") },
+            text = {
+                Text(
+                    "The device showing code $code gets access to everything on your account" +
+                        (if (account?.isAdmin == true) ", including the server dashboard" else "") +
+                        ". An administrator can sign it out again from the server dashboard's device list."
+                )
+            },
+            confirmButton = { TextButton(onClick = { confirming = false; approve() }) { Text("Sign it in") } },
+            dismissButton = { TextButton(onClick = { confirming = false }) { Text("Cancel") } },
+        )
     }
 }

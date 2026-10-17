@@ -10,3 +10,11 @@ captures/
 *.jks
 *.keystore
 !debug.keystore
+
+# Secrets and logs that must never be committed
+.env
+.env.*
+*.p12
+*.pem
+keystore.properties
+build.log

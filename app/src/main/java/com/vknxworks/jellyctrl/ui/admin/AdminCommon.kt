@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -23,10 +25,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
@@ -138,6 +146,7 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
+            value is JsonPrimitive && value.isString && isSecretKey(key) -> SecretField(key, value.content) { onChange(key, JsonPrimitive(it)) }
             value is JsonPrimitive && value.isString -> {
                 OutlinedTextField(
                     value = value.content,
@@ -147,6 +156,7 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
+            value is JsonNull && isSecretKey(key) -> SecretField(key, "") { onChange(key, JsonPrimitive(it)) }
             value is JsonNull -> {
                 OutlinedTextField(
                     value = "",
@@ -179,6 +189,31 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
             modifier = Modifier.padding(16.dp),
         )
     }
+}
+
+private val SECRET_KEY_RE = Regex("(?i)(password|passwd|secret|token|api_?key|private_?key|passphrase)")
+
+/** Settings whose value is a credential (e.g. CertificatePassword) are masked until the user chooses to show them. */
+fun isSecretKey(key: String): Boolean = SECRET_KEY_RE.containsMatchIn(key)
+
+@Composable
+private fun SecretField(key: String, value: String, onChange: (String) -> Unit) {
+    var shown by rememberSaveable(key) { mutableStateOf(false) }
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        label = { Text(humanize(key)) },
+        placeholder = { Text("Not set") },
+        singleLine = true,
+        visualTransformation = if (shown) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
+        trailingIcon = {
+            IconButton(onClick = { shown = !shown }) {
+                Icon(if (shown) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, if (shown) "Hide" else "Show")
+            }
+        },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+    )
 }
 
 fun JsonObject.with(key: String, value: JsonElement): JsonObject = JsonObject(toMutableMap().apply { put(key, value) })
