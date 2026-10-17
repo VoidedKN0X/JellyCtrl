@@ -115,6 +115,10 @@ class MpvEngine(
             setOptionString("sub-scale-with-window", "yes")
             setOptionString("sub-use-margins", "no")
             setOptionString("user-agent", "JellyCtrl mpv")
+            // No user scripts, no youtube-dl hook, and playlists fetched from the network can't point at local files.
+            setOptionString("load-scripts", "no")
+            setOptionString("ytdl", "no")
+            setOptionString("load-unsafe-playlists", "no")
             setOptionString("tls-verify", "yes")
             setOptionString("tls-ca-file", caFile.path)
             init()
@@ -134,6 +138,10 @@ class MpvEngine(
     }
 
     override fun load(request: LoadRequest) {
+        if (!isAllowedSource(request.url)) {
+            _state.value = EngineState(error = "This stream address isn't supported")
+            return
+        }
         pending = request
         lastError = null
         _state.value = EngineState()
@@ -145,7 +153,7 @@ class MpvEngine(
 
     private fun onFileLoaded(request: LoadRequest) {
         mpv.setPropertyString("start", "none")
-        request.externalSubs.forEach { s ->
+        request.externalSubs.filter { isWebUrl(it.url) }.forEach { s ->
             val title = s.title ?: s.language ?: "External"
             setAuthFor(s.url)
             mpv.command(arrayOf("sub-add", s.url, "auto", title, s.language ?: ""))
@@ -153,6 +161,21 @@ class MpvEngine(
         pending?.let { setAuthFor(it.url) }
         request.audioOrdinal?.let { selectAudio(it) }
         selectSubtitle(request.subtitle)
+    }
+
+    /**
+     * mpv understands many protocols (file://, edl://, lavf://, memory://, ...). Streams and subtitles from the
+     * server may only be http(s); the only local files it plays are this app's own downloads.
+     */
+    private fun isWebUrl(url: String): Boolean =
+        url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
+
+    private fun isAllowedSource(url: String): Boolean {
+        if (isWebUrl(url)) return true
+        if (!url.startsWith("/")) return false
+        val file = runCatching { File(url).canonicalFile }.getOrNull() ?: return false
+        val roots = listOfNotNull(context.getExternalFilesDir(null), context.filesDir).mapNotNull { runCatching { it.canonicalPath }.getOrNull() }
+        return file.isFile && roots.any { file.path.startsWith(it + File.separator) }
     }
 
     /** The token goes in a request header, and only to the signed-in server - never into the URL. */

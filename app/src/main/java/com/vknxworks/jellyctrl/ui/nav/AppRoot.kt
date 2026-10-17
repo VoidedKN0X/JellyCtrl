@@ -127,6 +127,9 @@ private fun MainScaffold() {
     val dest = backStack?.destination
     val selectedIndex = topDestinations.indexOfFirst { top -> dest?.hierarchy?.any { it.hasRoute(top.route::class) } == true }
     val onNowPlaying = dest?.hasRoute(NowPlayingRoute::class) == true
+    val settings by context.container.settings.settings.collectAsStateWithLifecycle()
+    val onAdminScreen = dest != null && ADMIN_ROUTES.any { dest.hasRoute(it) }
+    ProtectWindow(onAdminScreen && settings.protectAdminScreens)
 
     fun selectTab(i: Int) {
         navController.navigate(topDestinations[i].route) {
@@ -235,6 +238,34 @@ private fun PhoneLayout(
     }
 }
 
+/** Server dashboard screens show API keys, logs, users and server settings. */
+private val ADMIN_ROUTES = listOf(
+    AdminRoute::class, AdminUsersRoute::class, AdminUserRoute::class, AdminLibrariesRoute::class, AdminTasksRoute::class,
+    AdminPluginsRoute::class, AdminCatalogRoute::class, AdminLogsRoute::class, AdminLogRoute::class, AdminActivityRoute::class,
+    AdminDevicesRoute::class, AdminKeysRoute::class, AdminConfigRoute::class,
+)
+
+/**
+ * While [protect] is on, the window can't be captured (screenshots, screen recording, casting the screen)
+ * and the recent-apps preview is blank. Dialogs opened from the screen inherit the flag.
+ */
+@Composable
+private fun ProtectWindow(protect: Boolean) {
+    val activity = LocalContext.current as? android.app.Activity ?: return
+    androidx.compose.runtime.DisposableEffect(protect, activity) {
+        if (protect) {
+            activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+            activity.setRecentsScreenshotEnabled(false)
+        }
+        onDispose {
+            if (protect) {
+                activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                activity.setRecentsScreenshotEnabled(true)
+            }
+        }
+    }
+}
+
 @Composable
 private fun AppNavHost(navController: androidx.navigation.NavHostController) {
     NavHost(navController, startDestination = HomeRoute) {
@@ -252,7 +283,13 @@ private fun AppNavHost(navController: androidx.navigation.NavHostController) {
         composable<SettingsRoute> { SettingsScreen() }
         composable<AccountsRoute> { AccountsScreen() }
         composable<AddAccountRoute> {
-            ServerSetupFlow(onDone = { navController.popBackStack(HomeRoute, false) }, onCancel = { navController.popBackStack() })
+            ServerSetupFlow(onDone = { navController.popBackStack(HomeRoute, false) }, onCancel = {
+                // Same guard as Navigator.back(): ignore repeat taps mid-animation and never empty the stack.
+                val top = navController.currentBackStackEntry
+                if (navController.previousBackStackEntry != null && top?.destination?.hasRoute(AddAccountRoute::class) == true &&
+                    top.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)
+                ) navController.popBackStack()
+            })
         }
         composable<RemoteRoute> { RemoteScreen() }
         composable<NowPlayingRoute> { NowPlayingScreen() }

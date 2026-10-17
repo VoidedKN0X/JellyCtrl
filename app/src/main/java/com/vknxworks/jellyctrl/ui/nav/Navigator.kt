@@ -3,19 +3,45 @@ package com.vknxworks.jellyctrl.ui.nav
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.player.PlayerActivity
+import kotlin.reflect.KClass
 
 /** One place that knows where each kind of item opens and how it plays. */
 class Navigator(val nav: NavHostController, private val context: Context) {
 
-    fun navigate(route: Any) = nav.navigate(route) { launchSingleTop = true }
+    /** Opens a screen from a tap. Taps on a screen that's still animating in or already leaving are ignored. */
+    fun navigate(route: Any) {
+        if (!isCurrentResumed()) return
+        nav.navigate(route) { launchSingleTop = true }
+    }
 
+    /**
+     * Back from the screen the user is looking at. Repeat taps while a screen change is still animating are
+     * ignored, and the bottom screen is never popped (an empty back stack left a black screen).
+     */
     fun back() {
+        if (nav.previousBackStackEntry == null) return
+        if (!isCurrentResumed()) return
         nav.popBackStack()
     }
+
+    /**
+     * Closes the top screen only if it is still a [route] screen, for screens that finish on their own after
+     * a network call (save, delete). If the user already left, nothing else gets popped.
+     */
+    fun close(route: KClass<*>) {
+        if (nav.previousBackStackEntry == null) return
+        if (nav.currentBackStackEntry?.destination?.hasRoute(route) != true) return
+        nav.popBackStack()
+    }
+
+    private fun isCurrentResumed(): Boolean =
+        nav.currentBackStackEntry?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) != false
 
     fun openItem(item: BaseItemDto) {
         when (item.type) {

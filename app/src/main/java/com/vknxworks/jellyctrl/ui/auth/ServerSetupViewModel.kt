@@ -183,8 +183,15 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
                 val client: JellyfinClient = c.sessions.anonymousClient(s.url, deviceId)
                 val start = client.quickConnectInitiate()
                 quickConnectCode = start.code
+                // Stop asking after the code's lifetime instead of polling (and holding the secret) forever.
+                val deadline = System.currentTimeMillis() + QUICK_CONNECT_TIMEOUT_MS
                 while (isActive) {
                     delay(3000)
+                    if (System.currentTimeMillis() > deadline) {
+                        quickConnectCode = null
+                        error = "The Quick Connect code expired. Start again to get a new one."
+                        break
+                    }
                     val st = client.quickConnectState(start.secret)
                     if (st.authenticated) {
                         val auth = client.authenticateWithQuickConnect(start.secret)
@@ -201,6 +208,10 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
                 }
             }
         }
+    }
+
+    private companion object {
+        const val QUICK_CONNECT_TIMEOUT_MS = 10 * 60 * 1000L
     }
 
     fun cancelQuickConnect() {

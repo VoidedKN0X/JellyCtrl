@@ -329,7 +329,7 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
                                     modifier = Modifier
                                         .clip(CircleShape)
                                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                        .clickable { link.url?.let { u -> runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u))) } } }
+                                        .clickable { link.url?.let { u -> openWebLink(ctx, u) } }
                                         .padding(horizontal = 14.dp, vertical = 8.dp),
                                 )
                             }
@@ -564,7 +564,7 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
             }
             if (item.remoteTrailers.isNotEmpty()) {
                 RoundAction(Icons.Outlined.Movie, "Trailer", {
-                    item.remoteTrailers.firstOrNull()?.url?.let { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) } }
+                    item.remoteTrailers.firstOrNull()?.url?.let { openWebLink(context, it) }
                 })
             }
             RoundAction(Icons.Filled.MoreHoriz, "More", { more = true })
@@ -762,7 +762,7 @@ private fun MoreSheet(
                     onDismiss()
                     scope.launch {
                         runCatching { c.api.deleteItem(item.id) }
-                            .onSuccess { Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show(); nav.back() }
+                            .onSuccess { Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show(); nav.close(com.vknxworks.jellyctrl.ui.nav.ItemRoute::class) }
                             .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                     }
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
@@ -927,4 +927,14 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
             }) { Icon(Icons.Filled.Delete, "Remove from playlist", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
+}
+
+/**
+ * Opens a link that came from the server (external IDs, trailers) in a browser. Only http/https web links
+ * are opened, so server metadata can't launch other apps' deep links or local file/content URIs.
+ */
+private fun openWebLink(context: android.content.Context, url: String) {
+    val uri = Uri.parse(url.trim())
+    if (uri.scheme?.lowercase() !in setOf("http", "https") || uri.host.isNullOrBlank()) return
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)) }
 }

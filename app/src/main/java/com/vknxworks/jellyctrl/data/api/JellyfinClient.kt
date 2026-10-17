@@ -212,9 +212,9 @@ class JellyfinClient(
             return b.build()
         }
 
-        private val SECRET_RE = Regex("(?i)(api_?key|token)(\"?\\s*[=:]\\s*\"?)[^&\\s\",]+")
+        private val SECRET_RE = Regex("(?i)(api_?key|token|password|passwd|\\bpw|secret)(\"?\\s*[=:]\\s*\"?)[^&\\s\",]+")
 
-        /** Removes access tokens from text that may be shown to the user (player errors, exception messages). */
+        /** Removes access tokens and passwords from text that may be shown to the user (player errors, exception messages, server logs). */
         fun redact(text: String): String = SECRET_RE.replace(text) { m -> m.groupValues[1] + m.groupValues[2] + "***" }
     }
 }

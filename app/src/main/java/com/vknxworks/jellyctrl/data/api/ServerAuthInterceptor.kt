@@ -23,10 +23,19 @@ class ServerAuthInterceptor(
         if (!hasAuth && client != null && !client.accessToken.isNullOrBlank() && client.ownsUrl(request.url)) {
             request = request.newBuilder().header("Authorization", client.authHeader).build()
         }
-        val carriesCredentials = request.header("Authorization")?.contains("Token=") == true || request.header("X-Emby-Token") != null
+        val path = request.url.encodedPath.lowercase()
+        val carriesCredentials = request.header("Authorization")?.contains("Token=") == true || request.header("X-Emby-Token") != null ||
+            PASSWORD_PATHS.any { path.endsWith(it) }
         if (carriesCredentials && !request.url.isHttps && !cleartextAllowed(request.url)) {
             throw IOException("Blocked an unencrypted connection to ${request.url.host}. Add the server again and accept the HTTP warning to use it.")
         }
         return chain.proceed(request)
+    }
+
+    private companion object {
+        /** Requests whose body holds a password or Quick Connect secret, even before there's a token. */
+        val PASSWORD_PATHS = listOf(
+            "/users/authenticatebyname", "/users/authenticatewithquickconnect", "/users/password", "/users/new",
+        )
     }
 }

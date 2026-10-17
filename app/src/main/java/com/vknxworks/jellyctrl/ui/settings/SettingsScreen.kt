@@ -127,6 +127,15 @@ fun SettingsScreen() {
                 GroupSwitch("Download on Wi-Fi only", checked = s.downloadWifiOnly) { v -> update { it.copy(downloadWifiOnly = v) } }
             }
 
+            if (c.sessions.active.value?.account?.isAdmin == true) {
+                Group(
+                    "Privacy",
+                    footer = "API keys, server logs, users and server settings can't be captured by screenshots or screen recording, and the recent-apps preview is blank while they're open.",
+                ) {
+                    GroupSwitch("Protect the server dashboard", checked = s.protectAdminScreens) { v -> update { it.copy(protectAdminScreens = v) } }
+                }
+            }
+
             Group("Appearance") {
                 GroupChoice("Theme", ThemeChoice.entries.map { it to it.label }, s.theme) { v -> update { it.copy(theme = v) } }
                 GroupSwitch("Use wallpaper colours", "Replaces the default colours with ones from your wallpaper", s.dynamicColor) { v ->

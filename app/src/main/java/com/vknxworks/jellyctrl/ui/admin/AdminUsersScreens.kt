@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -40,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.vknxworks.jellyctrl.container
@@ -65,6 +67,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
+
+/** Password keyboards don't learn or suggest what's typed. */
+private val PasswordKeyboard = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false)
 
 @Composable
 fun AdminUsersScreen() {
@@ -124,7 +129,8 @@ fun AdminUsersScreen() {
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true)
-                    OutlinedTextField(pw, { pw = it }, label = { Text("Password (optional)") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
+                    OutlinedTextField(pw, { pw = it }, label = { Text("Password (optional)") }, singleLine = true, visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = PasswordKeyboard)
                 }
             },
             confirmButton = {
@@ -226,14 +232,25 @@ fun AdminUserScreen(id: String) {
             onDismissRequest = { newPassword = null },
             title = { Text("Set password") },
             text = {
-                OutlinedTextField(pw, { newPassword = it }, label = { Text("New password (blank removes it)") }, singleLine = true,
-                    visualTransformation = PasswordVisualTransformation())
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(pw, { newPassword = it }, label = { Text("New password (blank removes it)") }, singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(), keyboardOptions = PasswordKeyboard)
+                    if (pw.isEmpty()) {
+                        Text(
+                            "With no password, anyone who can reach the server can sign in as ${name ?: "this user"}.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
                     newPassword = null
-                    actions.run("Password updated") { client.adminSetPassword(id, pw) }
-                }) { Text("Save") }
+                    actions.run(if (pw.isEmpty()) "Password removed" else "Password updated") { client.adminSetPassword(id, pw) }
+                }) {
+                    if (pw.isEmpty()) Text("Remove password", color = MaterialTheme.colorScheme.error) else Text("Save")
+                }
             },
             dismissButton = { TextButton(onClick = { newPassword = null }) { Text("Cancel") } },
         )
@@ -247,7 +264,7 @@ fun AdminUserScreen(id: String) {
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
-                    actions.run(after = { nav.back() }) { client.deleteUser(id) }
+                    actions.run(after = { nav.close(com.vknxworks.jellyctrl.ui.nav.AdminUserRoute::class) }) { client.deleteUser(id) }
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
