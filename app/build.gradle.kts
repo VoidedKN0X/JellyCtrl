@@ -11,7 +11,6 @@ plugins {
 val releaseKeystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")?.takeIf { it.isNotBlank() && file(it).exists() }
 val isCi: Boolean = System.getenv("CI") == "true" || System.getenv("GITHUB_ACTIONS") == "true"
 val signingEnvMissing: Boolean = listOf("KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD").any { System.getenv(it).isNullOrBlank() }
-val ciRunNumber: Int = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
 
 android {
     namespace = "com.vknxworks.jellyctrl"
@@ -21,8 +20,9 @@ android {
         applicationId = "com.vknxworks.jellyctrl"
         minSdk = 33
         targetSdk = 36
-        versionCode = ciRunNumber
-        versionName = "0.1.$ciRunNumber"
+        // Bump both to publish a new release (see CHANGELOG.md).
+        versionCode = 12
+        versionName = "0.1.12"
 
         ndk {
             // Android 13+ phones and tablets are effectively all 64-bit ARM; keeps mpv's native libs small.
