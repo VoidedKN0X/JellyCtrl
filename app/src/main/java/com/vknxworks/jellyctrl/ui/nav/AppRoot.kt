@@ -248,7 +248,11 @@ private val ADMIN_ROUTES = listOf(
  */
 @Composable
 private fun ProtectWindow(protect: Boolean) {
-    val activity = LocalContext.current as? android.app.Activity ?: return
+    // Unwrap: the composition's context can be a wrapper around the activity; a plain cast would then
+    // silently skip the protection.
+    var ctx: android.content.Context? = LocalContext.current
+    while (ctx is android.content.ContextWrapper && ctx !is android.app.Activity) ctx = ctx.baseContext
+    val activity = ctx as? android.app.Activity ?: return
     androidx.compose.runtime.DisposableEffect(protect, activity) {
         if (protect) {
             activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)

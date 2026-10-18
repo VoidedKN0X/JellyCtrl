@@ -4,6 +4,16 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.1.16 (2026-10-18)
+
+A security follow-up that closes gaps in 0.1.14's protections.
+
+### Security
+
+- **Your password can't be redirected.** If the server (or something in front of it, like a reverse proxy) answered a sign-in, password change or new-user request with a redirect, the request was sent on again with your password in it, even to plain HTTP or to another site. Such redirects are now refused with a message, and the same check runs on every step of a redirect for images, video, music and downloads: your access token is removed before a request goes to any other address, and nothing with your token or password goes over plain HTTP unless you accepted HTTP for that server
+- **Better masking in server logs and error messages.** The password-change fields ("CurrentPw", "NewPw") are now hidden, passwords and tokens in quotes are hidden in full even when they contain spaces or commas (before, only the part up to the first space was), and "Bearer" tokens are hidden too
+- **Server dashboard protection can't be skipped.** The screenshot and recent-apps protection for the server dashboard now finds the app's window in every case, instead of quietly doing nothing if Android handed the screen a wrapped context
+
 ## v0.1.15 (2026-10-18)
 
 ### Changed

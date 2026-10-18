@@ -39,6 +39,10 @@ class AppContainer(val context: Context) {
                 { url -> runCatching { sessions.isCleartextAllowed(url) }.getOrDefault(false) },
             )
         )
+        // The same rules on every redirect hop (images, video, downloads and sign-in all use this client).
+        .addNetworkInterceptor(
+            com.vknxworks.jellyctrl.data.api.CredentialRedirectGuard { url -> runCatching { sessions.isCleartextAllowed(url) }.getOrDefault(false) }
+        )
         .build()
 
     val sessions = SessionManager(context, http, appScope)
