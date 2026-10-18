@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -28,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,10 +58,16 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
+import com.vknxworks.jellyctrl.ui.nav.ProfileRoute
 import com.vknxworks.jellyctrl.ui.theme.Gutter
 
 // ---------- Top bars ----------
@@ -85,15 +93,49 @@ fun ScreenTopBar(
     )
 }
 
-/** Big left-aligned title for the main tabs. */
+/** Big left-aligned title for the main tabs, with your profile picture at the end. */
 @Composable
-fun TabTitle(title: String, modifier: Modifier = Modifier, padded: Boolean = true, trailing: @Composable RowScope.() -> Unit = {}) {
+fun TabTitle(
+    title: String,
+    modifier: Modifier = Modifier,
+    padded: Boolean = true,
+    showProfile: Boolean = true,
+    trailing: @Composable RowScope.() -> Unit = {},
+) {
     Row(
         modifier.fillMaxWidth().padding(start = if (padded) Gutter else 0.dp, end = if (padded) 8.dp else 0.dp, top = 12.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f))
         trailing()
+        if (showProfile) ProfileButton()
+    }
+}
+
+/** The signed-in user's Jellyfin picture (or initial); tapping it opens the You page. */
+@Composable
+fun ProfileButton() {
+    val nav = LocalNavigator.current
+    val session by LocalContext.current.container.sessions.active.collectAsStateWithLifecycle()
+    val acc = session?.account
+    val client = session?.client
+    IconButton(onClick = { nav.navigate(ProfileRoute) }) {
+        Box(
+            Modifier.size(34.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            contentAlignment = Alignment.Center,
+        ) {
+            when {
+                acc?.userImageTag != null && client != null ->
+                    ArtImage(client.userImageUrl(acc.userId, acc.userImageTag), Modifier.fillMaxSize().semantics { contentDescription = "You" })
+                acc != null && acc.userName.isNotEmpty() ->
+                    Text(
+                        acc.userName.take(1).uppercase(),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { contentDescription = "You" },
+                    )
+                else -> Icon(Icons.Filled.AccountCircle, "You")
+            }
+        }
     }
 }
 

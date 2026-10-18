@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -87,7 +86,7 @@ import com.vknxworks.jellyctrl.ui.nav.SettingsRoute
 import com.vknxworks.jellyctrl.ui.theme.Gutter
 import kotlinx.coroutines.launch
 
-/** The You tab: who you are, your stuff, and where the settings live. */
+/** The You page, opened from your profile picture: who you are, your stuff, and where the settings live. */
 @Composable
 fun ProfileScreen() {
     val c = LocalContext.current.container
@@ -103,72 +102,75 @@ fun ProfileScreen() {
     val ready = downloads.count { it.status == DownloadStatus.DONE }
     val hasLiveTv = views.value?.any { it.collectionType == "livetv" } == true
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(bottom = 24.dp + LocalBottomClearance.current)) {
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = Gutter, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(Modifier.size(96.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh), contentAlignment = Alignment.Center) {
-                if (acc?.userImageTag != null && client != null) {
-                    ArtImage(client.userImageUrl(acc.userId, acc.userImageTag), Modifier.fillMaxSize())
-                } else {
-                    Text(acc?.userName?.take(1)?.uppercase().orEmpty(), style = MaterialTheme.typography.displaySmall)
+    Column(Modifier.fillMaxSize()) {
+        ScreenTopBar("You")
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp + LocalBottomClearance.current)) {
+            Column(
+                Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 8.dp, bottom = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(Modifier.size(96.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh), contentAlignment = Alignment.Center) {
+                    if (acc?.userImageTag != null && client != null) {
+                        ArtImage(client.userImageUrl(acc.userId, acc.userImageTag), Modifier.fillMaxSize())
+                    } else {
+                        Text(acc?.userName?.take(1)?.uppercase().orEmpty(), style = MaterialTheme.typography.displaySmall)
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(acc?.userName.orEmpty(), style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    acc?.serverName.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (acc?.serverUrl?.startsWith("http://", true) == true) {
+                    Text(
+                        "Not encrypted (HTTP)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             }
-            Spacer(Modifier.height(14.dp))
-            Text(acc?.userName.orEmpty(), style = MaterialTheme.typography.headlineMedium)
-            Text(
-                acc?.serverName.orEmpty(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (acc?.serverUrl?.startsWith("http://", true) == true) {
-                Text(
-                    "Not encrypted (HTTP)",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-        }
 
-        Group {
-            GroupRow("Favourites", icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
-            GroupRow(
-                "Downloads",
-                if (ready == 0) null else if (ready == 1) "1 ready offline" else "$ready ready offline",
-                icon = Icons.Filled.Download,
-                showChevron = true,
-                onClick = { nav.navigate(DownloadsRoute) },
-            )
-            if (hasLiveTv) GroupRow("Live TV", icon = Icons.Filled.LiveTv, showChevron = true, onClick = { nav.navigate(LiveTvRoute) })
-        }
-        Group {
-            GroupRow("Control another device", "Play and pause Jellyfin on your TV or browser", icon = Icons.Filled.Cast, showChevron = true, onClick = { nav.navigate(RemoteRoute) })
-            GroupRow("Sign in another device", "Approve a Quick Connect code", icon = Icons.Filled.Key, showChevron = true, onClick = { nav.navigate(QuickConnectApproveRoute) })
-        }
-        Group {
-            GroupRow("Settings", icon = Icons.Filled.Settings, showChevron = true, onClick = { nav.navigate(SettingsRoute) })
-            GroupRow("Switch account or server", icon = Icons.Filled.SwapHoriz, showChevron = true, onClick = { nav.navigate(AccountsRoute) })
-            GroupRow("Change password", icon = Icons.Filled.Password, showChevron = true, onClick = { changePassword = true })
-        }
-        if (acc?.isAdmin == true) {
             Group {
+                GroupRow("Favourites", icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
                 GroupRow(
-                    "Server dashboard",
-                    "Users, libraries, plugins, tasks and logs",
-                    icon = Icons.Filled.AdminPanelSettings,
+                    "Downloads",
+                    if (ready == 0) null else if (ready == 1) "1 ready offline" else "$ready ready offline",
+                    icon = Icons.Filled.Download,
                     showChevron = true,
-                    onClick = { nav.navigate(AdminRoute) },
+                    onClick = { nav.navigate(DownloadsRoute) },
                 )
+                if (hasLiveTv) GroupRow("Live TV", icon = Icons.Filled.LiveTv, showChevron = true, onClick = { nav.navigate(LiveTvRoute) })
             }
+            Group {
+                GroupRow("Control another device", "Play and pause Jellyfin on your TV or browser", icon = Icons.Filled.Cast, showChevron = true, onClick = { nav.navigate(RemoteRoute) })
+                GroupRow("Sign in another device", "Approve a Quick Connect code", icon = Icons.Filled.Key, showChevron = true, onClick = { nav.navigate(QuickConnectApproveRoute) })
+            }
+            Group {
+                GroupRow("Settings", icon = Icons.Filled.Settings, showChevron = true, onClick = { nav.navigate(SettingsRoute) })
+                GroupRow("Switch account or server", icon = Icons.Filled.SwapHoriz, showChevron = true, onClick = { nav.navigate(AccountsRoute) })
+                GroupRow("Change password", icon = Icons.Filled.Password, showChevron = true, onClick = { changePassword = true })
+            }
+            if (acc?.isAdmin == true) {
+                Group {
+                    GroupRow(
+                        "Server dashboard",
+                        "Users, libraries, plugins, tasks and logs",
+                        icon = Icons.Filled.AdminPanelSettings,
+                        showChevron = true,
+                        onClick = { nav.navigate(AdminRoute) },
+                    )
+                }
+            }
+            Text(
+                "JellyCtrl ${BuildConfig.VERSION_NAME}, made by VKNXWorks",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            )
         }
-        Text(
-            "JellyCtrl ${BuildConfig.VERSION_NAME}, made by VKNXWorks",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-        )
     }
 
     if (changePassword) ChangePasswordDialog { changePassword = false }
