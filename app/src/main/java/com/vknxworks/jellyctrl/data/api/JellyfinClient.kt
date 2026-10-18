@@ -212,10 +212,18 @@ class JellyfinClient(
             return b.build()
         }
 
-        private val SECRET_RE = Regex("(?i)(api_?key|token|password|passwd|\\bpw|secret)(\"?\\s*[=:]\\s*\"?)[^&\\s\",]+")
+        // "CurrentPw"/"NewPw" are the password-change fields; a quoted value is masked up to its closing quote
+        // (passwords can contain spaces and commas).
+        private val SECRET_RE = Regex("(?i)(api_?key|token|password|passwd|(?:\\b|current|new|old)pw|secret)(\"?\\s*[=:]\\s*)(\"(?:[^\"\\\\]|\\\\.)*\"|[^&\\s\",]+)")
+        private val BEARER_RE = Regex("(?i)(bearer\\s+)[A-Za-z0-9._~+/=-]+")
 
         /** Removes access tokens and passwords from text that may be shown to the user (player errors, exception messages, server logs). */
-        fun redact(text: String): String = SECRET_RE.replace(text) { m -> m.groupValues[1] + m.groupValues[2] + "***" }
+        fun redact(text: String): String {
+            val masked = SECRET_RE.replace(text) { m ->
+                m.groupValues[1] + m.groupValues[2] + if (m.groupValues[3].startsWith("\"")) "\"***\"" else "***"
+            }
+            return BEARER_RE.replace(masked) { m -> m.groupValues[1] + "***" }
+        }
     }
 }
 

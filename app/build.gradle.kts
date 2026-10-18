@@ -21,8 +21,8 @@ android {
         minSdk = 33
         targetSdk = 36
         // Bump both to publish a new release (see CHANGELOG.md).
-        versionCode = 15
-        versionName = "0.1.15"
+        versionCode = 16
+        versionName = "0.1.16"
 
         ndk {
             // Android 13+ phones and tablets are effectively all 64-bit ARM; keeps mpv's native libs small.
