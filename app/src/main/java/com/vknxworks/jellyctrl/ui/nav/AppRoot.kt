@@ -19,11 +19,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
@@ -115,7 +113,6 @@ private val topDestinations = listOf(
     TopDest(HomeRoute, TabItem("Home", Icons.Outlined.Home, Icons.Filled.Home)),
     TopDest(SearchRoute, TabItem("Search", Icons.Outlined.Search, Icons.Filled.Search)),
     TopDest(LibrariesRoute, TabItem("Library", Icons.Outlined.VideoLibrary, Icons.Filled.VideoLibrary)),
-    TopDest(ProfileRoute, TabItem("You", Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle)),
 )
 
 @Composable
@@ -183,7 +180,7 @@ private fun MainScaffold() {
 
 /**
  * Phones: content runs edge to edge and scrolls under a floating glass island.
- * The island shows on the four main tabs; pushed screens get the full height.
+ * The island shows on the main tabs; pushed screens get the full height.
  */
 @Composable
 private fun PhoneLayout(

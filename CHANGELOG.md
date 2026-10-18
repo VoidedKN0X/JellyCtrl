@@ -4,6 +4,14 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.1.15 (2026-10-18)
+
+### Changed
+
+- The **You** tab is gone from the bar at the bottom. Tap your profile picture at the top right of Home, Search or Library to open it instead. Everything that was there (favourites, downloads, Live TV, remote control, the server dashboard, settings, accounts and your password) is still on that page, now with a back arrow
+- The bottom bar now has three tabs: Home, Search and Library. On tablets and unfolded foldables the side rail matches
+- Search and Library now show your Jellyfin profile picture (or your initial if you haven't set one) next to their titles, like Home already did
+
 ## v0.1.14 (2026-10-18)
 
 A second security pass, mostly around the server dashboard.
