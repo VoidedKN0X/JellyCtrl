@@ -59,6 +59,8 @@ JellyCtrl can share anonymous usage stats, **only if you say yes**. It asks once
 
 Builds from source don't include the stats key, so they can't send anything and the setting is hidden. The code is in [`Telemetry.kt`](app/src/main/java/com/vknxworks/jellyctrl/data/telemetry/Telemetry.kt).
 
+Apart from these opt-in stats, JellyCtrl only talks to your own Jellyfin server. Artwork comes through your server, never straight from sites like TMDB; trailers and links to sites like IMDb only open in your browser when you tap them.
+
 ## Build from source
 
 You need [Android Studio](https://developer.android.com/studio), or JDK 17 and the Android SDK.

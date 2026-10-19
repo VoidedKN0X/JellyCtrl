@@ -118,6 +118,16 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             .setOnlyAlertOnce(true)
             .setOngoing(true)
             .setProgress(100, (progress * 100).toInt(), progress <= 0f)
+            // What's being downloaded stays off the lock screen.
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(
+                NotificationCompat.Builder(applicationContext, JellyCtrlApp.CHANNEL_DOWNLOADS)
+                    .setSmallIcon(R.drawable.ic_notification)
+                    .setContentTitle("Downloading")
+                    .setOnlyAlertOnce(true)
+                    .setProgress(100, (progress * 100).toInt(), progress <= 0f)
+                    .build(),
+            )
             .build()
         return ForegroundInfo(notificationId, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
     }

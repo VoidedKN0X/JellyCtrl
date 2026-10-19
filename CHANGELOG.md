@@ -4,13 +4,21 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
-## Unreleased
+## v0.1.18 (2026-10-19)
 
-Not in a release yet; this goes out with the next version.
+Fourth security and privacy review, focused on what's left on the phone and what the app sends.
+
+### Security
+
+- **Signing out removes that account's cached artwork.** Posters, backdrops, profile pictures and the seek-preview (trickplay) frames from a server stayed in the app's image cache after you signed out of it, or after the server rejected the login. They're now deleted from the cache when an account is removed. Your downloads aren't touched
+- **Downloads in progress stay private on the lock screen.** The download notification showed the title being downloaded; on a locked phone it now only says "Downloading", with the progress bar
+- **Switching usage stats off takes effect straight away.** Turning off **Settings > Usage stats** now also throws away any stats still waiting to be sent and stops one being sent at that moment, and switching them on again starts a new random session
 
 ### Changed
 
-- **All Ctrl apps in the README.** The README's Ctrl series table now lists all 14 apps. New in the table: [ArrCtrl](https://github.com/VoidedKN0X/ArrCtrl) (Radarr, Sonarr, Prowlarr, Bazarr, qBittorrent, autobrr and Cleanuparr in one app), [PaperCtrl](https://github.com/VoidedKN0X/PaperCtrl) (scan and browse documents on Paperless-ngx), [ProxCtrl](https://github.com/VoidedKN0X/ProxCtrl) (manage your Proxmox VE server) and [TrueCtrl](https://github.com/VoidedKN0X/TrueCtrl) (monitor and manage your TrueNAS server). Every app in the table is also in the [CtrlF-Droid repo](https://voidedkn0x.github.io/CtrlF-Droid/) for automatic updates. No change to the app itself.
+- **Usage stats share a little less.** Starting playback now only says whether it was video, music or Live TV, no longer whether you pressed Shuffle, so the stats match exactly what the README promises
+- The README's **Usage stats** section now says that, apart from those opt-in stats, JellyCtrl only talks to your own Jellyfin server; trailers and links to sites like IMDb only open in your browser when you tap them
+- - **All Ctrl apps in the README.** The README's Ctrl series table now lists all 14 apps. New in the table: [ArrCtrl](https://github.com/VoidedKN0X/ArrCtrl) (Radarr, Sonarr, Prowlarr, Bazarr, qBittorrent, autobrr and Cleanuparr in one app), [PaperCtrl](https://github.com/VoidedKN0X/PaperCtrl) (scan and browse documents on Paperless-ngx), [ProxCtrl](https://github.com/VoidedKN0X/ProxCtrl) (manage your Proxmox VE server) and [TrueCtrl](https://github.com/VoidedKN0X/TrueCtrl) (monitor and manage your TrueNAS server). Every app in the table is also in the [CtrlF-Droid repo](https://voidedkn0x.github.io/CtrlF-Droid/) for automatic updates.
 
 ## v0.1.17 (2026-10-19)
 
