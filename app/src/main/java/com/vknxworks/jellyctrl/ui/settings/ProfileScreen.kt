@@ -1,5 +1,7 @@
 package com.vknxworks.jellyctrl.ui.settings
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,8 +27,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Password
@@ -51,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -60,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vknxworks.jellyctrl.ui.components.LocalBottomClearance
 import com.vknxworks.jellyctrl.BuildConfig
+import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.changeOwnPassword
 import com.vknxworks.jellyctrl.data.api.currentUser
@@ -86,10 +92,15 @@ import com.vknxworks.jellyctrl.ui.nav.SettingsRoute
 import com.vknxworks.jellyctrl.ui.theme.Gutter
 import kotlinx.coroutines.launch
 
+private const val SPONSOR_URL = "https://github.com/sponsors/VoidedKN0X"
+private const val REPO_URL = "https://github.com/VoidedKN0X/JellyCtrl"
+private const val LICENCE_URL = "https://www.gnu.org/licenses/gpl-3.0.html"
+
 /** The You page, opened from your profile picture: who you are, your stuff, and where the settings live. */
 @Composable
 fun ProfileScreen() {
-    val c = LocalContext.current.container
+    val context = LocalContext.current
+    val c = context.container
     val nav = LocalNavigator.current
     val session by c.sessions.active.collectAsStateWithLifecycle()
     val downloads by c.downloads.entries.collectAsStateWithLifecycle()
@@ -163,6 +174,29 @@ fun ProfileScreen() {
                     )
                 }
             }
+            Group(stringResource(R.string.group_about)) {
+                GroupRow(
+                    stringResource(R.string.support_title),
+                    stringResource(R.string.support_subtitle),
+                    icon = Icons.Filled.Favorite,
+                    showChevron = true,
+                    onClick = { openLink(context, SPONSOR_URL) },
+                )
+                GroupRow(
+                    stringResource(R.string.source_title),
+                    stringResource(R.string.source_subtitle),
+                    icon = Icons.Filled.Code,
+                    showChevron = true,
+                    onClick = { openLink(context, REPO_URL) },
+                )
+                GroupRow(
+                    stringResource(R.string.licence_title),
+                    stringResource(R.string.licence_subtitle),
+                    icon = Icons.Filled.Gavel,
+                    showChevron = true,
+                    onClick = { openLink(context, LICENCE_URL) },
+                )
+            }
             Text(
                 "JellyCtrl ${BuildConfig.VERSION_NAME}, made by VKNXWorks",
                 style = MaterialTheme.typography.bodySmall,
@@ -174,6 +208,11 @@ fun ProfileScreen() {
     }
 
     if (changePassword) ChangePasswordDialog { changePassword = false }
+}
+
+/** Opens one of the app's own https links (sponsor page, source, licence) in the browser. */
+private fun openLink(context: android.content.Context, url: String) {
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) }
 }
 
 @Composable
