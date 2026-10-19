@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -17,7 +19,7 @@ val signingEnvMissing: Boolean = listOf("KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_P
 // build can't send stats at all and the setting is hidden, so builds from source never send anything.
 val aptabaseKey: String = System.getenv("APTABASE_KEY")?.trim()?.takeIf { it.isNotEmpty() }
     ?: rootProject.file("local.properties").takeIf { it.exists() }?.let { f ->
-        java.util.Properties().apply { f.inputStream().use { load(it) } }.getProperty("aptabase.key")?.trim()
+        Properties().apply { f.inputStream().use { stream -> load(stream) } }.getProperty("aptabase.key")?.trim()
     }
     ?: ""
 val aptabaseHost = "https://telemetry.vkhub.org"
