@@ -11,11 +11,13 @@ import com.vknxworks.jellyctrl.data.api.logout
 import com.vknxworks.jellyctrl.data.api.postCapabilities
 import com.vknxworks.jellyctrl.data.appDataStore
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import okhttp3.HttpUrl
@@ -155,6 +157,17 @@ class SessionManager(
         val nextActive = if (_active.value?.account?.key == key) remaining.firstOrNull() else _active.value?.account
         persist(remaining, nextActive?.key)
         if (nextActive != null) activate(nextActive) else _active.value = null
+        clearCachedImages()
+    }
+
+    /** Posters, backdrops, profile pictures and trickplay frames of the account that was signed out. */
+    private suspend fun clearCachedImages() = withContext(Dispatchers.IO) {
+        runCatching {
+            val loader = coil3.SingletonImageLoader.get(context)
+            loader.memoryCache?.clear()
+            loader.diskCache?.clear()
+        }
+        Unit
     }
 
     /** Called when the server rejects the token: drop the account so the user signs in again. */
@@ -163,6 +176,7 @@ class SessionManager(
         val remaining = _accounts.value.filterNot { it.key == acc.key }
         persist(remaining, remaining.firstOrNull()?.key)
         _active.value = remaining.firstOrNull()?.let { a -> clientFor(a)?.let { ActiveSession(a, it) } }
+        clearCachedImages()
     }
 
     suspend fun updateAdminFlag(isAdmin: Boolean) {

@@ -89,7 +89,7 @@ class Navigator(val nav: NavHostController, private val context: Context) {
             item.type == "Photo" -> return
             else -> "video"
         }
-        context.container.telemetry.track("playback_started", mapOf("kind" to kind, "shuffle" to shuffle.toString()))
+        context.container.telemetry.track("playback_started", mapOf("kind" to kind))
     }
 
     companion object {
