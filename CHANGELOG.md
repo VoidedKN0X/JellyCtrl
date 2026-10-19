@@ -4,13 +4,19 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
-## Unreleased
+## v0.1.17 (2026-10-19)
 
-README only; the app itself hasn't changed, so this doesn't make a new release.
+### New
+
+- **Optional anonymous usage stats.** After you sign in, JellyCtrl asks once whether you'd like to share anonymous usage stats. Nothing is sent unless you tap **Share stats**, and you can switch it on or off any time in **Settings > Usage stats**
+- **What's shared:** which screens you open (for example "Home", "Item" or "Settings", never which movie, show, library or person), whether you start video, music or Live TV, the app version, Android version, phone model, language, phone or tablet, and which video player setting you use
+- **What's never shared:** your server address, username, passwords, what you watch, listen to or search for, or any ID that follows you between sessions. Each session gets a new random ID, and stats from before and after you switch them off and on again aren't linked
+- **Where it goes:** to VKNXWorks' own self-hosted server (Aptabase), not to Google or any analytics company. Builds you make from source can't send stats at all, and the setting doesn't appear in them
 
 ### Changed
 
 - **PrintCtrl in the Ctrl series list.** The README's table of Ctrl apps now includes [PrintCtrl](https://github.com/VoidedKN0X/PrintCtrl), the app for Bambu Lab printers through a self-hosted Bambuddy server, and Spoolman spools.
+- The README has a new **Usage stats** section listing exactly what's collected
 
 ## v0.1.16 (2026-10-18)
 

@@ -136,6 +136,16 @@ fun SettingsScreen() {
                 }
             }
 
+            if (c.telemetry.available) {
+                Group("Usage stats", footer = USAGE_STATS_DESCRIPTION) {
+                    GroupSwitch(
+                        "Share anonymous usage stats",
+                        "Helps decide what to improve next",
+                        s.usageStats,
+                    ) { v -> update { it.copy(usageStats = v, usageStatsAsked = true) } }
+                }
+            }
+
             Group("Appearance") {
                 GroupChoice("Theme", ThemeChoice.entries.map { it to it.label }, s.theme) { v -> update { it.copy(theme = v) } }
                 GroupSwitch("Use wallpaper colours", "Replaces the default colours with ones from your wallpaper", s.dynamicColor) { v ->
