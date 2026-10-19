@@ -30,6 +30,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - Android 13 or newer
 - Jellyfin 10.9 or newer (10.10 or newer for skip intro)
 - A 64-bit phone or tablet (arm64-v8a; x86_64 is included too)
+- **Google-free:** works without Google Play services, contains no Google libraries that contact Google, and draws emoji with your phone's own emoji font
 
 ## Install
 
