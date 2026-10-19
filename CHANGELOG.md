@@ -4,6 +4,14 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.1.22 (2026-10-19)
+
+### New
+
+- **Support JellyCtrl** under **About** at the bottom of the You page (tap your profile picture) opens VKNXWorks' GitHub Sponsors page in your browser. JellyCtrl is free and open source, and sponsoring helps keep it that way
+- **Source code and issues** in the same **About** section opens JellyCtrl's GitHub repository, where you can read the code or report a bug
+- **Licence** in the same section opens the GNU General Public License v3.0 that JellyCtrl is released under
+
 ## v0.1.21 (2026-10-19)
 
 ### Fixed
