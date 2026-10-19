@@ -1,5 +1,6 @@
 package com.vknxworks.jellyctrl.ui.nav
 
+import com.vknxworks.jellyctrl.ui.components.friendlyMessage
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -143,16 +144,16 @@ private fun MainScaffold() {
     LaunchedEffect(link) {
         val l = link ?: return@LaunchedEffect
         context.container.pendingLink.value = null
-        val id = runCatching { context.container.api.resolve(l) }.getOrNull()
-        if (id != null) {
-            navController.navigate(ItemRoute(id)) { launchSingleTop = true }
-        } else {
-            android.widget.Toast.makeText(
-                context,
-                if (l is ExternalLink.Movie) "This movie isn't in your Jellyfin library yet" else "This episode isn't in your Jellyfin library yet",
-                android.widget.Toast.LENGTH_LONG,
-            ).show()
+        val result = runCatching { context.container.api.resolve(l) }
+        val id = result.getOrNull()
+        val message = when {
+            id != null -> null
+            result.isFailure -> "Couldn't look it up in Jellyfin: " + result.exceptionOrNull()!!.friendlyMessage()
+            l is ExternalLink.Movie -> "Couldn't find " + (l.title ?: "this movie") + " in your Jellyfin library"
+            else -> "Couldn't find " + (l.title ?: "this series") + " in your Jellyfin library"
         }
+        if (id != null) navController.navigate(ItemRoute(id)) { launchSingleTop = true }
+        else android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
     }
 
     fun selectTab(i: Int) {
