@@ -4,6 +4,13 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.1.20 (2026-10-19)
+
+### New
+
+- **Play in JellyCtrl from ArrCtrl.** The "Play in JellyCtrl" button on a movie or episode in [ArrCtrl](https://github.com/VoidedKN0X/ArrCtrl) now opens that movie or episode's page in JellyCtrl, ready to play, instead of just starting the app. JellyCtrl finds it in your library by its TMDB id (movies) or TVDB id, season and episode number (episodes). If the episode isn't there yet you get the series page, and if the movie or series isn't in your library a short message says so
+- Other apps can use the same `jellyctrl://item?type=movie&tmdb=…` and `jellyctrl://item?type=episode&tvdb=…&season=…&episode=…` links. They only open a page, never start playback by themselves, and web pages can't use them
+
 ## v0.1.19 (2026-10-19)
 
 JellyCtrl is now completely Google-free. Nothing changes in how you use it.

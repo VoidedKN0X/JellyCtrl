@@ -1,6 +1,7 @@
 package com.vknxworks.jellyctrl
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.graphics.Color
@@ -16,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vknxworks.jellyctrl.data.settings.ThemeChoice
 import com.vknxworks.jellyctrl.ui.nav.AppRoot
+import com.vknxworks.jellyctrl.ui.nav.ExternalLink
 import com.vknxworks.jellyctrl.ui.theme.JellyCtrlTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,7 +28,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val c = container
-        if (savedInstanceState == null) c.telemetry.appOpened()
+        if (savedInstanceState == null) {
+            c.telemetry.appOpened()
+            ExternalLink.from(intent)?.let { c.pendingLink.value = it }
+        }
         setContent {
             val settings by c.settings.settings.collectAsStateWithLifecycle()
             val dark = when (settings.theme) {
@@ -45,6 +50,11 @@ class MainActivity : ComponentActivity() {
                 AppRoot()
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        ExternalLink.from(intent)?.let { container.pendingLink.value = it }
     }
 
     /** Asked the first time something wants to show a notification (downloads, music). */

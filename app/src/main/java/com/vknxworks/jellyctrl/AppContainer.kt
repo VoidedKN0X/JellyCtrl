@@ -52,6 +52,9 @@ class AppContainer(val context: Context) {
     val downloads = DownloadRepository(context, appScope)
     val music by lazy { MusicController(context, this) }
 
+    /** A link from another app (ArrCtrl's "Play in JellyCtrl") waiting to be opened once the UI is up. */
+    val pendingLink = kotlinx.coroutines.flow.MutableStateFlow<com.vknxworks.jellyctrl.ui.nav.ExternalLink?>(null)
+
     /** Client for the signed-in account. Screens are only shown while signed in. */
     val api: JellyfinClient
         get() = sessions.active.value?.client ?: error("Not signed in")

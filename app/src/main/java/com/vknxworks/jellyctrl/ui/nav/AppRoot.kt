@@ -138,6 +138,23 @@ private fun MainScaffold() {
     }
     UsageStatsPrompt()
 
+    // "Play in JellyCtrl" from ArrCtrl: find the movie or episode in this library and open its page.
+    val link by context.container.pendingLink.collectAsStateWithLifecycle()
+    LaunchedEffect(link) {
+        val l = link ?: return@LaunchedEffect
+        context.container.pendingLink.value = null
+        val id = runCatching { context.container.api.resolve(l) }.getOrNull()
+        if (id != null) {
+            navController.navigate(ItemRoute(id)) { launchSingleTop = true }
+        } else {
+            android.widget.Toast.makeText(
+                context,
+                if (l is ExternalLink.Movie) "This movie isn't in your Jellyfin library yet" else "This episode isn't in your Jellyfin library yet",
+                android.widget.Toast.LENGTH_LONG,
+            ).show()
+        }
+    }
+
     fun selectTab(i: Int) {
         navController.navigate(topDestinations[i].route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }

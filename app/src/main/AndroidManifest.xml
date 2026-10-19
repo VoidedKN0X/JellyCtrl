@@ -34,6 +34,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- jellyctrl://item?… from other apps (ArrCtrl's "Play in JellyCtrl"). Not BROWSABLE, so web pages can't open it. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="jellyctrl" android:host="item" />
+            </intent-filter>
         </activity>
 
         <activity
