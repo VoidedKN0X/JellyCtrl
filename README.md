@@ -16,17 +16,20 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Home screen** with Continue watching, Next up and the latest from each library
 - **Skip intro, recap and credits**, next-episode autoplay and scrubbing previews
 - **Music** with background playback, queue, shuffle and synced lyrics
-- **Live TV** with a guide and recordings
-- **Downloads** for watching offline
+- **Live TV** with channels, a guide, recordings and scheduled recordings
+- **Downloads** for watching offline, with a Wi-Fi-only option
+- **Favourites** and photo libraries
 - **Remote control** for your other Jellyfin devices
-- **Full admin dashboard**: users, libraries, plugins, scheduled tasks, logs and server settings
-- **Finds servers on your network**; Quick Connect sign-in; several accounts
-- Picture-in-picture, gestures, quality limits for mobile data
+- **Full admin dashboard**: users, libraries, plugins, scheduled tasks, logs, devices, API keys and server settings
+- **Protect the server dashboard** (admins, on by default): dashboard screens can't be screenshotted or recorded, and the recent-apps preview is blank
+- **Finds servers on your network**; Quick Connect sign-in, and approve Quick Connect codes for other devices; several accounts
+- Picture-in-picture, swipe gestures, audio and subtitle language preferences, a separate quality limit for mobile data
 
 ## Requirements
 
 - Android 13 or newer
 - Jellyfin 10.9 or newer (10.10 or newer for skip intro)
+- A 64-bit phone or tablet (arm64-v8a; x86_64 is included too)
 
 ## Install
 
@@ -46,8 +49,10 @@ If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X
 ## Getting started
 
 1. Pick your server from the list, or enter its address.
-2. Sign in with your username and password, or use **Quick Connect**.
+2. Sign in with your username and password, or tap **Sign in with a code instead** to use Quick Connect.
 3. Your libraries appear on the Home screen.
+
+Favourites, downloads, Live TV, remote control, **Settings**, accounts and the server dashboard are behind your profile picture at the top right.
 
 ## Usage stats
 
