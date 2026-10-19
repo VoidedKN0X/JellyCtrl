@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Code
@@ -94,6 +95,7 @@ import kotlinx.coroutines.launch
 
 private const val SPONSOR_URL = "https://github.com/sponsors/VoidedKN0X"
 private const val REPO_URL = "https://github.com/VoidedKN0X/JellyCtrl"
+private const val ISSUES_URL = "$REPO_URL/issues"
 private const val LICENCE_URL = "https://www.gnu.org/licenses/gpl-3.0.html"
 
 /** The You page, opened from your profile picture: who you are, your stuff, and where the settings live. */
@@ -183,6 +185,13 @@ fun ProfileScreen() {
                     onClick = { openLink(context, SPONSOR_URL) },
                 )
                 GroupRow(
+                    stringResource(R.string.bugs_title),
+                    stringResource(R.string.bugs_subtitle),
+                    icon = Icons.Filled.BugReport,
+                    showChevron = true,
+                    onClick = { openLink(context, ISSUES_URL) },
+                )
+                GroupRow(
                     stringResource(R.string.source_title),
                     stringResource(R.string.source_subtitle),
                     icon = Icons.Filled.Code,
@@ -198,7 +207,7 @@ fun ProfileScreen() {
                 )
             }
             Text(
-                "JellyCtrl ${BuildConfig.VERSION_NAME}, made by VKNXWorks",
+                stringResource(R.string.about_footer, BuildConfig.VERSION_NAME),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -210,7 +219,7 @@ fun ProfileScreen() {
     if (changePassword) ChangePasswordDialog { changePassword = false }
 }
 
-/** Opens one of the app's own https links (sponsor page, source, licence) in the browser. */
+/** Opens one of the app's own https links (sponsor page, issues, source, licence) in the browser. */
 private fun openLink(context: android.content.Context, url: String) {
     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) }
 }
