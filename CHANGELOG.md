@@ -4,10 +4,18 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
-## Unreleased
+## v0.1.19 (2026-10-19)
+
+JellyCtrl is now completely Google-free. Nothing changes in how you use it.
+
+### Privacy
+
+- **Emoji no longer make JellyCtrl ask Google for a font.** A standard Android library inside the app asked Google Play services for a downloadable emoji font every time JellyCtrl started, which could make Google Play services fetch that font from Google. This lookup is now switched off: emoji are drawn with your phone's own emoji font. On phones without Google Play services nothing changes; on other phones, emoji can look slightly different if the phone's built-in emoji font is older.
+- **Checked: JellyCtrl is Google-free.** It contains no Google Play services, Firebase, ML Kit, Google Cast or Play Core, and it doesn't load fonts or anything else from Google's servers. It also never switches server addresses by itself: it always uses the address you set up, and only you can change it.
 
 ### Changed
 
+- **README: new Google-free line** under Requirements: works without Google Play services, contains no Google libraries that contact Google, and draws emoji with your phone's own emoji font.
 - **README brought up to date with 0.1.18.** The feature list now also mentions Live TV channels and scheduled recordings, the Wi-Fi-only download option, Favourites and photo libraries, devices and API keys in the admin dashboard, **Protect the server dashboard**, approving Quick Connect codes for other devices, and audio and subtitle language preferences. **Requirements** now says the app is for 64-bit phones and tablets (arm64-v8a, plus x86_64). **Getting started** uses the current **Sign in with a code instead** button name and explains that favourites, downloads, Live TV, settings and the server dashboard are behind your profile picture now that the You tab is gone. Nothing in the app has changed.
 - Tidied the changelog: removed a doubled bullet marker in the previous version's notes.
 
