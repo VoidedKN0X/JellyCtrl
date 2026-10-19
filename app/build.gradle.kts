@@ -12,6 +12,16 @@ val releaseKeystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")?.takeI
 val isCi: Boolean = System.getenv("CI") == "true" || System.getenv("GITHUB_ACTIONS") == "true"
 val signingEnvMissing: Boolean = listOf("KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD").any { System.getenv(it).isNullOrBlank() }
 
+// Opt-in usage stats go to VKNXWorks' self-hosted Aptabase server. The app key comes from the APTABASE_KEY
+// environment variable (a GitHub Actions secret) or `aptabase.key` in local.properties. Without one, the
+// build can't send stats at all and the setting is hidden, so builds from source never send anything.
+val aptabaseKey: String = System.getenv("APTABASE_KEY")?.trim()?.takeIf { it.isNotEmpty() }
+    ?: rootProject.file("local.properties").takeIf { it.exists() }?.let { f ->
+        java.util.Properties().apply { f.inputStream().use { load(it) } }.getProperty("aptabase.key")?.trim()
+    }
+    ?: ""
+val aptabaseHost = "https://telemetry.vkhub.org"
+
 android {
     namespace = "com.vknxworks.jellyctrl"
     compileSdk = 36
@@ -21,8 +31,11 @@ android {
         minSdk = 33
         targetSdk = 36
         // Bump both to publish a new release (see CHANGELOG.md).
-        versionCode = 16
-        versionName = "0.1.16"
+        versionCode = 17
+        versionName = "0.1.17"
+
+        buildConfigField("String", "APTABASE_KEY", "\"${aptabaseKey.replace("\"", "")}\"")
+        buildConfigField("String", "APTABASE_HOST", "\"$aptabaseHost\"")
 
         ndk {
             // Android 13+ phones and tablets are effectively all 64-bit ARM; keeps mpv's native libs small.

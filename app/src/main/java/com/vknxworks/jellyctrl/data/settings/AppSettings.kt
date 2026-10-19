@@ -10,6 +10,7 @@ import com.vknxworks.jellyctrl.data.appDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -41,6 +42,10 @@ data class AppSettings(
     val hwDecoding: Boolean = true,
     /** Server dashboard screens are hidden from screenshots, screen recording and the recent-apps preview. */
     val protectAdminScreens: Boolean = true,
+    /** Opt-in anonymous usage stats (off until the user says yes). */
+    val usageStats: Boolean = false,
+    /** Whether the one-time usage stats question has been answered. */
+    val usageStatsAsked: Boolean = false,
 ) {
     fun maxBitrateBps(onCellular: Boolean): Long {
         val mbps = if (onCellular && cellularBitrateMbps > 0) cellularBitrateMbps else maxBitrateMbps
@@ -65,11 +70,16 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val musicBitrate = intPreferencesKey("music_bitrate")
         val hwDec = booleanPreferencesKey("hw_decoding")
         val protectAdmin = booleanPreferencesKey("protect_admin_screens")
+        val usageStats = booleanPreferencesKey("usage_stats")
+        val usageStatsAsked = booleanPreferencesKey("usage_stats_asked")
     }
 
     val settings: StateFlow<AppSettings> = context.appDataStore.data
         .map { it.toSettings() }
         .stateIn(scope, SharingStarted.Eagerly, AppSettings())
+
+    /** The stored settings as they're read and changed, without [settings]' placeholder defaults at start-up. */
+    val stored: Flow<AppSettings> = context.appDataStore.data.map { it.toSettings() }
 
     private fun Preferences.toSettings() = AppSettings(
         engine = enumOr(this[K.engine], PlayerEngineChoice.AUTO),
@@ -87,6 +97,8 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         musicBitrateKbps = this[K.musicBitrate] ?: 320,
         hwDecoding = this[K.hwDec] ?: true,
         protectAdminScreens = this[K.protectAdmin] ?: true,
+        usageStats = this[K.usageStats] ?: false,
+        usageStatsAsked = this[K.usageStatsAsked] ?: false,
     )
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
@@ -107,6 +119,8 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             p[K.musicBitrate] = s.musicBitrateKbps
             p[K.hwDec] = s.hwDecoding
             p[K.protectAdmin] = s.protectAdminScreens
+            p[K.usageStats] = s.usageStats
+            p[K.usageStatsAsked] = s.usageStatsAsked
         }
     }
 
