@@ -25,6 +25,10 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Finds servers on your network**; Quick Connect sign-in, and approve Quick Connect codes for other devices; several accounts
 - Picture-in-picture, swipe gestures, audio and subtitle language preferences, a separate quality limit for mobile data
 
+## Screenshots
+
+Coming soon.
+
 ## Requirements
 
 - Android 13 or newer
