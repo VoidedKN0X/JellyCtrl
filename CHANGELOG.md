@@ -4,6 +4,12 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+### Changed
+
+- **README**: a Screenshots section (screenshots are coming soon), and a link preview image (`.github/assets/social-preview.png`) with JellyCtrl's icon, name and summary, for when the repo is shared on Reddit, Discord or elsewhere
+
 ## v0.1.23 (2026-10-19)
 
 ### Fixed
