@@ -4,6 +4,13 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.1.21 (2026-10-19)
+
+### Fixed
+
+- **Play in JellyCtrl from ArrCtrl now finds your movies and episodes.** JellyCtrl said a movie or series wasn't in your library even when it was. It only looked for a TMDB id (movies) or a TVDB id (series), and recent Jellyfin versions often don't store TVDB ids at all. It now searches by title first and matches on any id ArrCtrl sends (TMDB, TVDB or IMDb); if none match, it takes the one item with the same title and year. Only then does it go through the whole library by id. Use it with ArrCtrl 1.0.1 or newer, which sends the title, year and all ids; links from older ArrCtrl versions still work as before
+- **A clear message when the lookup fails.** If Jellyfin can't be reached, JellyCtrl now says so (with the reason) instead of claiming the movie or series isn't in your library, and the "couldn't find" message names the movie or series
+
 ## v0.1.20 (2026-10-19)
 
 ### New
