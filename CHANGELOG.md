@@ -4,20 +4,18 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
-## v0.1.24 (2026-10-19)
+## v0.1.23 (2026-10-19)
+
+### Fixed
+
+- **Play in JellyCtrl from ArrCtrl works.** Opening a movie or episode from ArrCtrl always failed: JellyCtrl showed "Couldn't look it up in Jellyfin: The coroutine scope left the composition" (or, in 0.1.20, said the item wasn't in your library). JellyCtrl was cancelling its own lookup the moment it started. The lookup now runs to the end and opens the movie or episode page
 
 ### Changed
 
 - **One About section in every Ctrl app**: Support, Report a bug, Source code and Licence (GPL-3.0), with the version underneath, at the bottom of the You page (tap your profile picture). Every Ctrl app now has the same four rows, in the same order, with the same wording and icons
 - **Report a bug** is a new row in **About** that opens JellyCtrl's GitHub issues page, where you can report a problem or suggest an idea
 - **Source code and issues** is now called **Source code**, since reporting bugs has its own row. It still opens JellyCtrl's GitHub repository
-- The line under **About** now reads "JellyCtrl 0.1.24 · VKNXWorks", the same as in the other Ctrl apps
-
-## v0.1.23 (2026-10-19)
-
-### Fixed
-
-- **Play in JellyCtrl from ArrCtrl works.** Opening a movie or episode from ArrCtrl always failed: JellyCtrl showed "Couldn't look it up in Jellyfin: The coroutine scope left the composition" (or, in 0.1.20, said the item wasn't in your library). JellyCtrl was cancelling its own lookup the moment it started. The lookup now runs to the end and opens the movie or episode page
+- The line under **About** now reads "JellyCtrl 0.1.23 · VKNXWorks", the same as in the other Ctrl apps
 
 ## v0.1.22 (2026-10-19)
 
