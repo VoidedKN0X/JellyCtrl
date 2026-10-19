@@ -283,3 +283,31 @@ suspend fun JellyfinClient.updateItem(id: String, raw: JsonObject) = postUnit("I
 
 /** Download URL; the worker authenticates it with the Authorization header. */
 fun JellyfinClient.downloadUrl(id: String): String = url("Items/$id/Download").toString()
+
+/**
+ * The first item of [type] ("Movie" or "Series") whose provider id [key] ("Tmdb" or "Tvdb") is [value], or null when it
+ * isn't in the library. Jellyfin can't filter by a provider id's value, so this pages through the items that have one,
+ * asking only for their ids.
+ */
+suspend fun JellyfinClient.findByProviderId(type: String, key: String, value: String): BaseItemDto? {
+    var start = 0
+    while (true) {
+        val page = get<ItemsResult>(
+            "Items",
+            mapOf(
+                "userId" to requireUserId(),
+                "includeItemTypes" to type,
+                "recursive" to true,
+                "has${key}Id" to true,
+                "fields" to "ProviderIds",
+                "enableImages" to false,
+                "enableUserData" to false,
+                "startIndex" to start,
+                "limit" to 500,
+            ),
+        )
+        page.items.firstOrNull { item -> item.providerIds.any { (k, v) -> k.equals(key, ignoreCase = true) && v == value } }?.let { return it }
+        start += page.items.size
+        if (page.items.isEmpty() || start >= page.totalRecordCount) return null
+    }
+}
