@@ -1,5 +1,6 @@
 package com.vknxworks.jellyctrl.ui.nav
 
+import kotlinx.coroutines.flow.filterNotNull
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -140,20 +141,29 @@ private fun MainScaffold() {
     UsageStatsPrompt()
 
     // "Play in JellyCtrl" from ArrCtrl: find the movie or episode in this library and open its page.
-    val link by context.container.pendingLink.collectAsStateWithLifecycle()
-    LaunchedEffect(link) {
-        val l = link ?: return@LaunchedEffect
-        context.container.pendingLink.value = null
-        val result = runCatching { context.container.api.resolve(l) }
-        val id = result.getOrNull()
-        val message = when {
-            id != null -> null
-            result.isFailure -> "Couldn't look it up in Jellyfin: " + result.exceptionOrNull()!!.friendlyMessage()
-            l is ExternalLink.Movie -> "Couldn't find " + (l.title ?: "this movie") + " in your Jellyfin library"
-            else -> "Couldn't find " + (l.title ?: "this series") + " in your Jellyfin library"
+    // One long-lived collector: clearing the pending link must not restart (and so cancel) a lookup in progress.
+    LaunchedEffect(Unit) {
+        context.container.pendingLink.filterNotNull().collect { l ->
+            context.container.pendingLink.value = null
+            val result = try {
+                Result.success(context.container.api.resolve(l))
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Result.failure(e)
+            }
+            val id = result.getOrNull()
+            if (id != null) {
+                navController.navigate(ItemRoute(id)) { launchSingleTop = true }
+            } else {
+                val message = when {
+                    result.isFailure -> "Couldn't look it up in Jellyfin: " + result.exceptionOrNull()!!.friendlyMessage()
+                    l is ExternalLink.Movie -> "Couldn't find " + (l.title ?: "this movie") + " in your Jellyfin library"
+                    else -> "Couldn't find " + (l.title ?: "this series") + " in your Jellyfin library"
+                }
+                android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
+            }
         }
-        if (id != null) navController.navigate(ItemRoute(id)) { launchSingleTop = true }
-        else android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
     }
 
     fun selectTab(i: Int) {

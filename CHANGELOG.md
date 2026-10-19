@@ -12,6 +12,12 @@ To publish a new version: bump `versionCode` and `versionName` in `app/build.gra
 - **Source code and issues** in the same **About** section opens JellyCtrl's GitHub repository, where you can read the code or report a bug
 - **Licence** in the same section opens the GNU General Public License v3.0 that JellyCtrl is released under
 
+## v0.1.22 (2026-10-19)
+
+### Fixed
+
+- **Play in JellyCtrl from ArrCtrl works.** Opening a movie or episode from ArrCtrl always failed: JellyCtrl showed "Couldn't look it up in Jellyfin: The coroutine scope left the composition" (or, in 0.1.20, said the item wasn't in your library). JellyCtrl was cancelling its own lookup the moment it started. The lookup now runs to the end and opens the movie or episode page
+
 ## v0.1.21 (2026-10-19)
 
 ### Fixed
