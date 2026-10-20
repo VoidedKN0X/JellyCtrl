@@ -34,7 +34,7 @@ Coming soon.
 - Android 13 or newer
 - Jellyfin 10.9 or newer (10.10 or newer for skip intro)
 - A 64-bit phone or tablet (arm64-v8a; x86_64 is included too)
-- **Google-free:** works without Google Play services, contains no Google libraries that contact Google, and draws emoji with your phone's own emoji font
+- **Google-free and de-Googled:** no Google Play services, Firebase or other Google services, and the app never contacts Google. It works the same on de-Googled phones (GrapheneOS, CalyxOS, /e/OS, LineageOS without Google apps).
 
 ## Install
 

@@ -4,6 +4,19 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.1.25 (2026-10-20)
+
+JellyCtrl is now Google-free and de-Googled.
+
+### Changed
+
+- **Media controls trust the apps built into your phone.** JellyCtrl's music player used to accept controls only from a fixed list of named apps (system UI, Bluetooth, car mode, a car assistant and voice controls), some of them Google's. It now accepts the apps that are part of your phone's system, plus apps Android itself marks as trusted for media control, so the notification, lock screen, Bluetooth and car controls keep working as before, also on de-Googled phones whose built-in apps have different names. JellyCtrl checks which app is really asking before it trusts it, and apps you installed yourself still can't control playback.
+- **README**: the Google-free line now reads "Google-free and de-Googled": no Google Play services, Firebase or other Google services, the app never contacts Google, and it works the same on de-Googled phones (GrapheneOS, CalyxOS, /e/OS, LineageOS without Google apps). It's the only place Google is mentioned in the README.
+
+### Privacy
+
+- **No mention of Google left in the app's own code.** JellyCtrl has no Google Play services, Firebase or other Google services and never contacts Google: it only talks to your Jellyfin server. The list of named Google apps in the music player and a technical note in its setup file are gone. It works the same on de-Googled phones such as GrapheneOS, CalyxOS, /e/OS and LineageOS without Google apps.
+
 ## v0.1.24 (2026-10-20)
 
 ### Privacy
