@@ -29,7 +29,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val c = container
         if (savedInstanceState == null) {
-            c.telemetry.appOpened()
             ExternalLink.from(intent)?.let { c.pendingLink.value = it }
         }
         setContent {

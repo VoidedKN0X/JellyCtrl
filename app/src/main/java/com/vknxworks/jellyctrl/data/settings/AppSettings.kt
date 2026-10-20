@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 enum class PlayerEngineChoice(val label: String) {
     AUTO("Automatic (Media3, mpv when needed)"),
@@ -42,10 +43,6 @@ data class AppSettings(
     val hwDecoding: Boolean = true,
     /** Server dashboard screens are hidden from screenshots, screen recording and the recent-apps preview. */
     val protectAdminScreens: Boolean = true,
-    /** Opt-in anonymous usage stats (off until the user says yes). */
-    val usageStats: Boolean = false,
-    /** Whether the one-time usage stats question has been answered. */
-    val usageStatsAsked: Boolean = false,
 ) {
     fun maxBitrateBps(onCellular: Boolean): Long {
         val mbps = if (onCellular && cellularBitrateMbps > 0) cellularBitrateMbps else maxBitrateMbps
@@ -70,13 +67,18 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val musicBitrate = intPreferencesKey("music_bitrate")
         val hwDec = booleanPreferencesKey("hw_decoding")
         val protectAdmin = booleanPreferencesKey("protect_admin_screens")
-        val usageStats = booleanPreferencesKey("usage_stats")
-        val usageStatsAsked = booleanPreferencesKey("usage_stats_asked")
+        /** Left over from the optional stats removed in 0.1.24; deleted at start and on every save. */
+        val legacy = listOf(booleanPreferencesKey("usage_stats"), booleanPreferencesKey("usage_stats_asked"))
     }
 
     val settings: StateFlow<AppSettings> = context.appDataStore.data
         .map { it.toSettings() }
         .stateIn(scope, SharingStarted.Eagerly, AppSettings())
+
+    init {
+        // Delete what the removed optional stats stored, so nothing of them stays on the phone.
+        scope.launch { context.appDataStore.edit { p -> K.legacy.forEach { p.remove(it) } } }
+    }
 
     /** The stored settings as they're read and changed, without [settings]' placeholder defaults at start-up. */
     val stored: Flow<AppSettings> = context.appDataStore.data.map { it.toSettings() }
@@ -97,8 +99,6 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         musicBitrateKbps = this[K.musicBitrate] ?: 320,
         hwDecoding = this[K.hwDec] ?: true,
         protectAdminScreens = this[K.protectAdmin] ?: true,
-        usageStats = this[K.usageStats] ?: false,
-        usageStatsAsked = this[K.usageStatsAsked] ?: false,
     )
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
@@ -119,8 +119,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             p[K.musicBitrate] = s.musicBitrateKbps
             p[K.hwDec] = s.hwDecoding
             p[K.protectAdmin] = s.protectAdminScreens
-            p[K.usageStats] = s.usageStats
-            p[K.usageStatsAsked] = s.usageStatsAsked
+            K.legacy.forEach { p.remove(it) }
         }
     }
 
