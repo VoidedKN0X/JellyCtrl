@@ -57,7 +57,6 @@ class Navigator(val nav: NavHostController, private val context: Context) {
 
     /** Start playback. Video opens the player; audio goes to the music queue. */
     fun play(item: BaseItemDto, fromStart: Boolean = false) {
-        trackPlayback(item)
         when {
             item.type == "Program" -> item.channelId?.let { PlayerActivity.start(context, it, startMs = 0) }
             item.mediaType == "Audio" || item.type in AUDIO_CONTAINERS -> context.container.music.playItem(item)
@@ -73,23 +72,11 @@ class Navigator(val nav: NavHostController, private val context: Context) {
     }
 
     fun shuffle(item: BaseItemDto) {
-        trackPlayback(item, shuffle = true)
         if (item.mediaType == "Audio" || item.type in AUDIO_CONTAINERS || item.collectionType == "music") {
             context.container.music.playContainer(item, shuffle = true)
         } else {
             PlayerActivity.startContainer(context, item.id, shuffle = true)
         }
-    }
-
-    /** Only what kind of thing started playing, never which item. */
-    private fun trackPlayback(item: BaseItemDto, shuffle: Boolean = false) {
-        val kind = when {
-            item.type == "Program" || item.type == "TvChannel" -> "live_tv"
-            item.mediaType == "Audio" || item.type in AUDIO_CONTAINERS || item.collectionType == "music" -> "music"
-            item.type == "Photo" -> return
-            else -> "video"
-        }
-        context.container.telemetry.track("playback_started", mapOf("kind" to kind))
     }
 
     companion object {

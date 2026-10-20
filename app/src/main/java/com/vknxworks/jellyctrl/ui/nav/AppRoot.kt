@@ -95,7 +95,6 @@ import com.vknxworks.jellyctrl.ui.settings.ProfileScreen
 import com.vknxworks.jellyctrl.ui.library.LibrariesScreen
 import com.vknxworks.jellyctrl.ui.settings.QuickConnectApproveScreen
 import com.vknxworks.jellyctrl.ui.settings.SettingsScreen
-import com.vknxworks.jellyctrl.ui.settings.UsageStatsPrompt
 
 @Composable
 fun AppRoot() {
@@ -131,14 +130,6 @@ private fun MainScaffold() {
     val settings by context.container.settings.settings.collectAsStateWithLifecycle()
     val onAdminScreen = dest != null && ADMIN_ROUTES.any { dest.hasRoute(it) }
     ProtectWindow(onAdminScreen && settings.protectAdminScreens)
-
-    // Usage stats (only if the user opted in): the kind of screen, never its contents or the item it shows.
-    val entryId = backStack?.id
-    val screen = dest?.route?.let(::screenName)
-    LaunchedEffect(entryId) {
-        if (screen != null) context.container.telemetry.track("screen_viewed", mapOf("screen" to screen))
-    }
-    UsageStatsPrompt()
 
     // "Play in JellyCtrl" from ArrCtrl: find the movie or episode in this library and open its page.
     // One long-lived collector: clearing the pending link must not restart (and so cancel) a lookup in progress.
@@ -272,13 +263,6 @@ private fun PhoneLayout(
         }
     }
 }
-
-/**
- * "com.vknxworks.jellyctrl.ui.nav.ItemRoute/{id}?…" -> "Item". Only the route's class name: arguments (item IDs,
- * library and person names, titles) are dropped.
- */
-private fun screenName(route: String): String =
-    route.substringBefore('/').substringBefore('?').substringAfterLast('.').removeSuffix("Route")
 
 /** Server dashboard screens show API keys, logs, users and server settings. */
 private val ADMIN_ROUTES = listOf(

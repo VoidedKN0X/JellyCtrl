@@ -8,7 +8,6 @@ import com.vknxworks.jellyctrl.data.api.ServerAuthInterceptor
 import com.vknxworks.jellyctrl.data.auth.SessionManager
 import com.vknxworks.jellyctrl.data.download.DownloadRepository
 import com.vknxworks.jellyctrl.data.settings.SettingsRepository
-import com.vknxworks.jellyctrl.data.telemetry.Telemetry
 import com.vknxworks.jellyctrl.music.MusicController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,7 +47,6 @@ class AppContainer(val context: Context) {
 
     val sessions = SessionManager(context, http, appScope)
     val settings = SettingsRepository(context, appScope)
-    val telemetry = Telemetry(context, settings, appScope)
     val downloads = DownloadRepository(context, appScope)
     val music by lazy { MusicController(context, this) }
 
