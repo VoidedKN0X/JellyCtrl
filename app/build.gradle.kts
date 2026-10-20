@@ -21,12 +21,12 @@ android {
         minSdk = 33
         targetSdk = 36
         // Bump both to publish a new release (see CHANGELOG.md).
-        versionCode = 25
-        versionName = "0.1.25"
+        versionCode = 26
+        versionName = "0.1.26"
 
         ndk {
-            // Android 13+ phones and tablets are effectively all 64-bit ARM; keeps mpv's native libs small.
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            // 64-bit ARM phones and tablets only (arm64-v8a), like every Ctrl app; keeps mpv's native libs small.
+            abiFilters += listOf("arm64-v8a")
         }
     }
 
