@@ -1,0 +1,16 @@
+<p>A native Android app for Jellyfin.</p>
+<ul>
+<li>Media3 player with automatic mpv fallback for difficult formats and subtitles</li>
+<li>Home with Continue watching, Next up and latest per library</li>
+<li>Skip intro, recap and credits, next-episode autoplay and scrubbing previews</li>
+<li>Music with background playback, queue, shuffle and synced lyrics</li>
+<li>Live TV with channels, guide, recordings and scheduled recordings</li>
+<li>Downloads for offline watching</li>
+<li>Remote control for your other Jellyfin devices</li>
+<li>Full admin dashboard, protected from screenshots</li>
+<li>Server discovery, Quick Connect and several accounts</li>
+<li>Picture-in-picture, gestures and a mobile-data quality limit</li>
+</ul>
+<p>Needs Jellyfin 10.9 or newer.</p>
+<p>Google-free and de-Googled: no Google Play services, Firebase or other Google services, and the app never contacts Google. It works the same on de-Googled phones (GrapheneOS, CalyxOS, /e/OS, LineageOS without Google apps).</p>
+<p>Telemetry-free: no analytics, crash reporting, usage stats or tracking of any kind.</p>
