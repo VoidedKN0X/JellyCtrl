@@ -36,7 +36,6 @@ class MusicService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        running = true
         val player = ExoPlayer.Builder(this)
             .setAudioAttributes(
                 AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
@@ -66,6 +65,10 @@ class MusicService : MediaSessionService() {
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_ENDED) stopReport(player)
+            }
+
+            override fun onEvents(player: Player, events: Player.Events) {
+                updateRunning(player)
             }
         })
 
@@ -150,14 +153,24 @@ class MusicService : MediaSessionService() {
         }
         session = null
         scope.cancel()
-        running = false
-        // With the app locked, the sign-in was only kept in memory for playback.
-        container.sessions.mediaStopped()
+        if (running) {
+            running = false
+            // With the app locked, the sign-in was only kept in memory for playback.
+            container.sessions.mediaStopped()
+        }
         super.onDestroy()
     }
 
+    /** Music is playing or paused with a queue (its notification is up): that keeps the sign-in while locked. */
+    private fun updateRunning(player: Player) {
+        val now = player.mediaItemCount > 0 && player.playbackState != Player.STATE_IDLE && player.playbackState != Player.STATE_ENDED
+        if (now == running) return
+        running = now
+        if (!now) container.sessions.mediaStopped()
+    }
+
     companion object {
-        /** The music service exists (playing or paused with a queue): it keeps the sign-in while locked. */
+        /** Music is playing or paused with a queue: it keeps the sign-in in memory while the app is locked. */
         @Volatile var running = false
             private set
     }
