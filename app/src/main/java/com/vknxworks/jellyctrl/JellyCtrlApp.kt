@@ -18,6 +18,7 @@ class JellyCtrlApp : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
+        AppStrings.context = this
         container = AppContainer(this)
         // The app lock: lock when the app leaves the screen, or after the chosen time away.
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
@@ -31,7 +32,7 @@ class JellyCtrlApp : Application(), SingletonImageLoader.Factory {
         })
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_DOWNLOADS, "Downloads", NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(CHANNEL_DOWNLOADS, getString(R.string.channel_downloads), NotificationManager.IMPORTANCE_LOW)
         )
     }
 

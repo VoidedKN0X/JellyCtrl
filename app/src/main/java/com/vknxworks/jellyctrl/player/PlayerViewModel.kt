@@ -41,6 +41,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 data class PlayerArgs(
     val itemId: String?,
@@ -125,7 +127,7 @@ class PlayerViewModel(
                         limit = 1000,
                     ).items
                 }
-                if (list.isEmpty()) throw IllegalStateException("Nothing to play here")
+                if (list.isEmpty()) throw IllegalStateException(str(R.string.nothing_to_play_here))
                 queue = list.map { it.id }
                 queueIndex = 0
                 if (!args.shuffle && container.type == "Series") {
@@ -171,7 +173,7 @@ class PlayerViewModel(
                 val it: BaseItemDto = if (cl != null && c.isOnline()) {
                     runCatching { cl.item(id) }.getOrElse { e -> c.downloads.find(id)?.item ?: throw e }
                 } else {
-                    c.downloads.find(id)?.item ?: throw IllegalStateException("You're offline and this isn't downloaded")
+                    c.downloads.find(id)?.item ?: throw IllegalStateException(str(R.string.you_re_offline_and_this_isn))
                 }
                 item = it
                 val resumeMs = it.userData?.playbackPositionTicks?.ticksToMs() ?: 0L
@@ -181,7 +183,7 @@ class PlayerViewModel(
                 val resolved = if (local != null && mediaSourceId == null) {
                     PlaybackResolver.offline(it, local.absolutePath, engineOverride ?: settings.engine)
                 } else {
-                    val api = cl ?: throw IllegalStateException("Not signed in")
+                    val api = cl ?: throw IllegalStateException(str(R.string.not_signed_in))
                     PlaybackResolver.resolve(
                         api, id, engineOverride ?: settings.engine, currentMaxBitrate(), start,
                         mediaSourceId, audioIndex, subtitleIndex,
@@ -228,7 +230,7 @@ class PlayerViewModel(
         EngineKind.MPV -> try {
             MpvEngine(appContext, settings.hwDecoding, ::mpvAuthHeader)
         } catch (e: Throwable) {
-            notice = e.message?.let { "mpv unavailable ($it), using Media3" } ?: "mpv unavailable, using Media3"
+            notice = e.message?.let { str(R.string.mpv_unavailable_x_using_media3, it) } ?: str(R.string.mpv_unavailable_using_media3)
             Media3Engine(appContext, c.http)
         }
     }
@@ -399,7 +401,7 @@ class PlayerViewModel(
             loading = true
             error = null
             try {
-                val cl = client ?: throw IllegalStateException("Not signed in")
+                val cl = client ?: throw IllegalStateException(str(R.string.not_signed_in))
                 val resolved = PlaybackResolver.resolve(
                     cl, id, engineOverride ?: settings.engine, currentMaxBitrate(), pos,
                     sourceId, audioIndex, subtitleIndex,
@@ -445,11 +447,11 @@ class PlayerViewModel(
                     pb.offline -> PlaybackResolver.offline(item ?: throw IllegalStateException(message), pb.url.removePrefix("file://"),
                         if (pb.engine == EngineKind.MEDIA3) PlayerEngineChoice.MPV else PlayerEngineChoice.MEDIA3)
                     pb.engine == EngineKind.MEDIA3 && !pb.isTranscoding && settings.engine != PlayerEngineChoice.MEDIA3 -> {
-                        notice = "Switched to mpv for this file"
+                        notice = str(R.string.switched_to_mpv_for_this_file)
                         PlaybackResolver.resolve(cl, id, PlayerEngineChoice.MPV, currentMaxBitrate(), pos, pb.source.id, pb.audioIndex, pb.subtitleIndex ?: -1)
                     }
                     else -> {
-                        notice = "Direct play failed - transcoding"
+                        notice = str(R.string.direct_play_failed_transcoding)
                         PlaybackResolver.resolve(cl, id, PlayerEngineChoice.MEDIA3, currentMaxBitrate(), pos, pb.source.id, pb.audioIndex, pb.subtitleIndex ?: -1, forceTranscode = true)
                     }
                 }

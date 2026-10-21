@@ -24,6 +24,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.UUID
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
 
@@ -106,7 +108,7 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
 
     fun dismissHttpFallback() {
         httpFallbackFor = null
-        error = "Couldn't connect securely. Check the address, or type http:// in front of it to use an unencrypted connection."
+        error = str(R.string.couldn_t_connect_securely_check_the)
     }
 
     private fun probe(candidates: List<String>, offerHttpFor: String? = null) {
@@ -118,7 +120,7 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
                 try {
                     val client = c.sessions.anonymousClient(url)
                     val info = client.publicSystemInfo()
-                    if (info.id.isNullOrBlank()) throw IllegalStateException("That address isn't a Jellyfin server")
+                    if (info.id.isNullOrBlank()) throw IllegalStateException(str(R.string.that_address_isn_t_a_jellyfin))
                     server = Server(client.baseUrl, info)
                     publicUsers = client.publicUsers()
                     quickConnectAvailable = client.quickConnectEnabled()
@@ -135,7 +137,7 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
             if (offerHttpFor != null && !tlsProblem && err is java.io.IOException && err !is com.vknxworks.jellyctrl.data.api.ApiException && err !is java.net.UnknownHostException) {
                 httpFallbackFor = offerHttpFor
             } else {
-                error = err?.friendlyMessage() ?: "Couldn't connect"
+                error = err?.friendlyMessage() ?: str(R.string.couldn_t_connect)
             }
         }
     }
@@ -150,7 +152,7 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
     fun signIn(onDone: () -> Unit) {
         val s = server ?: return
         if (username.isBlank()) {
-            error = "Enter your username"
+            error = str(R.string.enter_your_username)
             return
         }
         error = null
@@ -165,7 +167,7 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
                 onDone()
             } catch (e: Throwable) {
                 error = if ((e as? com.vknxworks.jellyctrl.data.api.ApiException)?.code == 401) {
-                    "Wrong username or password"
+                    str(R.string.wrong_username_or_password)
                 } else e.friendlyMessage()
             } finally {
                 signingIn = false
@@ -189,7 +191,7 @@ class ServerSetupViewModel(private val c: AppContainer) : ViewModel() {
                     delay(3000)
                     if (System.currentTimeMillis() > deadline) {
                         quickConnectCode = null
-                        error = "The Quick Connect code expired. Start again to get a new one."
+                        error = str(R.string.the_quick_connect_code_expired_start)
                         break
                     }
                     val st = client.quickConnectState(start.secret)

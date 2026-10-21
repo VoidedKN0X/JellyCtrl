@@ -10,6 +10,8 @@ import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.player.PlayerActivity
 import kotlin.reflect.KClass
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 /** One place that knows where each kind of item opens and how it plays. */
 class Navigator(val nav: NavHostController, private val context: Context) {
@@ -49,8 +51,8 @@ class Navigator(val nav: NavHostController, private val context: Context) {
             "Folder" -> navigate(LibraryRoute(item.id, item.name ?: "", "folders"))
             "Photo" -> navigate(PhotoRoute(item.parentId ?: item.id, item.id))
             "TvChannel", "Program" -> play(item)
-            "Genre", "MusicGenre" -> navigate(ListRoute(item.name ?: "Genre", "genre", item.name))
-            "Studio" -> navigate(ListRoute(item.name ?: "Studio", "studio", item.id))
+            "Genre", "MusicGenre" -> navigate(ListRoute(item.name ?: str(R.string.genre), "genre", item.name))
+            "Studio" -> navigate(ListRoute(item.name ?: str(R.string.studio), "studio", item.id))
             else -> navigate(ItemRoute(item.id))
         }
     }
@@ -67,7 +69,7 @@ class Navigator(val nav: NavHostController, private val context: Context) {
                 item.id,
                 startMs = if (fromStart) 0 else null,
             )
-            else -> Toast.makeText(context, "This item can't be played", Toast.LENGTH_SHORT).show()
+            else -> Toast.makeText(context, str(R.string.this_item_can_t_be_played), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -84,4 +86,4 @@ class Navigator(val nav: NavHostController, private val context: Context) {
     }
 }
 
-val LocalNavigator = staticCompositionLocalOf<Navigator> { error("No navigator") }
+val LocalNavigator = staticCompositionLocalOf<Navigator> { error(str(R.string.no_navigator)) }

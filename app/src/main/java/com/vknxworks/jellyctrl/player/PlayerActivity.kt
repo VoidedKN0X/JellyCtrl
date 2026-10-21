@@ -37,6 +37,8 @@ import com.vknxworks.jellyctrl.ui.lock.AppLockOverlay
 import com.vknxworks.jellyctrl.ui.lock.lockCovering
 import com.vknxworks.jellyctrl.ui.theme.JellyCtrlTheme
 import com.vknxworks.jellyctrl.data.settings.ThemeChoice
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 class PlayerActivity : ComponentActivity() {
 
@@ -144,8 +146,8 @@ class PlayerActivity : ComponentActivity() {
         val playing = st.playWhenReady
         val action = RemoteAction(
             Icon.createWithResource(this, if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play),
-            if (playing) "Pause" else "Play",
-            if (playing) "Pause" else "Play",
+            if (playing) str(R.string.pause) else str(R.string.play),
+            if (playing) str(R.string.pause) else str(R.string.play),
             PendingIntent.getBroadcast(
                 this, 0, Intent(ACTION_PIP_TOGGLE).setPackage(packageName),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,

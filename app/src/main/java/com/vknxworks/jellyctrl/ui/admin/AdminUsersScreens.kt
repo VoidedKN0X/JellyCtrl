@@ -67,6 +67,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 /** Password keyboards don't learn or suggest what's typed. */
 private val PasswordKeyboard = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false)
@@ -81,8 +84,8 @@ fun AdminUsersScreen() {
     var creating by remember { mutableStateOf(false) }
 
     AdminScaffold(
-        "Users", actions, loader.refreshing, { loader.reload(silent = true) },
-        floating = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Add user") }) },
+        stringResource(R.string.users), actions, loader.refreshing, { loader.reload(silent = true) },
+        floating = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(stringResource(R.string.add_user)) }) },
     ) {
         LoadContent(loader) { users ->
             LazyColumn(Modifier.fillMaxSize()) {
@@ -92,11 +95,11 @@ fun AdminUsersScreen() {
                         supportingContent = {
                             Text(
                                 listOfNotNull(
-                                    if (u.policy?.isAdministrator == true) "Administrator" else null,
-                                    if (u.policy?.isDisabled == true) "Disabled" else null,
-                                    if (u.policy?.isHidden == true) "Hidden" else null,
-                                    u.lastActivityDate?.let { "Active ${formatDateTime(it)}" },
-                                ).joinToString("  ·  ").ifBlank { "Never signed in" }
+                                    if (u.policy?.isAdministrator == true) stringResource(R.string.administrator) else null,
+                                    if (u.policy?.isDisabled == true) stringResource(R.string.disabled) else null,
+                                    if (u.policy?.isHidden == true) stringResource(R.string.hidden) else null,
+                                    u.lastActivityDate?.let { stringResource(R.string.active_x, formatDateTime(it)) },
+                                ).joinToString("  ·  ").ifBlank { stringResource(R.string.never_signed_in) }
                             )
                         },
                         leadingContent = {
@@ -125,21 +128,21 @@ fun AdminUsersScreen() {
         var pw by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { creating = false },
-            title = { Text("New user") },
+            title = { Text(stringResource(R.string.new_user)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true)
-                    OutlinedTextField(pw, { pw = it }, label = { Text("Password (optional)") }, singleLine = true, visualTransformation = PasswordVisualTransformation(),
+                    OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.name)) }, singleLine = true)
+                    OutlinedTextField(pw, { pw = it }, label = { Text(stringResource(R.string.password_optional)) }, singleLine = true, visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = PasswordKeyboard)
                 }
             },
             confirmButton = {
                 TextButton(enabled = name.isNotBlank(), onClick = {
                     creating = false
-                    actions.run("User created", after = { loader.reload(silent = true) }) { client.createUser(name.trim(), pw) }
-                }) { Text("Create") }
+                    actions.run(str(R.string.user_created), after = { loader.reload(silent = true) }) { client.createUser(name.trim(), pw) }
+                }) { Text(stringResource(R.string.create)) }
             },
-            dismissButton = { TextButton(onClick = { creating = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { creating = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -162,33 +165,33 @@ fun AdminUserScreen(id: String) {
     var confirmDelete by remember { mutableStateOf(false) }
     var newPassword by remember { mutableStateOf<String?>(null) }
 
-    AdminScaffold(name ?: "User", actions) {
+    AdminScaffold(name ?: stringResource(R.string.user), actions) {
         LoadContent(loader) { (user, libs) ->
             val p = policy ?: (user["Policy"] as? JsonObject)?.also { policy = it } ?: JsonObject(emptyMap())
             val currentName = name ?: user.str("Name").orEmpty().also { name = it }
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
-                SectionTitle("Profile")
+                SectionTitle(stringResource(R.string.profile))
                 OutlinedTextField(
                     currentName, { name = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 )
                 Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = {
                         val updatedUser = JsonObject(user.toMutableMap().apply { put("Name", JsonPrimitive(currentName)) })
-                        actions.run("Saved", after = { loader.reload(silent = true) }) {
+                        actions.run(str(R.string.saved), after = { loader.reload(silent = true) }) {
                             if (currentName != user.str("Name")) client.updateUser(id, updatedUser)
                             client.updateUserPolicy(id, p)
                         }
-                    }) { Text("Save changes") }
-                    OutlinedButton(onClick = { newPassword = "" }) { Text("Set password") }
+                    }) { Text(stringResource(R.string.save_changes)) }
+                    OutlinedButton(onClick = { newPassword = "" }) { Text(stringResource(R.string.set_password)) }
                 }
 
-                SectionTitle("Library access")
+                SectionTitle(stringResource(R.string.library_access))
                 val allFolders = p["EnableAllFolders"]?.jsonPrimitive?.booleanOrNull ?: true
                 ListItem(
-                    headlineContent = { Text("Access to all libraries") },
+                    headlineContent = { Text(stringResource(R.string.access_to_all_libraries)) },
                     trailingContent = { Checkbox(allFolders, onCheckedChange = { policy = p.with("EnableAllFolders", JsonPrimitive(it)) }) },
                 )
                 if (!allFolders) {
@@ -208,7 +211,7 @@ fun AdminUserScreen(id: String) {
                     }
                 }
 
-                SectionTitle("Permissions")
+                SectionTitle(stringResource(R.string.permissions))
                 JsonFieldsEditor(
                     p,
                     onChange = { k, v -> policy = p.with(k, v) },
@@ -221,7 +224,7 @@ fun AdminUserScreen(id: String) {
 
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 TextButton(onClick = { confirmDelete = true }, modifier = Modifier.padding(horizontal = 8.dp)) {
-                    Text("Delete user", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.delete_user), color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -230,14 +233,14 @@ fun AdminUserScreen(id: String) {
     newPassword?.let { pw ->
         AlertDialog(
             onDismissRequest = { newPassword = null },
-            title = { Text("Set password") },
+            title = { Text(stringResource(R.string.set_password)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(pw, { newPassword = it }, label = { Text("New password (blank removes it)") }, singleLine = true,
+                    OutlinedTextField(pw, { newPassword = it }, label = { Text(stringResource(R.string.new_password_blank_removes_it)) }, singleLine = true,
                         visualTransformation = PasswordVisualTransformation(), keyboardOptions = PasswordKeyboard)
                     if (pw.isEmpty()) {
                         Text(
-                            "With no password, anyone who can reach the server can sign in as ${name ?: "this user"}.",
+                            name?.let { stringResource(R.string.no_password_warning_x, it) } ?: stringResource(R.string.no_password_warning),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
@@ -247,27 +250,27 @@ fun AdminUserScreen(id: String) {
             confirmButton = {
                 TextButton(onClick = {
                     newPassword = null
-                    actions.run(if (pw.isEmpty()) "Password removed" else "Password updated") { client.adminSetPassword(id, pw) }
+                    actions.run(if (pw.isEmpty()) str(R.string.password_removed) else str(R.string.password_updated)) { client.adminSetPassword(id, pw) }
                 }) {
-                    if (pw.isEmpty()) Text("Remove password", color = MaterialTheme.colorScheme.error) else Text("Save")
+                    if (pw.isEmpty()) Text(stringResource(R.string.remove_password), color = MaterialTheme.colorScheme.error) else Text(stringResource(R.string.save))
                 }
             },
-            dismissButton = { TextButton(onClick = { newPassword = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { newPassword = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete ${name ?: "user"}?") },
-            text = { Text("Their watch history, favorites and settings are removed. This can't be undone.") },
+            title = { Text(name?.let { stringResource(R.string.delete_x_q, it) } ?: stringResource(R.string.delete_user_q)) },
+            text = { Text(stringResource(R.string.their_watch_history_favorites_and_settings)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     actions.run(after = { nav.close(com.vknxworks.jellyctrl.ui.nav.AdminUserRoute::class) }) { client.deleteUser(id) }
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

@@ -51,6 +51,10 @@ import com.vknxworks.jellyctrl.data.api.setPlayed
 import com.vknxworks.jellyctrl.ui.nav.ItemRoute
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
+import com.vknxworks.jellyctrl.plural
 
 /** Long-press menu for any item. [onChanged] is called after played/favorite state changes. */
 @Composable
@@ -87,44 +91,44 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
             val played = item.userData?.played == true
             val fav = item.userData?.isFavorite == true
             if (item.isPlayable || item.isFolder) {
-                Action(Icons.Filled.PlayArrow, "Play") { nav.play(item); onDismiss() }
+                Action(Icons.Filled.PlayArrow, stringResource(R.string.play)) { nav.play(item); onDismiss() }
             }
             if ((item.userData?.playbackPositionTicks ?: 0) > 0) {
-                Action(Icons.Filled.Replay, "Play from the beginning") { nav.play(item, fromStart = true); onDismiss() }
+                Action(Icons.Filled.Replay, stringResource(R.string.play_from_the_beginning)) { nav.play(item, fromStart = true); onDismiss() }
             }
             if (item.isFolder) {
-                Action(Icons.Filled.Shuffle, "Shuffle") { nav.shuffle(item); onDismiss() }
+                Action(Icons.Filled.Shuffle, stringResource(R.string.shuffle)) { nav.shuffle(item); onDismiss() }
             }
             if (item.mediaType == "Audio" || item.type == "MusicAlbum") {
-                Action(Icons.AutoMirrored.Filled.QueueMusic, "Add to queue") {
+                Action(Icons.AutoMirrored.Filled.QueueMusic, stringResource(R.string.add_to_queue)) {
                     c.music.enqueue(item)
                     onDismiss()
                 }
             }
             Action(
                 if (played) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
-                if (played) "Mark as unwatched" else "Mark as watched",
+                if (played) stringResource(R.string.mark_as_unwatched) else stringResource(R.string.mark_as_watched),
             ) { act { c.api.setPlayed(item.id, !played) } }
-            Action(if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, if (fav) "Remove from favourites" else "Add to favourites") {
+            Action(if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, if (fav) stringResource(R.string.remove_from_favourites) else stringResource(R.string.add_to_favourites)) {
                 act { c.api.setFavorite(item.id, !fav) }
             }
             if (item.type != "Playlist" && (item.isPlayable || item.isFolder)) {
-                Action(Icons.AutoMirrored.Filled.PlaylistAdd, "Add to playlist") { playlistPicker = true }
+                Action(Icons.AutoMirrored.Filled.PlaylistAdd, stringResource(R.string.add_to_playlist)) { playlistPicker = true }
             }
             if (item.type == "Episode" && item.seriesId != null) {
-                Action(Icons.Filled.Tv, "Go to show") { nav.navigate(ItemRoute(item.seriesId)); onDismiss() }
+                Action(Icons.Filled.Tv, stringResource(R.string.go_to_show)) { nav.navigate(ItemRoute(item.seriesId)); onDismiss() }
             }
             if (item.isPlayable && item.mediaType == "Video" || item.type in DOWNLOADABLE_FOLDERS) {
-                Action(Icons.Filled.Download, "Download") {
+                Action(Icons.Filled.Download, stringResource(R.string.download)) {
                     (context as? MainActivity)?.ensureNotificationPermission()
                     scope.launch {
                         val n = downloadItemWith(c, item)
-                        Toast.makeText(context, if (n == 1) "Downloading" else "Downloading $n items", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, plural(R.plurals.downloading_items, n, n), Toast.LENGTH_SHORT).show()
                         onDismiss()
                     }
                 }
             }
-            Action(Icons.Outlined.Info, "Details") { nav.navigate(ItemRoute(item.id)); onDismiss() }
+            Action(Icons.Outlined.Info, stringResource(R.string.details)) { nav.navigate(ItemRoute(item.id)); onDismiss() }
         }
     }
 }
@@ -174,13 +178,13 @@ fun AddToPlaylistDialog(item: BaseItemDto, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add to playlist") },
+        title = { Text(stringResource(R.string.add_to_playlist)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { newName = it },
-                    label = { Text("New playlist name") },
+                    label = { Text(stringResource(R.string.new_playlist_name)) },
                     singleLine = true,
                 )
                 LoadContent(playlists, Modifier.padding(top = 8.dp)) { list ->
@@ -191,7 +195,7 @@ fun AddToPlaylistDialog(item: BaseItemDto, onDismiss: () -> Unit) {
                                 modifier = Modifier.clickable {
                                     scope.launch {
                                         runCatching { c.api.addToPlaylist(pl.id, listOf(item.id)) }
-                                            .onSuccess { done("Added to ${pl.name}") }
+                                            .onSuccess { done(str(R.string.added_to_x, pl.name)) }
                                             .onFailure { done(it.friendlyMessage()) }
                                     }
                                 },
@@ -207,12 +211,12 @@ fun AddToPlaylistDialog(item: BaseItemDto, onDismiss: () -> Unit) {
                 onClick = {
                     scope.launch {
                         runCatching { c.api.createPlaylist(newName.trim(), listOf(item.id), mediaType) }
-                            .onSuccess { done("Created $newName") }
+                            .onSuccess { done(str(R.string.created_x, newName)) }
                             .onFailure { done(it.friendlyMessage()) }
                     }
                 },
-            ) { Text("Create") }
+            ) { Text(stringResource(R.string.create)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

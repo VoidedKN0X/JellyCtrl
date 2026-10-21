@@ -69,6 +69,9 @@ import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import com.vknxworks.jellyctrl.ui.nav.ProfileRoute
 import com.vknxworks.jellyctrl.ui.theme.Gutter
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 // ---------- Top bars ----------
 
@@ -83,7 +86,7 @@ fun ScreenTopBar(
     TopAppBar(
         title = { Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         navigationIcon = {
-            if (showBack) IconButton(onClick = nav::back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+            if (showBack) IconButton(onClick = nav::back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
@@ -121,19 +124,21 @@ fun ProfileButton() {
     val client = session?.client
     IconButton(onClick = { nav.navigate(ProfileRoute) }) {
         Box(
-            Modifier.size(34.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            Modifier.size(34.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
             contentAlignment = Alignment.Center,
         ) {
+            val you = stringResource(R.string.you)
             when {
                 acc?.userImageTag != null && client != null ->
-                    ArtImage(client.userImageUrl(acc.userId, acc.userImageTag), Modifier.fillMaxSize().semantics { contentDescription = "You" })
+                    ArtImage(client.userImageUrl(acc.userId, acc.userImageTag), Modifier.fillMaxSize().semantics { contentDescription = you })
                 acc != null && acc.userName.isNotEmpty() ->
                     Text(
                         acc.userName.take(1).uppercase(),
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.semantics { contentDescription = "You" },
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.semantics { contentDescription = you },
                     )
-                else -> Icon(Icons.Filled.AccountCircle, "You")
+                else -> Icon(Icons.Filled.AccountCircle, you, tint = MaterialTheme.colorScheme.primary)
             }
         }
     }
@@ -272,7 +277,7 @@ fun <T> ChoiceSheet(
                         color = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
-                    if (isSel) Icon(Icons.Filled.Check, "Selected", tint = MaterialTheme.colorScheme.primary)
+                    if (isSel) Icon(Icons.Filled.Check, stringResource(R.string.selected), tint = MaterialTheme.colorScheme.primary)
                 }
             }
         }

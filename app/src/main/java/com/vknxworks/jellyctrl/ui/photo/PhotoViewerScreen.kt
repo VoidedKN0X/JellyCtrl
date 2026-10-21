@@ -38,6 +38,8 @@ import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.LoadContent
 import com.vknxworks.jellyctrl.ui.components.rememberLoader
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
 
 @Composable
 fun PhotoViewerScreen(parentId: String, startId: String) {
@@ -70,7 +72,7 @@ fun PhotoViewerScreen(parentId: String, startId: String) {
         }
         if (chrome) {
             IconButton(onClick = nav::back, modifier = Modifier.statusBarsPadding().padding(8.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = Color.White)
             }
         }
     }

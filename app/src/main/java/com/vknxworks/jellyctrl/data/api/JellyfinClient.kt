@@ -24,6 +24,8 @@ import java.io.IOException
 import java.net.URLEncoder
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 /** Json used for the Jellyfin REST API (PascalCase on the wire). */
 val JellyfinJson: Json = Json {
@@ -72,7 +74,7 @@ class JellyfinClient(
             if (!accessToken.isNullOrBlank()) append(", Token=\"").append(accessToken).append('"')
         }
 
-    fun requireUserId(): String = userId ?: error("Not signed in")
+    fun requireUserId(): String = userId ?: error(str(R.string.not_signed_in))
 
     fun url(path: String, params: Map<String, Any?> = emptyMap()): HttpUrl {
         val b = base.newBuilder()
@@ -143,9 +145,9 @@ class JellyfinClient(
             val text = resp.body?.string().orEmpty()
             if (!resp.isSuccessful) {
                 val msg = when (resp.code) {
-                    401 -> "Unauthorized - sign in again"
-                    403 -> "Not allowed for this user"
-                    404 -> "Not found"
+                    401 -> str(R.string.unauthorized_sign_in_again)
+                    403 -> str(R.string.not_allowed_for_this_user)
+                    404 -> str(R.string.not_found)
                     else -> text.take(300).ifBlank { "HTTP ${resp.code}" }
                 }
                 throw ApiException(resp.code, msg)

@@ -20,6 +20,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
+import com.vknxworks.jellyctrl.str
 
 class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
@@ -27,17 +28,17 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
     private val repo = c.downloads
     private val notificationId = (params.inputData.getString(KEY_ITEM_ID)?.hashCode() ?: 0) and 0x0FFFFFFF
 
-    override suspend fun getForegroundInfo(): ForegroundInfo = foregroundInfo("Preparing download", 0f)
+    override suspend fun getForegroundInfo(): ForegroundInfo = foregroundInfo(str(R.string.preparing_download), 0f)
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val itemId = inputData.getString(KEY_ITEM_ID) ?: return@withContext Result.failure()
         c.sessions.loaded.filter { it }.first()
         val entry = repo.find(itemId) ?: return@withContext Result.failure()
         val account = c.sessions.accounts.value.firstOrNull { it.key == entry.accountKey }
-            ?: return@withContext fail(itemId, "Account was signed out")
+            ?: return@withContext fail(itemId, str(R.string.account_was_signed_out))
         // JellyCtrl restarted while the app lock is on: the token stays sealed until you unlock, so wait.
         if (c.sessions.isSealedNow(account)) return@withContext Result.retry()
-        val client = c.sessions.clientFor(account) ?: return@withContext fail(itemId, "Account token unavailable")
+        val client = c.sessions.clientFor(account) ?: return@withContext fail(itemId, str(R.string.account_token_unavailable))
 
         runCatching { setForeground(foregroundInfo(entry.name, 0f)) }
         repo.modify(itemId) { it.copy(status = DownloadStatus.RUNNING, error = null) }
@@ -53,8 +54,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             }
         }
 
-        val target = repo.safeFile(entry.fileName) ?: return@withContext fail(itemId, "Invalid file name")
-        val part = repo.safeFile(entry.fileName + ".part") ?: return@withContext fail(itemId, "Invalid file name")
+        val target = repo.safeFile(entry.fileName) ?: return@withContext fail(itemId, str(R.string.invalid_file_name))
+        val part = repo.safeFile(entry.fileName + ".part") ?: return@withContext fail(itemId, str(R.string.invalid_file_name))
         try {
             val existing = if (part.exists()) part.length() else 0L
             val reqBuilder = Request.Builder()
@@ -62,9 +63,9 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                 .header("Authorization", client.authHeader)
             if (existing > 0) reqBuilder.header("Range", "bytes=$existing-")
             client.http.newCall(reqBuilder.build()).await().use { resp ->
-                if (!resp.isSuccessful) return@withContext fail(itemId, "Server returned ${resp.code}")
+                if (!resp.isSuccessful) return@withContext fail(itemId, str(R.string.server_returned_x, resp.code))
                 val resumed = resp.code == 206
-                val body = resp.body ?: return@withContext fail(itemId, "Empty response")
+                val body = resp.body ?: return@withContext fail(itemId, str(R.string.empty_response))
                 val startAt = if (resumed) existing else 0L
                 val total = body.contentLength().let { if (it > 0) it + startAt else 0L }
                 repo.modify(itemId) { it.copy(totalBytes = total, downloadedBytes = startAt) }
@@ -95,7 +96,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                 }
             }
             target.delete()
-            if (!part.renameTo(target)) return@withContext fail(itemId, "Could not save file")
+            if (!part.renameTo(target)) return@withContext fail(itemId, str(R.string.could_not_save_file))
             repo.modify(itemId) { it.copy(status = DownloadStatus.DONE, downloadedBytes = target.length(), totalBytes = target.length()) }
             Result.success()
         } catch (e: Exception) {
@@ -103,7 +104,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                 repo.modify(itemId) { it.copy(status = DownloadStatus.QUEUED, error = e.message) }
                 Result.retry()
             } else {
-                fail(itemId, e.message ?: "Download failed")
+                fail(itemId, e.message ?: str(R.string.download_failed))
             }
         }
     }
@@ -116,7 +117,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
     private fun foregroundInfo(title: String, progress: Float): ForegroundInfo {
         val n: Notification = NotificationCompat.Builder(applicationContext, JellyCtrlApp.CHANNEL_DOWNLOADS)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Downloading $title")
+            .setContentTitle(str(R.string.downloading_x, title))
             .setOnlyAlertOnce(true)
             .setOngoing(true)
             .setProgress(100, (progress * 100).toInt(), progress <= 0f)
@@ -125,7 +126,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             .setPublicVersion(
                 NotificationCompat.Builder(applicationContext, JellyCtrlApp.CHANNEL_DOWNLOADS)
                     .setSmallIcon(R.drawable.ic_notification)
-                    .setContentTitle("Downloading")
+                    .setContentTitle(str(R.string.downloading))
                     .setOnlyAlertOnce(true)
                     .setProgress(100, (progress * 100).toInt(), progress <= 0f)
                     .build(),

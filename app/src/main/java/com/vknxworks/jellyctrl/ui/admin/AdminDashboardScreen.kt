@@ -83,25 +83,32 @@ import com.vknxworks.jellyctrl.ui.remote.SessionCard
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 private data class AdminLink(val icon: ImageVector, val label: String, val route: Any)
 
-private val LINKS = listOf(
-    AdminLink(Icons.Filled.People, "Users", AdminUsersRoute),
-    AdminLink(Icons.Filled.Storage, "Libraries", AdminLibrariesRoute),
-    AdminLink(Icons.Filled.Schedule, "Scheduled tasks", AdminTasksRoute),
-    AdminLink(Icons.Filled.Extension, "Plugins", AdminPluginsRoute),
-    AdminLink(Icons.Filled.History, "Activity log", AdminActivityRoute),
-    AdminLink(Icons.AutoMirrored.Filled.Subject, "Logs", AdminLogsRoute),
-    AdminLink(Icons.Filled.Devices, "Devices", AdminDevicesRoute),
-    AdminLink(Icons.Filled.Key, "API keys", AdminKeysRoute),
-    AdminLink(Icons.Filled.Settings, "General", AdminConfigRoute("", "General")),
-    AdminLink(Icons.Filled.Movie, "Playback and transcoding", AdminConfigRoute("encoding", "Playback and transcoding")),
-    AdminLink(Icons.Filled.Lan, "Networking", AdminConfigRoute("network", "Networking")),
-    AdminLink(Icons.Filled.Search, "Metadata", AdminConfigRoute("metadata", "Metadata")),
-    AdminLink(Icons.Filled.LiveTv, "Live TV", AdminConfigRoute("livetv", "Live TV")),
-    AdminLink(Icons.Filled.Palette, "Branding", AdminConfigRoute("branding", "Branding")),
-)
+private val LINKS: List<AdminLink>
+    get() = listOf(
+        AdminLink(Icons.Filled.People, str(R.string.admin_users), AdminUsersRoute),
+        AdminLink(Icons.Filled.Storage, str(R.string.admin_libraries), AdminLibrariesRoute),
+        AdminLink(Icons.Filled.Schedule, str(R.string.admin_scheduled_tasks), AdminTasksRoute),
+        AdminLink(Icons.Filled.Extension, str(R.string.admin_plugins), AdminPluginsRoute),
+        AdminLink(Icons.Filled.History, str(R.string.admin_activity_log), AdminActivityRoute),
+        AdminLink(Icons.AutoMirrored.Filled.Subject, str(R.string.admin_logs), AdminLogsRoute),
+        AdminLink(Icons.Filled.Devices, str(R.string.admin_devices), AdminDevicesRoute),
+        AdminLink(Icons.Filled.Key, str(R.string.admin_api_keys), AdminKeysRoute),
+        configLink(Icons.Filled.Settings, R.string.admin_general, ""),
+        configLink(Icons.Filled.Movie, R.string.admin_playback, "encoding"),
+        configLink(Icons.Filled.Lan, R.string.admin_networking, "network"),
+        configLink(Icons.Filled.Search, R.string.admin_metadata, "metadata"),
+        configLink(Icons.Filled.LiveTv, R.string.admin_live_tv, "livetv"),
+        configLink(Icons.Filled.Palette, R.string.admin_branding, "branding"),
+    )
+
+private fun configLink(icon: ImageVector, label: Int, section: String): AdminLink =
+    str(label).let { AdminLink(icon, it, AdminConfigRoute(section, it)) }
 
 @Composable
 fun AdminDashboardScreen() {
@@ -124,7 +131,7 @@ fun AdminDashboardScreen() {
         while (true) { delay(10_000); loader.reload(silent = true) }
     }
 
-    AdminScaffold("Server", actions, loader.refreshing, { loader.reload(silent = true) }) {
+    AdminScaffold(stringResource(R.string.server), actions, loader.refreshing, { loader.reload(silent = true) }) {
         LoadContent(loader) { d ->
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
                 item("server") {
@@ -132,25 +139,25 @@ fun AdminDashboardScreen() {
                         Text(d.info.serverName ?: "Jellyfin", style = MaterialTheme.typography.headlineMedium)
                         Text(
                             listOfNotNull(
-                                "Jellyfin ${d.info.version.orEmpty()}",
+                                stringResource(R.string.jellyfin_x, d.info.version.orEmpty()),
                                 d.info.operatingSystemDisplayName ?: d.info.operatingSystem,
                                 d.info.systemArchitecture,
                             ).joinToString(", "),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        if (d.info.hasPendingRestart) Text("Restart the server to finish applying changes", color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.bodyMedium)
-                        if (d.info.hasUpdateAvailable) Text("A Jellyfin update is available", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                        if (d.info.hasPendingRestart) Text(stringResource(R.string.restart_the_server_to_finish_applying), color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.bodyMedium)
+                        if (d.info.hasUpdateAvailable) Text(stringResource(R.string.a_jellyfin_update_is_available), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
                         Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                            RoundAction(Icons.Filled.Search, "Scan libraries", { actions.run("Scanning libraries") { client.scanAllLibraries() } })
-                            if (d.info.canSelfRestart) RoundAction(Icons.Filled.RestartAlt, "Restart", { confirm = "restart" })
-                            RoundAction(Icons.Filled.PowerSettingsNew, "Shut down", { confirm = "shutdown" })
+                            RoundAction(Icons.Filled.Search, stringResource(R.string.scan_libraries), { actions.run(str(R.string.scanning_libraries)) { client.scanAllLibraries() } })
+                            if (d.info.canSelfRestart) RoundAction(Icons.Filled.RestartAlt, stringResource(R.string.restart), { confirm = "restart" })
+                            RoundAction(Icons.Filled.PowerSettingsNew, stringResource(R.string.shut_down), { confirm = "shutdown" })
                         }
                     }
                 }
                 if (d.tasks.isNotEmpty()) {
                     item("tasks") {
-                        Group("Running now") {
+                        Group(stringResource(R.string.running_now)) {
                             d.tasks.forEach { t ->
                                 Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
                                     Row {
@@ -168,18 +175,18 @@ fun AdminDashboardScreen() {
                     }
                 }
                 item("manage") {
-                    Group("Manage") {
+                    Group(stringResource(R.string.manage)) {
                         LINKS.take(4).forEach { l -> GroupRow(l.label, icon = l.icon, showChevron = true, onClick = { nav.navigate(l.route) }) }
                     }
-                    Group("Activity and access") {
+                    Group(stringResource(R.string.activity_and_access)) {
                         LINKS.drop(4).take(4).forEach { l -> GroupRow(l.label, icon = l.icon, showChevron = true, onClick = { nav.navigate(l.route) }) }
                     }
-                    Group("Settings") {
+                    Group(stringResource(R.string.settings)) {
                         LINKS.drop(8).forEach { l -> GroupRow(l.label, icon = l.icon, showChevron = true, onClick = { nav.navigate(l.route) }) }
                     }
                 }
                 item("sessions-title") {
-                    SectionHeader(if (d.sessions.isEmpty()) "Nobody's watching right now" else "Watching now")
+                    SectionHeader(if (d.sessions.isEmpty()) stringResource(R.string.nobody_s_watching_right_now) else stringResource(R.string.watching_now))
                 }
                 items(d.sessions, key = { "s-" + it.id }) { s ->
                     Box(Modifier.padding(horizontal = Gutter, vertical = 6.dp)) {
@@ -188,7 +195,7 @@ fun AdminDashboardScreen() {
                 }
                 if (d.activity.isNotEmpty()) {
                     item("activity") {
-                        SectionHeader("Recent activity", onMore = { nav.navigate(AdminActivityRoute) })
+                        SectionHeader(stringResource(R.string.recent_activity), onMore = { nav.navigate(AdminActivityRoute) })
                         Group(modifier = Modifier.padding(top = 0.dp)) {
                             d.activity.forEach { a ->
                                 GroupRow(a.name.orEmpty(), formatDateTime(a.date))
@@ -203,21 +210,21 @@ fun AdminDashboardScreen() {
     confirm?.let { what ->
         AlertDialog(
             onDismissRequest = { confirm = null },
-            title = { Text(if (what == "restart") "Restart the server?" else "Shut down the server?") },
+            title = { Text(if (what == "restart") stringResource(R.string.restart_the_server) else stringResource(R.string.shut_down_the_server)) },
             text = {
                 Text(
-                    if (what == "restart") "Everyone's playback stops for a minute or two while it restarts."
-                    else "The server stops completely. You'll need to start it again on the machine it runs on."
+                    if (what == "restart") stringResource(R.string.everyone_s_playback_stops_for_a)
+                    else stringResource(R.string.the_server_stops_completely_you_ll)
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     confirm = null
-                    if (what == "restart") actions.run("Restarting") { client.restartServer() }
-                    else actions.run("Shutting down") { client.shutdownServer() }
-                }) { Text(if (what == "restart") "Restart" else "Shut down", color = MaterialTheme.colorScheme.error) }
+                    if (what == "restart") actions.run(str(R.string.restarting)) { client.restartServer() }
+                    else actions.run(str(R.string.shutting_down)) { client.shutdownServer() }
+                }) { Text(if (what == "restart") stringResource(R.string.restart) else stringResource(R.string.shut_down), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

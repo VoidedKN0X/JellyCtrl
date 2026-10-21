@@ -77,6 +77,9 @@ import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 @Composable
 fun LiveTvScreen() {
@@ -86,9 +89,9 @@ fun LiveTvScreen() {
         contentWindowInsets = WindowInsets(0),
         topBar = {
             Column {
-                ScreenTopBar("Live TV")
+                ScreenTopBar(stringResource(R.string.live_tv))
                 PrimaryTabRow(selectedTabIndex = tab) {
-                    listOf("Channels", "Guide", "Recorded", "Scheduled").forEachIndexed { i, t ->
+                    listOf(stringResource(R.string.channels), stringResource(R.string.guide), stringResource(R.string.recorded), stringResource(R.string.scheduled)).forEachIndexed { i, t ->
                         Tab(tab == i, onClick = { tab = i }, text = { Text(t) })
                     }
                 }
@@ -114,7 +117,7 @@ private fun Channels() {
     val loader = rememberLoader("tv-channels") { client.liveTvChannels() }
     LoadContent(loader) { channels ->
         if (channels.isEmpty()) {
-            MessageView(Icons.Outlined.LiveTv, "No channels", "Set up a tuner in the server's Live TV settings.")
+            MessageView(Icons.Outlined.LiveTv, stringResource(R.string.no_channels), stringResource(R.string.set_up_a_tuner_in_the))
             return@LoadContent
         }
         LazyColumn(Modifier.fillMaxSize()) {
@@ -124,7 +127,7 @@ private fun Channels() {
                     headlineContent = { Text(listOfNotNull(ch.channelNumber, ch.name).joinToString("  "), fontWeight = FontWeight.Medium) },
                     supportingContent = {
                         Column {
-                            Text(prog?.name ?: "No guide data", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(prog?.name ?: stringResource(R.string.no_guide_data), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             programProgress(prog)?.let { p ->
                                 LinearProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), drawStopIndicator = {})
                             }
@@ -190,7 +193,7 @@ private fun Guide() {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text("${formatTime(p.startDate) ?: ""} – ${formatTime(p.endDate) ?: ""}", style = MaterialTheme.typography.labelSmall)
                                         if (p.timerId != null) {
-                                            Icon(Icons.Filled.FiberManualRecord, "Recording", Modifier.padding(start = 4.dp).size(10.dp), tint = Color.Red)
+                                            Icon(Icons.Filled.FiberManualRecord, stringResource(R.string.recording), Modifier.padding(start = 4.dp).size(10.dp), tint = Color.Red)
                                         }
                                     }
                                     Text(p.name.orEmpty(), style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -219,10 +222,10 @@ private fun Guide() {
                         recordTarget = null
                         scope.launch {
                             runCatching { client.recordProgram(p.id) }
-                                .onSuccess { Toast.makeText(context, "Recording scheduled", Toast.LENGTH_SHORT).show(); loader.reload(silent = true) }
+                                .onSuccess { Toast.makeText(context, str(R.string.recording_scheduled), Toast.LENGTH_SHORT).show(); loader.reload(silent = true) }
                                 .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                         }
-                    }) { Text("Record") }
+                    }) { Text(stringResource(R.string.record)) }
                 } else {
                     TextButton(onClick = {
                         recordTarget = null
@@ -231,10 +234,10 @@ private fun Guide() {
                                 .onSuccess { loader.reload(silent = true) }
                                 .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                         }
-                    }) { Text("Cancel recording") }
+                    }) { Text(stringResource(R.string.cancel_recording)) }
                 }
             },
-            dismissButton = { TextButton(onClick = { recordTarget = null }) { Text("Close") } },
+            dismissButton = { TextButton(onClick = { recordTarget = null }) { Text(stringResource(R.string.close)) } },
         )
     }
 }
@@ -245,7 +248,7 @@ private fun Recordings() {
     val nav = LocalNavigator.current
     val loader = rememberLoader("tv-recordings") { c.api.liveTvRecordings() }
     LoadContent(loader) { recs ->
-        ItemGrid(recs, c.api, onItem = { nav.openItem(it) }, emptyText = "No recordings yet")
+        ItemGrid(recs, c.api, onItem = { nav.openItem(it) }, emptyText = stringResource(R.string.no_recordings_yet))
     }
 }
 
@@ -257,7 +260,7 @@ private fun Timers() {
     val loader = rememberLoader("tv-timers") { c.api.liveTvTimers() }
     LoadContent(loader) { timers ->
         if (timers.isEmpty()) {
-            MessageView(Icons.Outlined.LiveTv, "Nothing scheduled", "Tap a program in the guide to record it.")
+            MessageView(Icons.Outlined.LiveTv, stringResource(R.string.nothing_scheduled), stringResource(R.string.tap_a_program_in_the_guide))
             return@LoadContent
         }
         LazyColumn(Modifier.fillMaxSize()) {
@@ -273,7 +276,7 @@ private fun Timers() {
                                     .onSuccess { loader.reload(silent = true) }
                                     .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                             }
-                        }) { Icon(Icons.Filled.Delete, "Cancel") }
+                        }) { Icon(Icons.Filled.Delete, stringResource(R.string.cancel)) }
                     },
                 )
             }

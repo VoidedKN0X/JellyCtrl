@@ -46,23 +46,27 @@ import com.vknxworks.jellyctrl.ui.components.formatClock
 import com.vknxworks.jellyctrl.ui.components.formatRuntime
 import com.vknxworks.jellyctrl.ui.components.isoToEpochMs
 import com.vknxworks.jellyctrl.ui.theme.Gutter
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
+import com.vknxworks.jellyctrl.plural
 
 /** Year, rating, length and score as plain facts. */
-fun metaParts(item: BaseItemDto): List<String> = buildList {
+fun metaParts(item: BaseItemDto, withEnd: Boolean = true): List<String> = buildList {
     item.productionYear?.let { add(it.toString()) }
     item.officialRating?.let { add(it) }
     when (item.type) {
-        "Series" -> item.childCount?.let { add(if (it == 1) "1 season" else "$it seasons") }
-        "MusicAlbum", "Playlist" -> item.childCount?.let { add(if (it == 1) "1 track" else "$it tracks") }
+        "Series" -> item.childCount?.let { add(plural(R.plurals.count_seasons, it, it)) }
+        "MusicAlbum", "Playlist" -> item.childCount?.let { add(plural(R.plurals.count_tracks, it, it)) }
         else -> formatRuntime(item.runTimeTicks)?.let { add(it) }
     }
     item.communityRating?.let { add("★ %.1f".format(it)) }
     val runtime = item.runTimeTicks
-    if (runtime != null && item.mediaType == "Video" && item.type != "TvChannel") {
+    if (withEnd && runtime != null && item.mediaType == "Video" && item.type != "TvChannel") {
         val remaining = runtime - (item.userData?.playbackPositionTicks ?: 0)
         val end = System.currentTimeMillis() + remaining.ticksToMs()
         val fmt = java.time.format.DateTimeFormatter.ofPattern("HH:mm").withZone(java.time.ZoneId.systemDefault())
-        add("Ends ${fmt.format(java.time.Instant.ofEpochMilli(end))}")
+        add(str(R.string.ends_x, fmt.format(java.time.Instant.ofEpochMilli(end))))
     }
 }
 
@@ -136,7 +140,7 @@ fun PeopleRow(title: String, people: List<BaseItemPerson>, client: JellyfinClien
 @Composable
 fun ChaptersRow(itemId: String, chapters: List<ChapterInfo>, client: JellyfinClient, onChapter: (ChapterInfo) -> Unit) {
     if (chapters.size < 2) return
-    SectionHeader("Chapters")
+    SectionHeader(stringResource(R.string.chapters))
     LazyRow(contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         items(chapters.withIndex().toList(), key = { it.index }) { (i, ch) ->
             Column(Modifier.width(200.dp).clip(MaterialTheme.shapes.small).clickable { onChapter(ch) }) {
@@ -144,7 +148,7 @@ fun ChaptersRow(itemId: String, chapters: List<ChapterInfo>, client: JellyfinCli
                     ArtImage(ch.imageTag?.let { client.imageUrl(itemId, "Chapter", it, 400, index = i) }, Modifier.fillMaxSize(), placeholderText = ch.name)
                 }
                 Text(
-                    ch.name ?: "Chapter ${i + 1}",
+                    ch.name ?: stringResource(R.string.chapter_x, i + 1),
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -161,10 +165,10 @@ fun ChaptersRow(itemId: String, chapters: List<ChapterInfo>, client: JellyfinCli
 }
 
 fun MediaStream.label(): String = displayTitle ?: buildString {
-    append(language ?: "Unknown")
+    append(language ?: str(R.string.unknown))
     codec?.let { append(" ").append(it.uppercase()) }
-    if (isForced) append(", forced")
-    if (isExternal) append(", external file")
+    if (isForced) append(str(R.string.forced))
+    if (isExternal) append(str(R.string.external_file_2))
 }
 
 /** Codec and file details, folded away until asked for. */
@@ -174,7 +178,7 @@ fun MediaInfoBlock(streams: List<MediaStream>, container: String?, sizeBytes: Lo
     val video = streams.firstOrNull { it.type == "Video" }
     Column(Modifier.fillMaxWidth().padding(horizontal = Gutter, vertical = 8.dp)) {
         Text(
-            if (open) "Hide file details" else "Show file details",
+            if (open) stringResource(R.string.hide_file_details) else stringResource(R.string.show_file_details),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.clip(CircleShape).clickable { open = !open }.padding(vertical = 8.dp),
@@ -184,19 +188,19 @@ fun MediaInfoBlock(streams: List<MediaStream>, container: String?, sizeBytes: Lo
                 Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainer).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                container?.let { InfoLine("File", it.uppercase() + (sizeBytes?.let { s -> ", " + formatBytes(s) } ?: "")) }
+                container?.let { InfoLine(stringResource(R.string.file), it.uppercase() + (sizeBytes?.let { s -> ", " + formatBytes(s) } ?: "")) }
                 video?.let { v ->
                     InfoLine(
-                        "Video",
+                        stringResource(R.string.video),
                         listOfNotNull(
                             v.codec?.uppercase(), v.profile, v.width?.let { "${it}×${v.height}" },
                             v.videoRangeType ?: v.videoRange, v.bitDepth?.let { "$it-bit" },
-                            v.realFrameRate?.let { "%.3f fps".format(it) }, v.bitRate?.let { "${it / 1000} kbps" },
+                            v.realFrameRate?.let { stringResource(R.string.x_fps, it) }, v.bitRate?.let { stringResource(R.string.x_kbps, it / 1000) },
                         ).joinToString(", "),
                     )
                 }
-                streams.filter { it.type == "Audio" }.forEach { InfoLine("Audio", it.label() + (it.channelLayout?.let { l -> ", $l" } ?: "")) }
-                streams.filter { it.type == "Subtitle" }.take(10).forEach { InfoLine("Subtitles", it.label()) }
+                streams.filter { it.type == "Audio" }.forEach { InfoLine(stringResource(R.string.audio), it.label() + (it.channelLayout?.let { l -> ", $l" } ?: "")) }
+                streams.filter { it.type == "Subtitle" }.take(10).forEach { InfoLine(stringResource(R.string.subtitles), it.label()) }
             }
         }
     }

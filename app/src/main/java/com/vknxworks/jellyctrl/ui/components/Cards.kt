@@ -38,6 +38,9 @@ import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import com.vknxworks.jellyctrl.data.api.ticksToMs
 import com.vknxworks.jellyctrl.ui.theme.Gutter
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 @Composable
 fun ArtImage(
@@ -92,7 +95,7 @@ private fun PlayedMark(modifier: Modifier) {
     Box(
         modifier.size(22.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.55f)),
         contentAlignment = Alignment.Center,
-    ) { Icon(Icons.Filled.Check, "Watched", Modifier.size(14.dp), tint = Color.White) }
+    ) { Icon(Icons.Filled.Check, stringResource(R.string.watched), Modifier.size(14.dp), tint = Color.White) }
 }
 
 @Composable
@@ -109,7 +112,7 @@ fun BaseItemDto.timeLeft(): String? {
     val total = runTimeTicks ?: return null
     if (pos <= 0 || total <= 0) return null
     val min = ((total - pos).ticksToMs() / 60_000).coerceAtLeast(1)
-    return if (min >= 60) "${min / 60}h ${min % 60}m left" else "${min}m left"
+    return if (min >= 60) str(R.string.x_h_x_m_left, min / 60, min % 60) else str(R.string.x_m_left, min)
 }
 
 @Composable
@@ -186,7 +189,7 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier, onMore: (() -> U
     ) {
         Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (onMore != null) {
-            Text("See all", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.see_all), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

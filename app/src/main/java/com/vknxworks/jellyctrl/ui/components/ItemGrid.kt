@@ -28,6 +28,9 @@ import androidx.compose.ui.unit.dp
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import com.vknxworks.jellyctrl.ui.theme.Gutter
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import androidx.compose.ui.res.pluralStringResource
 
 /** Adaptive poster grid that pages in more items as you scroll. More columns appear on tablets and unfolded foldables. */
 @Composable
@@ -38,7 +41,7 @@ fun PagedItemGrid(
     modifier: Modifier = Modifier,
     onLongItem: ((BaseItemDto) -> Unit)? = null,
     header: (@Composable () -> Unit)? = null,
-    emptyText: String = "Nothing here",
+    emptyText: String = stringResource(R.string.nothing_here),
 ) {
     val state = rememberLazyGridState()
     val first = loader.items.firstOrNull()
@@ -88,7 +91,7 @@ fun PagedItemGrid(
             item(span = { GridItemSpan(maxLineSpan) }, key = "footer") {
                 Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                     if (loader.error != null) {
-                        TextButton(onClick = { loader.loadMore() }) { Text("Retry  ·  ${loader.error}") }
+                        TextButton(onClick = { loader.loadMore() }) { Text(stringResource(R.string.retry_x, loader.error)) }
                     } else {
                         CircularProgressIndicator()
                     }
@@ -98,7 +101,7 @@ fun PagedItemGrid(
         if (loader.total > 0) {
             item(span = { GridItemSpan(maxLineSpan) }, key = "count") {
                 Text(
-                    if (loader.total == 1) "1 item" else "${loader.total} items",
+                    pluralStringResource(R.plurals.count_items, loader.total, loader.total),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -116,7 +119,7 @@ fun ItemGrid(
     onItem: (BaseItemDto) -> Unit,
     modifier: Modifier = Modifier,
     onLongItem: ((BaseItemDto) -> Unit)? = null,
-    emptyText: String = "Nothing here",
+    emptyText: String = stringResource(R.string.nothing_here),
 ) {
     if (items.isEmpty()) {
         MessageView(Icons.Outlined.Inbox, emptyText, modifier = modifier)

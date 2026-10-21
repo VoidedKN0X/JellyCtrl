@@ -4,6 +4,8 @@ import okhttp3.HttpUrl
 import okhttp3.Interceptor
 import okhttp3.Response
 import java.io.IOException
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 /**
  * Authenticates media, image and trickplay requests with a header instead of an `api_key` query parameter.
@@ -26,7 +28,7 @@ class ServerAuthInterceptor(
         val carriesCredentials = request.header("Authorization")?.contains("Token=") == true || request.header("X-Emby-Token") != null ||
             isPasswordPath(request.url)
         if (carriesCredentials && !request.url.isHttps && !cleartextAllowed(request.url)) {
-            throw IOException("Blocked an unencrypted connection to ${request.url.host}. Add the server again and accept the HTTP warning to use it.")
+            throw IOException(str(R.string.blocked_an_unencrypted_connection_to_x, request.url.host))
         }
         return chain.proceed(request)
     }
@@ -59,7 +61,7 @@ class CredentialRedirectGuard(private val cleartextAllowed: (HttpUrl) -> Boolean
         val sameOrigin = request.url.scheme == origin.scheme && request.url.host.equals(origin.host, true) && request.url.port == origin.port
         val passwordBody = request.body != null && ServerAuthInterceptor.isPasswordPath(origin)
         if (!sameOrigin) {
-            if (passwordBody) throw IOException("Blocked a redirect that would have sent your password to ${request.url.host}")
+            if (passwordBody) throw IOException(str(R.string.blocked_a_redirect_that_would_have, request.url.host))
             if (request.header("Authorization") != null || request.header("X-Emby-Token") != null) {
                 request = request.newBuilder().removeHeader("Authorization").removeHeader("X-Emby-Token").build()
             }
@@ -67,7 +69,7 @@ class CredentialRedirectGuard(private val cleartextAllowed: (HttpUrl) -> Boolean
         val carriesCredentials = passwordBody || request.header("Authorization")?.contains("Token=") == true ||
             request.header("X-Emby-Token") != null
         if (carriesCredentials && !request.url.isHttps && !cleartextAllowed(request.url)) {
-            throw IOException("Blocked an unencrypted connection to ${request.url.host}. Add the server again and accept the HTTP warning to use it.")
+            throw IOException(str(R.string.blocked_an_unencrypted_connection_to_x, request.url.host))
         }
         return chain.proceed(request)
     }

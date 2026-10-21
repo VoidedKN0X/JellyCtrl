@@ -47,6 +47,9 @@ import com.vknxworks.jellyctrl.ui.nav.DownloadsRoute
 import com.vknxworks.jellyctrl.ui.nav.FavoritesRoute
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import com.vknxworks.jellyctrl.ui.theme.Gutter
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import androidx.compose.ui.res.pluralStringResource
 
 /** The Library tab: every library as a tile, plus favourites and downloads. */
 @Composable
@@ -67,13 +70,13 @@ fun LibrariesScreen() {
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                item(span = { GridItemSpan(maxLineSpan) }) { TabTitle("Library", padded = false) }
+                item(span = { GridItemSpan(maxLineSpan) }) { TabTitle(stringResource(R.string.library), padded = false) }
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Group(padded = false) {
-                            GroupRow("Favourites", icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
+                            GroupRow(stringResource(R.string.favourites), icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
                             GroupRow(
-                                "Downloads",
-                                if (ready == 0) "Nothing saved for offline yet" else if (ready == 1) "1 ready to watch offline" else "$ready ready to watch offline",
+                                stringResource(R.string.downloads),
+                                if (ready == 0) stringResource(R.string.nothing_saved_for_offline_yet) else pluralStringResource(R.plurals.ready_to_watch_offline, ready, ready),
                                 icon = Icons.Filled.Download,
                                 showChevron = true,
                                 onClick = { nav.navigate(DownloadsRoute) },
@@ -82,7 +85,7 @@ fun LibrariesScreen() {
                 }
                 if (views.isEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        MessageView(Icons.Outlined.VideoLibrary, "No libraries yet", "Libraries you have access to will show up here.")
+                        MessageView(Icons.Outlined.VideoLibrary, stringResource(R.string.no_libraries_yet), stringResource(R.string.libraries_you_have_access_to_will))
                     }
                 }
                 items(views, key = { it.id }) { v ->

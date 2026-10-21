@@ -23,6 +23,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import java.io.File
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 enum class DownloadStatus { QUEUED, RUNNING, DONE, FAILED, PAUSED }
 
@@ -95,7 +97,7 @@ class DownloadRepository(private val context: Context, private val scope: Corout
         val entry = DownloadEntry(
             itemId = item.id,
             accountKey = accountKey,
-            name = item.name ?: "Item",
+            name = item.name ?: str(R.string.item),
             type = item.type,
             seriesName = item.seriesName,
             itemJson = JellyfinJson.encodeToString(BaseItemDto.serializer(), item),

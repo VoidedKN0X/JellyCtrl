@@ -64,11 +64,16 @@ import com.vknxworks.jellyctrl.ui.components.LoadContent
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
 import com.vknxworks.jellyctrl.ui.components.rememberLoader
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
-private val COLLECTION_TYPES = listOf(
-    "movies" to "Movies", "tvshows" to "Shows", "music" to "Music", "musicvideos" to "Music videos",
-    "homevideos" to "Home videos & photos", "boxsets" to "Collections", "books" to "Books", "mixed" to "Mixed movies & shows",
-)
+private val COLLECTION_TYPES: List<Pair<String, String>>
+    get() = listOf(
+        "movies" to str(R.string.kind_movies), "tvshows" to str(R.string.kind_shows), "music" to str(R.string.kind_music),
+        "musicvideos" to str(R.string.kind_music_videos), "homevideos" to str(R.string.kind_home_videos), "boxsets" to str(R.string.kind_collections),
+        "books" to str(R.string.kind_books), "mixed" to str(R.string.kind_mixed),
+    )
 
 @Composable
 fun AdminLibrariesScreen() {
@@ -91,13 +96,13 @@ fun AdminLibrariesScreen() {
     }
 
     AdminScaffold(
-        "Libraries", actions, loader.refreshing, { loader.reload(silent = true) },
+        stringResource(R.string.libraries), actions, loader.refreshing, { loader.reload(silent = true) },
         topActions = {
-            IconButton(onClick = { actions.run("Scan started", after = { loader.reload(silent = true) }) { client.scanAllLibraries() } }) {
-                Icon(Icons.Filled.Refresh, "Scan all")
+            IconButton(onClick = { actions.run(str(R.string.scan_started), after = { loader.reload(silent = true) }) { client.scanAllLibraries() } }) {
+                Icon(Icons.Filled.Refresh, stringResource(R.string.scan_all))
             }
         },
-        floating = { ExtendedFloatingActionButton(onClick = { adding = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Add library") }) },
+        floating = { ExtendedFloatingActionButton(onClick = { adding = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(stringResource(R.string.add_library)) }) },
     ) {
         LoadContent(loader) { libs ->
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -110,25 +115,25 @@ fun AdminLibrariesScreen() {
                                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                                     Text(lib.name.orEmpty(), fontWeight = FontWeight.SemiBold)
                                     Text(
-                                        COLLECTION_TYPES.firstOrNull { it.first == lib.collectionType }?.second ?: (lib.collectionType ?: "Mixed"),
+                                        COLLECTION_TYPES.firstOrNull { it.first == lib.collectionType }?.second ?: (lib.collectionType ?: stringResource(R.string.mixed)),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                                 Box {
-                                    IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, "More") }
+                                    IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.more)) }
                                     DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                                        DropdownMenuItem(text = { Text("Scan this library") }, leadingIcon = { Icon(Icons.Filled.Refresh, null) }, onClick = {
+                                        DropdownMenuItem(text = { Text(stringResource(R.string.scan_this_library)) }, leadingIcon = { Icon(Icons.Filled.Refresh, null) }, onClick = {
                                             menu = false
-                                            lib.itemId?.let { id -> actions.run("Scan started", after = { loader.reload(silent = true) }) { client.refreshItem(id, replaceAll = false) } }
+                                            lib.itemId?.let { id -> actions.run(str(R.string.scan_started), after = { loader.reload(silent = true) }) { client.refreshItem(id, replaceAll = false) } }
                                         })
-                                        DropdownMenuItem(text = { Text("Add folder") }, leadingIcon = { Icon(Icons.Filled.Add, null) }, onClick = {
+                                        DropdownMenuItem(text = { Text(stringResource(R.string.add_folder)) }, leadingIcon = { Icon(Icons.Filled.Add, null) }, onClick = {
                                             menu = false; addPathTo = lib.name
                                         })
-                                        DropdownMenuItem(text = { Text("Rename") }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = {
+                                        DropdownMenuItem(text = { Text(stringResource(R.string.rename)) }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = {
                                             menu = false; renaming = lib
                                         })
-                                        DropdownMenuItem(text = { Text("Remove library", color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Filled.Delete, null) }, onClick = {
+                                        DropdownMenuItem(text = { Text(stringResource(R.string.remove_library), color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Filled.Delete, null) }, onClick = {
                                             menu = false; removing = lib
                                         })
                                     }
@@ -146,7 +151,7 @@ fun AdminLibrariesScreen() {
                                     Icon(Icons.Filled.Folder, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(path, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f).padding(start = 8.dp))
                                     if (lib.locations.size > 1) {
-                                        IconButton(onClick = { removingPath = lib.name.orEmpty() to path }) { Icon(Icons.Filled.Delete, "Remove folder") }
+                                        IconButton(onClick = { removingPath = lib.name.orEmpty() to path }) { Icon(Icons.Filled.Delete, stringResource(R.string.remove_folder)) }
                                     }
                                 }
                             }
@@ -160,56 +165,56 @@ fun AdminLibrariesScreen() {
     if (adding) {
         AddLibraryDialog(client, onDismiss = { adding = false }) { name, type, path ->
             adding = false
-            actions.run("Library added - scanning", after = { loader.reload(silent = true) }) { client.addVirtualFolder(name, type, listOf(path)) }
+            actions.run(str(R.string.library_added_scanning), after = { loader.reload(silent = true) }) { client.addVirtualFolder(name, type, listOf(path)) }
         }
     }
     addPathTo?.let { libName ->
         FolderPickerDialog(client, onDismiss = { addPathTo = null }) { path ->
             addPathTo = null
-            actions.run("Folder added", after = { loader.reload(silent = true) }) { client.addLibraryPath(libName, path) }
+            actions.run(str(R.string.folder_added), after = { loader.reload(silent = true) }) { client.addLibraryPath(libName, path) }
         }
     }
     renaming?.let { lib ->
         var newName by remember(lib.name) { mutableStateOf(lib.name.orEmpty()) }
         AlertDialog(
             onDismissRequest = { renaming = null },
-            title = { Text("Rename library") },
-            text = { OutlinedTextField(newName, { newName = it }, singleLine = true, label = { Text("Name") }) },
+            title = { Text(stringResource(R.string.rename_library)) },
+            text = { OutlinedTextField(newName, { newName = it }, singleLine = true, label = { Text(stringResource(R.string.name)) }) },
             confirmButton = {
                 TextButton(enabled = newName.isNotBlank(), onClick = {
                     renaming = null
-                    actions.run("Renamed", after = { loader.reload(silent = true) }) { client.renameVirtualFolder(lib.name.orEmpty(), newName.trim()) }
-                }) { Text("Rename") }
+                    actions.run(str(R.string.renamed), after = { loader.reload(silent = true) }) { client.renameVirtualFolder(lib.name.orEmpty(), newName.trim()) }
+                }) { Text(stringResource(R.string.rename)) }
             },
-            dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { renaming = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
     removingPath?.let { (libName, path) ->
         AlertDialog(
             onDismissRequest = { removingPath = null },
-            title = { Text("Remove folder?") },
-            text = { Text("$path will no longer be part of $libName, and its items will drop out of the library. The files on disk are not touched.") },
+            title = { Text(stringResource(R.string.remove_folder_2)) },
+            text = { Text(stringResource(R.string.x_will_no_longer_be_part, path, libName)) },
             confirmButton = {
                 TextButton(onClick = {
                     removingPath = null
-                    actions.run("Folder removed", after = { loader.reload(silent = true) }) { client.removeLibraryPath(libName, path) }
-                }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+                    actions.run(str(R.string.folder_removed), after = { loader.reload(silent = true) }) { client.removeLibraryPath(libName, path) }
+                }) { Text(stringResource(R.string.remove), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { removingPath = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { removingPath = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
     removing?.let { lib ->
         AlertDialog(
             onDismissRequest = { removing = null },
-            title = { Text("Remove ${lib.name}?") },
-            text = { Text("The library is removed from Jellyfin along with its watch history. Your media files on disk are not touched.") },
+            title = { Text(stringResource(R.string.remove_x, lib.name)) },
+            text = { Text(stringResource(R.string.the_library_is_removed_from_jellyfin)) },
             confirmButton = {
                 TextButton(onClick = {
                     removing = null
-                    actions.run("Library removed", after = { loader.reload(silent = true) }) { client.removeVirtualFolder(lib.name.orEmpty()) }
-                }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+                    actions.run(str(R.string.library_removed), after = { loader.reload(silent = true) }) { client.removeVirtualFolder(lib.name.orEmpty()) }
+                }) { Text(stringResource(R.string.remove), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -233,7 +238,7 @@ private fun AddLibraryDialog(client: JellyfinClient, onDismiss: () -> Unit, onCr
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add library") },
+        title = { Text(stringResource(R.string.add_library)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box {
@@ -241,7 +246,7 @@ private fun AddLibraryDialog(client: JellyfinClient, onDismiss: () -> Unit, onCr
                         value = COLLECTION_TYPES.first { it.first == type }.second,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Content type") },
+                        label = { Text(stringResource(R.string.content_type)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Box(Modifier.matchParentSize().clickable { typeMenu = true })
@@ -251,9 +256,9 @@ private fun AddLibraryDialog(client: JellyfinClient, onDismiss: () -> Unit, onCr
                         }
                     }
                 }
-                OutlinedTextField(name, { name = it }, label = { Text("Display name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.display_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 ListItem(
-                    headlineContent = { Text(path ?: "Choose a folder on the server") },
+                    headlineContent = { Text(path ?: stringResource(R.string.choose_a_folder_on_the_server)) },
                     leadingContent = { Icon(Icons.Filled.Folder, null) },
                     modifier = Modifier.clickable { picking = true },
                 )
@@ -262,9 +267,9 @@ private fun AddLibraryDialog(client: JellyfinClient, onDismiss: () -> Unit, onCr
         confirmButton = {
             TextButton(enabled = name.isNotBlank() && path != null, onClick = {
                 onCreate(name.trim(), if (type == "mixed") null else type, path!!)
-            }) { Text("Add") }
+            }) { Text(stringResource(R.string.add)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -298,14 +303,14 @@ fun FolderPickerDialog(client: JellyfinClient, onDismiss: () -> Unit, onPick: (S
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Server folder") },
+        title = { Text(stringResource(R.string.server_folder)) },
         text = {
             Column {
                 OutlinedTextField(
                     typed, { typed = it },
-                    label = { Text("Path") },
+                    label = { Text(stringResource(R.string.path)) },
                     singleLine = true,
-                    trailingIcon = { TextButton(onClick = { path = typed.ifBlank { null } }) { Text("Go") } },
+                    trailingIcon = { TextButton(onClick = { path = typed.ifBlank { null } }) { Text(stringResource(R.string.go)) } },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (loading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp))
@@ -331,8 +336,8 @@ fun FolderPickerDialog(client: JellyfinClient, onDismiss: () -> Unit, onPick: (S
                 }
             }
         },
-        confirmButton = { TextButton(enabled = path != null && path != PARENT_MARKER, onClick = { path?.let(onPick) }) { Text("Use this folder") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(enabled = path != null && path != PARENT_MARKER, onClick = { path?.let(onPick) }) { Text(stringResource(R.string.use_this_folder)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

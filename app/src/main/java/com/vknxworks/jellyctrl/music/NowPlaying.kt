@@ -74,6 +74,8 @@ import com.vknxworks.jellyctrl.ui.nav.ItemRoute
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import com.vknxworks.jellyctrl.ui.theme.ArtworkTint
 import com.vknxworks.jellyctrl.ui.theme.rememberArtworkColor
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
 
 /** Floating card above the navigation bar while music plays. */
 @Composable
@@ -103,9 +105,9 @@ fun MiniPlayer(onOpen: () -> Unit) {
                         Text(s.artist.orEmpty(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     IconButton(onClick = { music.togglePlay() }) {
-                        Icon(if (s.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, if (s.isPlaying) "Pause" else "Play")
+                        Icon(if (s.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, if (s.isPlaying) stringResource(R.string.pause) else stringResource(R.string.play))
                     }
-                    IconButton(onClick = { music.next() }) { Icon(Icons.Filled.SkipNext, "Next track") }
+                    IconButton(onClick = { music.next() }) { Icon(Icons.Filled.SkipNext, stringResource(R.string.next_track)) }
                 }
                 val p = if (s.durationMs > 0) (s.positionMs.toFloat() / s.durationMs).coerceIn(0f, 1f) else 0f
                 Box(
@@ -129,7 +131,7 @@ fun NowPlayingScreen() {
     val seed = rememberArtworkColor(s.artworkUri)
 
     if (!s.hasMedia) {
-        MessageView(Icons.Outlined.MusicNote, "Nothing playing", "Play an album, a playlist or a song and it shows up here.")
+        MessageView(Icons.Outlined.MusicNote, stringResource(R.string.nothing_playing), stringResource(R.string.play_an_album_a_playlist_or))
         return
     }
 
@@ -143,7 +145,7 @@ fun NowPlayingScreen() {
             val player: @Composable (Modifier) -> Unit = { mod ->
                 Column(mod.statusBarsPadding().padding(horizontal = 28.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = nav::back) { Icon(Icons.Filled.KeyboardArrowDown, "Close") }
+                        IconButton(onClick = nav::back) { Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.close)) }
                         Text(
                             s.album.orEmpty(),
                             style = MaterialTheme.typography.labelLarge,
@@ -153,7 +155,7 @@ fun NowPlayingScreen() {
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(onClick = { music.stop(); nav.back() }) { Icon(Icons.Filled.Stop, "Stop playback") }
+                        IconButton(onClick = { music.stop(); nav.back() }) { Icon(Icons.Filled.Stop, stringResource(R.string.stop_playback)) }
                     }
                     Spacer(Modifier.height(20.dp))
                     Box(
@@ -186,25 +188,25 @@ fun NowPlayingScreen() {
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         IconButton(onClick = { music.toggleShuffle() }) {
-                            Icon(Icons.Filled.Shuffle, "Shuffle", tint = if (s.shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Filled.Shuffle, stringResource(R.string.shuffle), tint = if (s.shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        IconButton(onClick = { music.previous() }, modifier = Modifier.size(56.dp)) { Icon(Icons.Filled.SkipPrevious, "Previous", Modifier.size(36.dp)) }
+                        IconButton(onClick = { music.previous() }, modifier = Modifier.size(56.dp)) { Icon(Icons.Filled.SkipPrevious, stringResource(R.string.previous), Modifier.size(36.dp)) }
                         IconButton(
                             onClick = { music.togglePlay() },
                             modifier = Modifier.size(76.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
                         ) {
                             Icon(
                                 if (s.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                                if (s.isPlaying) "Pause" else "Play",
+                                if (s.isPlaying) stringResource(R.string.pause) else stringResource(R.string.play),
                                 Modifier.size(40.dp),
                                 tint = MaterialTheme.colorScheme.onPrimary,
                             )
                         }
-                        IconButton(onClick = { music.next() }, modifier = Modifier.size(56.dp)) { Icon(Icons.Filled.SkipNext, "Next", Modifier.size(36.dp)) }
+                        IconButton(onClick = { music.next() }, modifier = Modifier.size(56.dp)) { Icon(Icons.Filled.SkipNext, stringResource(R.string.next), Modifier.size(36.dp)) }
                         IconButton(onClick = { music.cycleRepeat() }) {
                             Icon(
                                 if (s.repeatMode == Player.REPEAT_MODE_ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
-                                "Repeat",
+                                stringResource(R.string.repeat),
                                 tint = if (s.repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -212,8 +214,8 @@ fun NowPlayingScreen() {
                     if (!wide) {
                         Spacer(Modifier.weight(1f))
                         Row(Modifier.fillMaxWidth().navigationBarsPadding(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            PanelButton(Icons.AutoMirrored.Filled.Subject, "Lyrics") { panel = "lyrics" }
-                            PanelButton(Icons.AutoMirrored.Filled.QueueMusic, "Up next") { panel = "queue" }
+                            PanelButton(Icons.AutoMirrored.Filled.Subject, stringResource(R.string.lyrics)) { panel = "lyrics" }
+                            PanelButton(Icons.AutoMirrored.Filled.QueueMusic, stringResource(R.string.up_next)) { panel = "queue" }
                         }
                     }
                 }
@@ -223,8 +225,8 @@ fun NowPlayingScreen() {
                     player(Modifier.weight(1f).fillMaxSize())
                     Column(Modifier.weight(1f).fillMaxSize().statusBarsPadding()) {
                         Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            PanelButton(Icons.AutoMirrored.Filled.QueueMusic, "Up next", selected = panel != "lyrics") { panel = "queue" }
-                            PanelButton(Icons.AutoMirrored.Filled.Subject, "Lyrics", selected = panel == "lyrics") { panel = "lyrics" }
+                            PanelButton(Icons.AutoMirrored.Filled.QueueMusic, stringResource(R.string.up_next), selected = panel != "lyrics") { panel = "queue" }
+                            PanelButton(Icons.AutoMirrored.Filled.Subject, stringResource(R.string.lyrics), selected = panel == "lyrics") { panel = "lyrics" }
                         }
                         if (panel == "lyrics") LyricsView(s) else QueueList(s)
                     }
@@ -293,7 +295,7 @@ private fun QueueList(s: MusicState) {
                     e.artist?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
                 if (!current) {
-                    IconButton(onClick = { music.removeAt(i) }) { Icon(Icons.Filled.Close, "Remove from queue", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    IconButton(onClick = { music.removeAt(i) }) { Icon(Icons.Filled.Close, stringResource(R.string.remove_from_queue), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
         }
@@ -307,7 +309,7 @@ private fun LyricsView(s: MusicState) {
     val loader = rememberLoader("lyrics-$id") { c.api.lyrics(id) }
     val lyrics = loader.value
     if (lyrics == null || lyrics.lyrics.isEmpty()) {
-        MessageView(Icons.Outlined.MusicNote, if (loader.state is Load.Loading) "Loading lyrics" else "No lyrics for this song")
+        MessageView(Icons.Outlined.MusicNote, if (loader.state is Load.Loading) stringResource(R.string.loading_lyrics) else stringResource(R.string.no_lyrics_for_this_song))
         return
     }
     val synced = lyrics.lyrics.any { it.start != null }

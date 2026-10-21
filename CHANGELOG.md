@@ -4,10 +4,15 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
-## Unreleased
+## v0.2.5 (2026-10-21)
+
+A tidy-up release that makes JellyCtrl match the other Ctrl apps.
 
 ### Changed
 
+- **Your profile picture placeholder now matches the other Ctrl apps.** When your Jellyfin account has no picture, the round button at the top right and the big picture on the You page show your initial on a circle tinted in the app's accent colour, instead of a plain grey circle. Your Jellyfin picture still shows when you have one
+- **All text is now in one place, ready for translations.** Every label, message, notification and error the app shows now comes from a single list instead of being written into the code
+- **Counts use proper singular and plural wording** (seasons, tracks, episodes, items, downloads, seconds), ready for languages with other plural rules. In English, a server settings page with a single advanced setting it can't show now says "1 advanced setting isn't shown here" instead of "1 advanced settings aren't shown here"
 - **README**: the App lock and privacy setting paths now start at your profile picture (tap your profile picture › Settings › Privacy and security)
 
 ## v0.2.4 (2026-10-21)

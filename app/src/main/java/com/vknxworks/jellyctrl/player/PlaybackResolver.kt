@@ -9,6 +9,8 @@ import com.vknxworks.jellyctrl.data.api.directStreamUrl
 import com.vknxworks.jellyctrl.data.api.msToTicks
 import com.vknxworks.jellyctrl.data.api.playbackInfo
 import com.vknxworks.jellyctrl.data.settings.PlayerEngineChoice
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 enum class EngineKind { MEDIA3, MPV }
 
@@ -68,7 +70,7 @@ object PlaybackResolver {
         if (info.errorCode != null) throw IllegalStateException(playbackError(info.errorCode))
         val source = info.mediaSources.firstOrNull { mediaSourceId == null || it.id == mediaSourceId }
             ?: info.mediaSources.firstOrNull()
-            ?: throw IllegalStateException("The server returned no playable media")
+            ?: throw IllegalStateException(str(R.string.the_server_returned_no_playable_media))
 
         val audio = audioIndex ?: source.defaultAudioStreamIndex
         val sub = when (subtitleIndex) {
@@ -98,7 +100,7 @@ object PlaybackResolver {
                 source.transcodingSubProtocol.equals("hls", true) || transcodeUrl.contains(".m3u8"),
                 "Transcode",
             )
-            else -> throw IllegalStateException("This file can't be played or transcoded for this device")
+            else -> throw IllegalStateException(str(R.string.this_file_can_t_be_played))
         }
 
         // Track choices in engine terms. Transcodes already have the chosen tracks baked in by the server.
@@ -162,10 +164,10 @@ object PlaybackResolver {
     }
 
     private fun playbackError(code: String) = when (code) {
-        "NotAllowed" -> "This account isn't allowed to play this"
-        "NoCompatibleStream" -> "No compatible stream - try another player engine in settings"
-        "RateLimitExceeded" -> "Too many streams on this server right now"
-        else -> "Playback error: $code"
+        "NotAllowed" -> str(R.string.this_account_isn_t_allowed_to)
+        "NoCompatibleStream" -> str(R.string.no_compatible_stream_try_another_player)
+        "RateLimitExceeded" -> str(R.string.too_many_streams_on_this_server)
+        else -> str(R.string.playback_error_x, code)
     }
 
     private data class Quad<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
