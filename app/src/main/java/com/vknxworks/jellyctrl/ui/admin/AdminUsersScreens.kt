@@ -98,7 +98,7 @@ fun AdminUsersScreen() {
                                     if (u.policy?.isAdministrator == true) stringResource(R.string.administrator) else null,
                                     if (u.policy?.isDisabled == true) stringResource(R.string.disabled) else null,
                                     if (u.policy?.isHidden == true) stringResource(R.string.hidden) else null,
-                                    u.lastActivityDate?.let { stringResource(R.string.active_x, formatDateTime(it)) },
+                                    u.lastActivityDate?.let { stringResource(R.string.active_x, formatDateTime(it).orEmpty()) },
                                 ).joinToString("  ·  ").ifBlank { stringResource(R.string.never_signed_in) }
                             )
                         },

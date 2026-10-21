@@ -315,7 +315,7 @@ fun AccountsScreen() {
         val acc = accounts.firstOrNull { it.key == key }
         AlertDialog(
             onDismissRequest = { signOut = null },
-            title = { Text(stringResource(R.string.sign_out_x, acc?.userName)) },
+            title = { Text(stringResource(R.string.sign_out_x, acc?.userName.orEmpty())) },
             text = { Text(stringResource(R.string.this_signs_the_account_out_on)) },
             confirmButton = { TextButton(onClick = { signOut = null; scope.launch { c.sessions.signOut(key) } }) { Text(stringResource(R.string.sign_out)) } },
             dismissButton = { TextButton(onClick = { signOut = null }) { Text(stringResource(R.string.cancel)) } },

@@ -759,7 +759,7 @@ private fun MoreSheet(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text(stringResource(R.string.delete_x, item.name)) },
+            title = { Text(stringResource(R.string.delete_x, item.name.orEmpty())) },
             text = { Text(stringResource(R.string.this_removes_the_files_from_the)) },
             confirmButton = {
                 TextButton(onClick = {
