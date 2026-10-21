@@ -82,11 +82,8 @@ class PlayerActivity : ComponentActivity() {
                 val covered = lockCovering(lockSetting, c.vault)
                 // The video follows "Hide in screenshots" and "Hide in recent apps"; it's always hidden under the lock screen.
                 val secure = settings.hideScreenshots || covered
-                LaunchedEffect(secure, settings.hideRecents) {
-                    if (secure) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                    else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                    setRecentsScreenshotEnabled(!secure && !settings.hideRecents)
-                }
+                // With the app lock on, Recents always shows a blank card (the snapshot is taken before it locks).
+                com.vknxworks.jellyctrl.ui.lock.WindowPrivacy(this@PlayerActivity, secure, hideRecents = settings.hideRecents || lockSetting || c.vault.enabled)
                 Box(Modifier.fillMaxSize()) {
                     // The player stays underneath the lock screen (paused), hidden from TalkBack too.
                     Box(if (covered) Modifier.fillMaxSize().clearAndSetSemantics { } else Modifier.fillMaxSize()) {
