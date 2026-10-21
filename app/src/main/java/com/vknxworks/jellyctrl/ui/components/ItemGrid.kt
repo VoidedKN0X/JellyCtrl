@@ -91,7 +91,7 @@ fun PagedItemGrid(
             item(span = { GridItemSpan(maxLineSpan) }, key = "footer") {
                 Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                     if (loader.error != null) {
-                        TextButton(onClick = { loader.loadMore() }) { Text(stringResource(R.string.retry_x, loader.error)) }
+                        TextButton(onClick = { loader.loadMore() }) { Text(stringResource(R.string.retry_x, loader.error.orEmpty())) }
                     } else {
                         CircularProgressIndicator()
                     }

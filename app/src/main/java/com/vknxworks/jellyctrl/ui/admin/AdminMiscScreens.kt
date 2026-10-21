@@ -199,7 +199,7 @@ fun AdminPluginsScreen() {
     confirmRemove?.let { p ->
         AlertDialog(
             onDismissRequest = { confirmRemove = null },
-            title = { Text(stringResource(R.string.uninstall_x, p.name)) },
+            title = { Text(stringResource(R.string.uninstall_x, p.name.orEmpty())) },
             text = { Text(stringResource(R.string.the_server_needs_a_restart_afterwards)) },
             confirmButton = {
                 TextButton(onClick = {

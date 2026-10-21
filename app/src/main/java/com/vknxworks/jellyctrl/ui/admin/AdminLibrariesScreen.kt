@@ -206,7 +206,7 @@ fun AdminLibrariesScreen() {
     removing?.let { lib ->
         AlertDialog(
             onDismissRequest = { removing = null },
-            title = { Text(stringResource(R.string.remove_x, lib.name)) },
+            title = { Text(stringResource(R.string.remove_x, lib.name.orEmpty())) },
             text = { Text(stringResource(R.string.the_library_is_removed_from_jellyfin)) },
             confirmButton = {
                 TextButton(onClick = {
