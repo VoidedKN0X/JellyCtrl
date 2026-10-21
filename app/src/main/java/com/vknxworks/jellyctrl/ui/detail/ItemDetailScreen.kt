@@ -135,6 +135,11 @@ import com.vknxworks.jellyctrl.ui.theme.rememberArtworkColor
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
+import androidx.compose.ui.res.pluralStringResource
+import com.vknxworks.jellyctrl.plural
 
 /** Everything a detail page shows, loaded in parallel. */
 private data class Detail(
@@ -230,7 +235,7 @@ fun ItemDetailScreen(id: String) {
                 onClick = nav::back,
                 modifier = Modifier.statusBarsPadding().padding(start = 8.dp, top = 4.dp)
                     .clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)),
-            ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White) }
+            ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = Color.White) }
         }
     }
 }
@@ -279,23 +284,23 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
                     }
                 }
                 "Season" -> {
-                    item("eps-header") { SectionHeader(if (d.episodes.size == 1) "1 episode" else "${d.episodes.size} episodes") }
+                    item("eps-header") { SectionHeader(pluralStringResource(R.plurals.count_episodes, d.episodes.size, d.episodes.size)) }
                     items(d.episodes, key = { "ep-" + it.id }) { ep ->
                         EpisodeRow(ep, client, onClick = { nav.openItem(ep) }, onPlay = { nav.play(ep) }, onLong = { menuItem = ep })
                     }
                 }
                 "MusicAlbum", "Playlist" -> trackList(d, client, reload) { menuItem = it }
                 "MusicArtist" -> {
-                    item("albums") { ItemRow("Albums", d.children, client, nav::openItem, onLongItem = { menuItem = it }) }
-                    item("appears") { ItemRow("Appears on", d.filmography, client, nav::openItem) }
+                    item("albums") { ItemRow(stringResource(R.string.albums), d.children, client, nav::openItem, onLongItem = { menuItem = it }) }
+                    item("appears") { ItemRow(stringResource(R.string.appears_on), d.filmography, client, nav::openItem) }
                 }
-                "BoxSet" -> item("children") { ItemRow("In this collection", d.children, client, nav::openItem, onLongItem = { menuItem = it }) }
-                "Person" -> item("films") { ItemRow("Known for", d.filmography, client, nav::openItem, onLongItem = { menuItem = it }) }
+                "BoxSet" -> item("children") { ItemRow(stringResource(R.string.in_this_collection), d.children, client, nav::openItem, onLongItem = { menuItem = it }) }
+                "Person" -> item("films") { ItemRow(stringResource(R.string.known_for), d.filmography, client, nav::openItem, onLongItem = { menuItem = it }) }
                 else -> {
                     if (cur.type == "Episode" && d.episodes.size > 1) {
                         item("season") {
                             ItemRow(
-                                cur.seasonName ?: "More from this season",
+                                cur.seasonName ?: stringResource(R.string.more_from_this_season),
                                 d.episodes.filter { it.id != cur.id }, client, nav::openItem, landscape = true,
                                 onMore = { cur.seasonId?.let { nav.navigate(ItemRoute(it)) } },
                             )
@@ -309,10 +314,10 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
                 }
             }
             if (cur.type != "Person") {
-                item("cast") { PeopleRow("Cast and crew", cur.people, client) { p -> nav.navigate(ItemRoute(p.id)) } }
+                item("cast") { PeopleRow(stringResource(R.string.cast_and_crew), cur.people, client) { p -> nav.navigate(ItemRoute(p.id)) } }
             }
-            item("extras") { ItemRow("Extras", d.extras, client, nav::openItem, landscape = true) }
-            item("similar") { ItemRow("More like this", d.similar, client, nav::openItem, onLongItem = { menuItem = it }) }
+            item("extras") { ItemRow(stringResource(R.string.extras), d.extras, client, nav::openItem, landscape = true) }
+            item("similar") { ItemRow(stringResource(R.string.more_like_this), d.similar, client, nav::openItem, onLongItem = { menuItem = it }) }
             item("info") {
                 val source = cur.mediaSources.firstOrNull()
                 if (source != null && cur.mediaType == "Video") MediaInfoBlock(source.mediaStreams, source.container, source.size)
@@ -320,11 +325,11 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
             if (cur.externalUrls.isNotEmpty()) {
                 item("links") {
                     Column {
-                        SectionHeader("Links")
+                        SectionHeader(stringResource(R.string.links))
                         LazyRow(contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(cur.externalUrls.filter { it.url != null }.distinctBy { it.url }, key = { it.url.orEmpty() }) { link ->
                                 Text(
-                                    link.name ?: "Link",
+                                    link.name ?: stringResource(R.string.link),
                                     style = MaterialTheme.typography.labelLarge,
                                     modifier = Modifier
                                         .clip(CircleShape)
@@ -388,8 +393,8 @@ private fun Hero(item: BaseItemDto, client: JellyfinClient, wide: Boolean, width
             }
             val episodeLine = if (item.type == "Episode") {
                 listOfNotNull(
-                    item.parentIndexNumber?.let { "Season $it" },
-                    item.indexNumber?.let { "Episode $it" },
+                    item.parentIndexNumber?.let { stringResource(R.string.season_x, it) },
+                    item.indexNumber?.let { stringResource(R.string.episode_x, it) },
                 ).joinToString(", ")
             } else null
             MetaRow(listOfNotNull(episodeLine) + metaParts(item))
@@ -425,7 +430,7 @@ private fun SquareHeader(item: BaseItemDto, client: JellyfinClient) {
                 modifier = Modifier.clickable { artist?.id?.let { nav.navigate(ItemRoute(it)) } },
             )
         }
-        MetaRow(metaParts(item).filter { !it.startsWith("Ends") })
+        MetaRow(metaParts(item, withEnd = false))
     }
 }
 
@@ -441,7 +446,7 @@ private fun PersonHeader(item: BaseItemDto, client: JellyfinClient) {
         Spacer(Modifier.height(16.dp))
         Text(item.name.orEmpty(), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
         airDateText(item)?.let {
-            Text("Born $it", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.born_x, it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -495,13 +500,13 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
 
     fun download() {
         if (dl?.status == DownloadStatus.DONE) {
-            Toast.makeText(context, "Already downloaded", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, str(R.string.already_downloaded), Toast.LENGTH_SHORT).show()
             return
         }
         (context as? MainActivity)?.ensureNotificationPermission()
         scope.launch {
             val n = runCatching { downloadItemWith(c, item) }.getOrElse { 0 }
-            Toast.makeText(context, if (n == 0) "Couldn't start the download" else if (n == 1) "Downloading" else "Downloading $n items", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (n == 0) str(R.string.couldn_t_start_the_download) else plural(R.plurals.downloading_items, n, n), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -510,11 +515,11 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
             val label = when {
                 item.type == "Series" && d.nextUp != null -> {
                     val n = d.nextUp
-                    if (n.parentIndexNumber != null && n.indexNumber != null) "Play S${n.parentIndexNumber} E${n.indexNumber}" else "Play"
+                    if (n.parentIndexNumber != null && n.indexNumber != null) stringResource(R.string.play_s_x_e_x, n.parentIndexNumber, n.indexNumber) else stringResource(R.string.play)
                 }
-                resumeMs > 0 && isVideo -> "Resume from ${formatClock(resumeMs)}"
-                isAudioSet || item.type == "MusicArtist" -> "Play"
-                else -> "Play"
+                resumeMs > 0 && isVideo -> stringResource(R.string.resume_from_x, formatClock(resumeMs))
+                isAudioSet || item.type == "MusicArtist" -> stringResource(R.string.play)
+                else -> stringResource(R.string.play)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PillButton(
@@ -542,11 +547,11 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             if (item.type != "Person") {
-                RoundAction(Icons.Filled.Check, if (played) "Watched" else "Mark watched", { toggle { c.api.setPlayed(item.id, !played) } }, active = played)
+                RoundAction(Icons.Filled.Check, if (played) stringResource(R.string.watched) else stringResource(R.string.mark_watched), { toggle { c.api.setPlayed(item.id, !played) } }, active = played)
             }
             RoundAction(
                 if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                "Favourite",
+                stringResource(R.string.favourite),
                 { toggle { c.api.setFavorite(item.id, !fav) } },
                 active = fav,
             )
@@ -554,20 +559,20 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
                 RoundAction(
                     if (dl?.status == DownloadStatus.DONE) Icons.Filled.DownloadDone else Icons.Filled.Download,
                     when (dl?.status) {
-                        DownloadStatus.DONE -> "Downloaded"
-                        DownloadStatus.RUNNING, DownloadStatus.QUEUED -> "Downloading"
-                        else -> "Download"
+                        DownloadStatus.DONE -> stringResource(R.string.downloaded)
+                        DownloadStatus.RUNNING, DownloadStatus.QUEUED -> stringResource(R.string.downloading)
+                        else -> stringResource(R.string.download)
                     },
                     ::download,
                     active = dl?.status == DownloadStatus.DONE,
                 )
             }
             if (item.remoteTrailers.isNotEmpty()) {
-                RoundAction(Icons.Outlined.Movie, "Trailer", {
+                RoundAction(Icons.Outlined.Movie, stringResource(R.string.trailer), {
                     item.remoteTrailers.firstOrNull()?.url?.let { openWebLink(context, it) }
                 })
             }
-            RoundAction(Icons.Filled.MoreHoriz, "More", { more = true })
+            RoundAction(Icons.Filled.MoreHoriz, stringResource(R.string.more), { more = true })
         }
 
         if (isVideo && source != null && (audioStreams.size > 1 || subStreams.isNotEmpty() || sources.size > 1)) {
@@ -583,9 +588,9 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
                 Icon(Icons.Filled.Subtitles, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(audio?.label() ?: "Default audio", style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(audio?.label() ?: stringResource(R.string.default_audio), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        sub?.let { "Subtitles: ${it.label()}" } ?: "Subtitles off",
+                        sub?.let { stringResource(R.string.subtitles_x, it.label()) } ?: stringResource(R.string.subtitles_off),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -605,10 +610,10 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
         val directors = item.people.filter { it.type == "Director" }.mapNotNull { it.name }
         val writers = item.people.filter { it.type == "Writer" }.mapNotNull { it.name }
         val credits = listOfNotNull(
-            directors.takeIf { it.isNotEmpty() }?.let { "Directed by ${it.joinToString()}" },
-            writers.takeIf { it.isNotEmpty() }?.let { "Written by ${it.joinToString()}" },
-            item.studios.mapNotNull { it.name }.takeIf { it.isNotEmpty() }?.let { "From ${it.joinToString()}" },
-            if (item.type == "Episode") airDateText(item)?.let { "Aired $it" } else null,
+            directors.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.directed_by_x, it.joinToString()) },
+            writers.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.written_by_x, it.joinToString()) },
+            item.studios.mapNotNull { it.name }.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.from_x, it.joinToString()) },
+            if (item.type == "Episode") airDateText(item)?.let { stringResource(R.string.aired_x, it) } else null,
         )
         if (credits.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -652,18 +657,18 @@ private fun TracksSheet(
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
         Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
             if (sources.size > 1) {
-                SheetTitle("Version")
-                sources.forEach { s -> CheckLine(s.name ?: "Default", s.id == source?.id) { onSource(s) } }
+                SheetTitle(stringResource(R.string.version))
+                sources.forEach { s -> CheckLine(s.name ?: stringResource(R.string.default_label), s.id == source?.id) { onSource(s) } }
             }
             if (audioStreams.isNotEmpty()) {
-                SheetTitle("Audio")
+                SheetTitle(stringResource(R.string.audio))
                 audioStreams.forEach { a ->
                     CheckLine(a.label(), a.index == audio?.index, a.channelLayout) { onAudio(a) }
                 }
             }
             if (subStreams.isNotEmpty()) {
-                SheetTitle("Subtitles")
-                CheckLine("Off", sub == null) { onSub(null) }
+                SheetTitle(stringResource(R.string.subtitles))
+                CheckLine(stringResource(R.string.off), sub == null) { onSub(null) }
                 subStreams.forEach { s -> CheckLine(s.label(), s.index == sub?.index) { onSub(s) } }
             }
         }
@@ -689,7 +694,7 @@ private fun CheckLine(title: String, selected: Boolean, subtitle: String? = null
             Text(title, style = MaterialTheme.typography.bodyLarge, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (selected) Icon(Icons.Filled.Check, "Selected", tint = MaterialTheme.colorScheme.primary)
+        if (selected) Icon(Icons.Filled.Check, stringResource(R.string.selected), tint = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -728,25 +733,25 @@ private fun MoreSheet(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             )
             fun act(block: () -> Unit) { block(); onDismiss() }
-            if (resumeMs > 0 && isVideo) SheetAction(Icons.Filled.Replay, "Play from the beginning") { act(onPlayFromStart) }
-            if (item.isFolder && item.type != "Person") SheetAction(Icons.Filled.Shuffle, "Shuffle") { act { nav.shuffle(item) } }
-            if (item.type in setOf("MusicArtist", "MusicAlbum", "Audio")) SheetAction(Icons.Outlined.AutoAwesome, "Instant mix") { act { c.music.instantMix(item) } }
-            if (item.type != "Playlist" && item.type != "Person") SheetAction(Icons.AutoMirrored.Filled.PlaylistAdd, "Add to playlist") { playlist = true }
-            if (item.type == "Episode" && item.seriesId != null) SheetAction(Icons.Filled.Tv, "Go to show") { act { nav.navigate(ItemRoute(item.seriesId)) } }
+            if (resumeMs > 0 && isVideo) SheetAction(Icons.Filled.Replay, stringResource(R.string.play_from_the_beginning)) { act(onPlayFromStart) }
+            if (item.isFolder && item.type != "Person") SheetAction(Icons.Filled.Shuffle, stringResource(R.string.shuffle)) { act { nav.shuffle(item) } }
+            if (item.type in setOf("MusicArtist", "MusicAlbum", "Audio")) SheetAction(Icons.Outlined.AutoAwesome, stringResource(R.string.instant_mix)) { act { c.music.instantMix(item) } }
+            if (item.type != "Playlist" && item.type != "Person") SheetAction(Icons.AutoMirrored.Filled.PlaylistAdd, stringResource(R.string.add_to_playlist)) { playlist = true }
+            if (item.type == "Episode" && item.seriesId != null) SheetAction(Icons.Filled.Tv, stringResource(R.string.go_to_show)) { act { nav.navigate(ItemRoute(item.seriesId)) } }
             if (isAdmin) {
-                SheetAction(Icons.Filled.Edit, "Edit details") { act { nav.navigate(EditMetadataRoute(item.id)) } }
-                SheetAction(Icons.Filled.Refresh, "Refresh metadata") {
+                SheetAction(Icons.Filled.Edit, stringResource(R.string.edit_details)) { act { nav.navigate(EditMetadataRoute(item.id)) } }
+                SheetAction(Icons.Filled.Refresh, stringResource(R.string.refresh_metadata)) {
                     act {
                         scope.launch {
                             runCatching { c.api.refreshItem(item.id, replaceAll = false) }
-                                .onSuccess { Toast.makeText(context, "Refreshing metadata", Toast.LENGTH_SHORT).show(); onChanged() }
+                                .onSuccess { Toast.makeText(context, str(R.string.refreshing_metadata), Toast.LENGTH_SHORT).show(); onChanged() }
                                 .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                         }
                     }
                 }
             }
             if (item.canDelete) {
-                SheetAction(Icons.Filled.Delete, "Delete from server", destructive = true) { confirmDelete = true }
+                SheetAction(Icons.Filled.Delete, stringResource(R.string.delete_from_server), destructive = true) { confirmDelete = true }
             }
         }
     }
@@ -754,20 +759,20 @@ private fun MoreSheet(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete ${item.name}?") },
-            text = { Text("This removes the files from the server's disk for everyone. It can't be undone.") },
+            title = { Text(stringResource(R.string.delete_x, item.name)) },
+            text = { Text(stringResource(R.string.this_removes_the_files_from_the)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     onDismiss()
                     scope.launch {
                         runCatching { c.api.deleteItem(item.id) }
-                            .onSuccess { Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show(); nav.close(com.vknxworks.jellyctrl.ui.nav.ItemRoute::class) }
+                            .onSuccess { Toast.makeText(context, str(R.string.deleted), Toast.LENGTH_SHORT).show(); nav.close(com.vknxworks.jellyctrl.ui.nav.ItemRoute::class) }
                             .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                     }
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Keep") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.keep)) } },
         )
     }
 }
@@ -794,7 +799,7 @@ private fun SeasonChips(seasons: List<BaseItemDto>, selected: String?, onSelect:
         items(seasons, key = { it.id }) { s ->
             val isSel = s.id == selected
             Text(
-                s.name ?: "Season ${s.indexNumber ?: ""}",
+                s.name ?: stringResource(R.string.season_x, s.indexNumber?.toString().orEmpty()),
                 style = MaterialTheme.typography.labelLarge,
                 color = if (isSel) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
@@ -821,7 +826,7 @@ fun EpisodeRow(ep: BaseItemDto, client: JellyfinClient, onClick: () -> Unit, onP
             Box(
                 Modifier.align(Alignment.Center).size(36.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.PlayArrow, "Play", tint = Color.White, modifier = Modifier.size(22.dp)) }
+            ) { Icon(Icons.Filled.PlayArrow, stringResource(R.string.play), tint = Color.White, modifier = Modifier.size(22.dp)) }
             ep.resumeProgress()?.let { ArtProgress(it, Modifier.align(Alignment.BottomCenter)) }
         }
         Spacer(Modifier.width(14.dp))
@@ -836,7 +841,7 @@ fun EpisodeRow(ep: BaseItemDto, client: JellyfinClient, onClick: () -> Unit, onP
                 )
                 if (ep.userData?.played == true) {
                     Spacer(Modifier.width(6.dp))
-                    Icon(Icons.Filled.Check, "Watched", Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Filled.Check, stringResource(R.string.watched), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
             Text(
@@ -870,7 +875,7 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
     val multiDisc = d.children.mapNotNull { it.parentIndexNumber }.distinct().size > 1
     if (multiDisc && !isPlaylist && (index == 0 || d.children[index - 1].parentIndexNumber != track.parentIndexNumber)) {
         Text(
-            "Disc ${track.parentIndexNumber ?: 1}",
+            stringResource(R.string.disc_x, track.parentIndexNumber ?: 1),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = Gutter, top = 16.dp, bottom = 4.dp),
@@ -924,7 +929,7 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
                         .onSuccess { reload() }
                         .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                 }
-            }) { Icon(Icons.Filled.Delete, "Remove from playlist", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }) { Icon(Icons.Filled.Delete, stringResource(R.string.remove_from_playlist), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }

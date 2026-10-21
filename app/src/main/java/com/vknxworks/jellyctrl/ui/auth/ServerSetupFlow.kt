@@ -65,6 +65,8 @@ import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.Group
 import com.vknxworks.jellyctrl.ui.components.GroupRow
 import com.vknxworks.jellyctrl.ui.components.PillButton
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
 
 @Composable
 fun ServerSetupFlow(onDone: () -> Unit, onCancel: (() -> Unit)?) {
@@ -91,17 +93,17 @@ fun ServerSetupFlow(onDone: () -> Unit, onCancel: (() -> Unit)?) {
             Box(Modifier.height(48.dp)) {
                 if (server != null || onCancel != null) {
                     IconButton(onClick = { if (server != null) vm.backToServer() else onCancel?.invoke() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
                     }
                 }
             }
             Text(
-                if (server == null) "JellyCtrl" else "Sign in",
+                if (server == null) "JellyCtrl" else stringResource(R.string.sign_in),
                 style = MaterialTheme.typography.displaySmall,
             )
             Text(
-                if (server == null) "Enter the address of your Jellyfin server, the same one you'd type in a browser."
-                else "to ${server.info.serverName ?: "your Jellyfin server"}",
+                if (server == null) stringResource(R.string.enter_the_address_of_your_jellyfin)
+                else server.info.serverName?.let { stringResource(R.string.sign_in_to_x, it) } ?: stringResource(R.string.sign_in_to_your_server),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -150,7 +152,7 @@ private fun Field(
 private fun ServerStep(vm: ServerSetupViewModel) {
     Field(
         vm.address, { vm.address = it },
-        label = "Server address",
+        label = stringResource(R.string.server_address),
         keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
         actions = KeyboardActions(onGo = { vm.connect() }),
         enabled = !vm.checking,
@@ -159,38 +161,37 @@ private fun ServerStep(vm: ServerSetupViewModel) {
     if (vm.checking) {
         Box(Modifier.fillMaxWidth().height(52.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(28.dp)) }
     } else {
-        PillButton("Continue", onClick = { vm.connect() }, enabled = vm.address.isNotBlank(), modifier = Modifier.fillMaxWidth())
+        PillButton(stringResource(R.string.continue_label), onClick = { vm.connect() }, enabled = vm.address.isNotBlank(), modifier = Modifier.fillMaxWidth())
     }
     vm.httpFallbackFor?.let { host ->
         AlertDialog(
             onDismissRequest = { vm.dismissHttpFallback() },
             icon = { Icon(Icons.Outlined.LockOpen, null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text("Use an unencrypted connection?") },
+            title = { Text(stringResource(R.string.use_an_unencrypted_connection)) },
             text = {
                 Text(
-                    "$host didn't answer over HTTPS. JellyCtrl can try plain HTTP instead, but then your password, " +
-                        "sign-in token and everything you watch are sent unencrypted. Only do this on a network you trust."
+                    stringResource(R.string.x_didn_t_answer_over_https, host)
                 )
             },
-            confirmButton = { TextButton(onClick = { vm.acceptHttpFallback() }) { Text("Use HTTP", color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton(onClick = { vm.dismissHttpFallback() }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { vm.acceptHttpFallback() }) { Text(stringResource(R.string.use_http), color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { vm.dismissHttpFallback() }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 
     Spacer(Modifier.height(8.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            "On this network",
+            stringResource(R.string.on_this_network),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         if (vm.discovering) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-        else IconButton(onClick = { vm.discover() }) { Icon(Icons.Filled.Refresh, "Look again", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        else IconButton(onClick = { vm.discover() }) { Icon(Icons.Filled.Refresh, stringResource(R.string.look_again), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
     if (vm.discovered.isEmpty() && !vm.discovering) {
         Text(
-            "No servers found nearby. That's normal if your server is on another network.",
+            stringResource(R.string.no_servers_found_nearby_that_s),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -231,8 +232,8 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(server.url, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                if (secure) "Jellyfin ${server.info.version.orEmpty()}, encrypted connection"
-                else "Not encrypted (HTTP). Your password is sent in the clear. Fine on your home network, risky anywhere else.",
+                if (secure) stringResource(R.string.jellyfin_x_encrypted_connection, server.info.version.orEmpty())
+                else stringResource(R.string.not_encrypted_http_your_password_is),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -274,18 +275,18 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
 
     Field(
         vm.username, { vm.username = it },
-        label = "Username",
+        label = stringResource(R.string.username),
         keyboard = KeyboardOptions(imeAction = ImeAction.Next),
     )
     Field(
         vm.password, { vm.password = it },
-        label = "Password",
+        label = stringResource(R.string.password),
         visual = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
         keyboard = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
         actions = KeyboardActions(onDone = { vm.signIn(onDone) }),
         trailing = {
             IconButton(onClick = { showPassword = !showPassword }) {
-                Icon(if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, if (showPassword) "Hide password" else "Show password")
+                Icon(if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password))
             }
         },
     )
@@ -293,14 +294,14 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
     if (vm.signingIn) {
         Box(Modifier.fillMaxWidth().height(52.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(28.dp)) }
     } else {
-        PillButton("Sign in", onClick = { vm.signIn(onDone) }, modifier = Modifier.fillMaxWidth())
+        PillButton(stringResource(R.string.sign_in), onClick = { vm.signIn(onDone) }, modifier = Modifier.fillMaxWidth())
     }
 
     if (vm.quickConnectAvailable) {
         val code = vm.quickConnectCode
         if (code == null) {
             TextButton(onClick = { vm.startQuickConnect(onDone) }, modifier = Modifier.fillMaxWidth()) {
-                Text("Sign in with a code instead")
+                Text(stringResource(R.string.sign_in_with_a_code_instead))
             }
         } else {
             Column(
@@ -308,19 +309,19 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text("Your code", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.your_code), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     code.chunked(3).joinToString(" "),
                     style = MaterialTheme.typography.displayMedium.copy(letterSpacing = 6.sp),
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    "On a device that's already signed in, open your profile, choose Quick Connect and enter this code. This screen continues by itself.",
+                    stringResource(R.string.on_a_device_that_s_already),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
-                TextButton(onClick = { vm.cancelQuickConnect() }) { Text("Cancel") }
+                TextButton(onClick = { vm.cancelQuickConnect() }) { Text(stringResource(R.string.cancel)) }
             }
         }
     }

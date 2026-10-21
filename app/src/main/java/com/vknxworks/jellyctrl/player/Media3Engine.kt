@@ -35,6 +35,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import okhttp3.OkHttpClient
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
     override val name = "Media3"
@@ -78,7 +80,7 @@ class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            _state.update { it.copy(error = JellyfinClient.redact("${error.errorCodeName}: ${error.message ?: "Playback failed"}")) }
+            _state.update { it.copy(error = JellyfinClient.redact("${error.errorCodeName}: ${error.message ?: str(R.string.playback_failed)}")) }
         }
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {

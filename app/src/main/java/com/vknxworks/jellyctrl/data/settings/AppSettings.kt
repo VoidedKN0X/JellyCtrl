@@ -16,16 +16,27 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.vknxworks.jellyctrl.str
 
-enum class PlayerEngineChoice(val label: String) {
-    AUTO("Automatic (Media3, mpv when needed)"),
-    MEDIA3("Always Media3 (server transcodes the rest)"),
-    MPV("Always mpv"),
+enum class PlayerEngineChoice(@StringRes private val labelRes: Int) {
+    AUTO(R.string.engine_auto),
+    MEDIA3(R.string.engine_media3),
+    MPV(R.string.engine_mpv);
+
+    val label: String get() = str(labelRes)
 }
 
-enum class ThemeChoice(val label: String) { SYSTEM("Follow system"), DARK("Dark"), LIGHT("Light"), BLACK("Pure black") }
+enum class ThemeChoice(@StringRes private val labelRes: Int) {
+    SYSTEM(R.string.theme_system), DARK(R.string.theme_dark), LIGHT(R.string.theme_light), BLACK(R.string.theme_black);
 
-enum class SkipSegmentMode(val label: String) { ASK("Show skip button"), AUTO("Skip automatically"), OFF("Off") }
+    val label: String get() = str(labelRes)
+}
+
+enum class SkipSegmentMode(@StringRes private val labelRes: Int) {
+    ASK(R.string.skip_mode_ask), AUTO(R.string.skip_mode_auto), OFF(R.string.skip_mode_off);
+
+    val label: String get() = str(labelRes)
+}
 
 /** How long the app can be in the background before the app lock asks again. -1: only after a restart. */
 enum class LockTimeout(@StringRes val label: Int, val millis: Long) {

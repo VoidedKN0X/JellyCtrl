@@ -97,6 +97,10 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
+import kotlin.math.roundToInt
 
 // ---------- Scheduled tasks ----------
 
@@ -108,9 +112,9 @@ fun AdminTasksScreen() {
     val loader = rememberLoader("admin-tasks") { client.scheduledTasks() }
     LaunchedEffect(loader) { while (true) { delay(3000); loader.reload(silent = true) } }
 
-    AdminScaffold("Scheduled tasks", actions, loader.refreshing, { loader.reload(silent = true) }) {
+    AdminScaffold(stringResource(R.string.scheduled_tasks), actions, loader.refreshing, { loader.reload(silent = true) }) {
         LoadContent(loader) { tasks ->
-            val grouped = tasks.groupBy { it.category ?: "Other" }.toSortedMap()
+            val grouped = tasks.groupBy { it.category ?: stringResource(R.string.other) }.toSortedMap()
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
                 grouped.forEach { (cat, list) ->
                     item(key = "h-$cat") { SectionTitle(cat) }
@@ -121,8 +125,8 @@ fun AdminTasksScreen() {
                             supportingContent = {
                                 Column {
                                     Text(
-                                        if (running) "Running ${t.currentProgressPercentage?.let { "%.0f%%".format(it) } ?: ""}"
-                                        else t.lastExecutionResult?.let { r -> "Last run ${formatDateTime(r.endTimeUtc) ?: "?"} · ${r.status}" } ?: "Never run",
+                                        if (running) t.currentProgressPercentage?.let { stringResource(R.string.running_x_percent, it.roundToInt()) } ?: stringResource(R.string.task_running)
+                                        else t.lastExecutionResult?.let { r -> stringResource(R.string.last_run_x_x, formatDateTime(r.endTimeUtc) ?: "?", r.status.orEmpty()) } ?: stringResource(R.string.never_run),
                                         style = MaterialTheme.typography.bodySmall,
                                     )
                                     if (running) {
@@ -137,7 +141,7 @@ fun AdminTasksScreen() {
                             trailingContent = {
                                 IconButton(onClick = {
                                     actions.run(after = { loader.reload(silent = true) }) { if (running) client.stopTask(t.id) else client.startTask(t.id) }
-                                }) { Icon(if (running) Icons.Filled.Stop else Icons.Filled.PlayArrow, if (running) "Stop" else "Run now") }
+                                }) { Icon(if (running) Icons.Filled.Stop else Icons.Filled.PlayArrow, if (running) stringResource(R.string.stop) else stringResource(R.string.run_now)) }
                             },
                         )
                     }
@@ -159,8 +163,8 @@ fun AdminPluginsScreen() {
     var confirmRemove by remember { mutableStateOf<com.vknxworks.jellyctrl.data.api.PluginInfo?>(null) }
 
     AdminScaffold(
-        "Plugins", actions, loader.refreshing, { loader.reload(silent = true) },
-        floating = { ExtendedFloatingActionButton(onClick = { nav.navigate(AdminCatalogRoute) }, icon = { Icon(Icons.Filled.Store, null) }, text = { Text("Get plugins") }) },
+        stringResource(R.string.plugins), actions, loader.refreshing, { loader.reload(silent = true) },
+        floating = { ExtendedFloatingActionButton(onClick = { nav.navigate(AdminCatalogRoute) }, icon = { Icon(Icons.Filled.Store, null) }, text = { Text(stringResource(R.string.get_plugins)) }) },
     ) {
         LoadContent(loader) { plugins ->
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
@@ -179,11 +183,11 @@ fun AdminPluginsScreen() {
                         trailingContent = {
                             Row {
                                 Switch(active, onCheckedChange = { on ->
-                                    actions.run(if (on) "Enabled - restart the server to apply" else "Disabled - restart the server to apply", after = { loader.reload(silent = true) }) {
+                                    actions.run(if (on) str(R.string.enabled_restart_the_server_to_apply) else str(R.string.disabled_restart_the_server_to_apply), after = { loader.reload(silent = true) }) {
                                         if (on) client.enablePlugin(p) else client.disablePlugin(p)
                                     }
                                 })
-                                if (p.canUninstall) IconButton(onClick = { confirmRemove = p }) { Icon(Icons.Filled.Delete, "Uninstall") }
+                                if (p.canUninstall) IconButton(onClick = { confirmRemove = p }) { Icon(Icons.Filled.Delete, stringResource(R.string.uninstall)) }
                             }
                         },
                     )
@@ -195,15 +199,15 @@ fun AdminPluginsScreen() {
     confirmRemove?.let { p ->
         AlertDialog(
             onDismissRequest = { confirmRemove = null },
-            title = { Text("Uninstall ${p.name}?") },
-            text = { Text("The server needs a restart afterwards.") },
+            title = { Text(stringResource(R.string.uninstall_x, p.name)) },
+            text = { Text(stringResource(R.string.the_server_needs_a_restart_afterwards)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmRemove = null
-                    actions.run("Uninstalled - restart the server to finish", after = { loader.reload(silent = true) }) { client.uninstallPlugin(p) }
-                }) { Text("Uninstall", color = MaterialTheme.colorScheme.error) }
+                    actions.run(str(R.string.uninstalled_restart_the_server_to_finish), after = { loader.reload(silent = true) }) { client.uninstallPlugin(p) }
+                }) { Text(stringResource(R.string.uninstall), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { confirmRemove = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmRemove = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -220,10 +224,10 @@ fun AdminCatalogScreen() {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<PackageInfo?>(null) }
 
-    AdminScaffold("Plugin catalog", actions) {
+    AdminScaffold(stringResource(R.string.plugin_catalog), actions) {
         LoadContent(loader) { (packages, installed) ->
             Column(Modifier.fillMaxSize()) {
-                OutlinedTextField(query, { query = it }, label = { Text("Search") }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(16.dp))
+                OutlinedTextField(query, { query = it }, label = { Text(stringResource(R.string.search)) }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(16.dp))
                 val filtered = packages.filter { query.isBlank() || it.name.contains(query, true) || it.category.orEmpty().contains(query, true) }
                 LazyColumn(Modifier.fillMaxSize()) {
                     items(filtered, key = { it.guid + it.name }) { p ->
@@ -231,7 +235,7 @@ fun AdminCatalogScreen() {
                         ListItem(
                             headlineContent = { Text(p.name) },
                             supportingContent = { Text(listOfNotNull(p.category, p.overview ?: p.description).joinToString(" · "), maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                            trailingContent = { if (isInstalled) Text("Installed", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium) },
+                            trailingContent = { if (isInstalled) Text(stringResource(R.string.installed), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium) },
                             modifier = Modifier.clickable { selected = p },
                         )
                     }
@@ -248,11 +252,11 @@ fun AdminCatalogScreen() {
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     p.description?.let { Text(it) }
-                    Text("Latest: ${latest?.version ?: "?"}  ·  for Jellyfin ${latest?.targetAbi ?: "?"}", style = MaterialTheme.typography.bodySmall)
-                    p.owner?.let { Text("By $it", style = MaterialTheme.typography.bodySmall) }
+                    Text(stringResource(R.string.plugin_latest_x_for_x, latest?.version ?: "?", latest?.targetAbi ?: "?"), style = MaterialTheme.typography.bodySmall)
+                    p.owner?.let { Text(stringResource(R.string.by_x, it), style = MaterialTheme.typography.bodySmall) }
                     latest?.changelog?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                     Text(
-                        "Plugins run on the server with full access to it and to your media. Only install plugins from repositories you trust.",
+                        stringResource(R.string.plugins_run_on_the_server_with),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
@@ -261,10 +265,10 @@ fun AdminCatalogScreen() {
             confirmButton = {
                 TextButton(enabled = latest != null, onClick = {
                     selected = null
-                    actions.run("Installing ${p.name} - restart the server when it finishes") { client.installPackage(p, latest!!.version) }
-                }) { Text("Install") }
+                    actions.run(str(R.string.installing_x_restart_the_server_when, p.name)) { client.installPackage(p, latest!!.version) }
+                }) { Text(stringResource(R.string.install)) }
             },
-            dismissButton = { TextButton(onClick = { selected = null }) { Text("Close") } },
+            dismissButton = { TextButton(onClick = { selected = null }) { Text(stringResource(R.string.close)) } },
         )
     }
 }
@@ -277,7 +281,7 @@ fun AdminLogsScreen() {
     val nav = LocalNavigator.current
     val actions = rememberAdminActions()
     val loader = rememberLoader("admin-logs") { c.api.serverLogs().sortedByDescending { it.dateModified } }
-    AdminScaffold("Logs", actions, loader.refreshing, { loader.reload(silent = true) }) {
+    AdminScaffold(stringResource(R.string.logs), actions, loader.refreshing, { loader.reload(silent = true) }) {
         LoadContent(loader) { logs ->
             LazyColumn(Modifier.fillMaxSize()) {
                 items(logs, key = { it.name }) { l ->
@@ -313,12 +317,12 @@ fun AdminLogScreen(name: String) {
                     description.extras = PersistableBundle().apply { putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) }
                 }
                 (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
-            }) { Icon(Icons.Filled.ContentCopy, "Copy") }
+            }) { Icon(Icons.Filled.ContentCopy, stringResource(R.string.copy)) }
         },
     ) {
         LoadContent(loader) { lines ->
             Column(Modifier.fillMaxSize()) {
-                OutlinedTextField(filter, { filter = it }, label = { Text("Filter (e.g. ERR, WRN, a file name)") }, singleLine = true,
+                OutlinedTextField(filter, { filter = it }, label = { Text(stringResource(R.string.filter_e_g_err_wrn_a)) }, singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
                 val shown = if (filter.isBlank()) lines else lines.filter { it.contains(filter, true) }
                 val state = rememberLazyListState(initialFirstVisibleItemIndex = (shown.size - 1).coerceAtLeast(0))
@@ -355,9 +359,9 @@ fun AdminActivityScreen() {
         val r = client.activityLog(start, limit)
         r.items to r.totalRecordCount
     }
-    AdminScaffold("Activity", actions, false, { loader.refresh() }) {
+    AdminScaffold(stringResource(R.string.activity), actions, false, { loader.refresh() }) {
         if (loader.items.isEmpty() && !loader.loading) {
-            MessageView(Icons.Filled.Info, "No activity yet")
+            MessageView(Icons.Filled.Info, stringResource(R.string.no_activity_yet))
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
                 items(loader.items.size) { i ->
@@ -391,19 +395,19 @@ fun AdminDevicesScreen() {
     val client = c.api
     val loader = rememberLoader("admin-devices") { client.devices().sortedByDescending { it.dateLastActivity } }
     var signingOut by remember { mutableStateOf<com.vknxworks.jellyctrl.data.api.DeviceInfo?>(null) }
-    AdminScaffold("Devices", actions, loader.refreshing, { loader.reload(silent = true) }) {
+    AdminScaffold(stringResource(R.string.devices), actions, loader.refreshing, { loader.reload(silent = true) }) {
         LoadContent(loader) { devices ->
             LazyColumn(Modifier.fillMaxSize()) {
                 items(devices, key = { it.id ?: it.name.orEmpty() }) { d ->
                     val isThis = d.id == client.deviceId
                     ListItem(
-                        headlineContent = { Text((d.customName ?: d.name).orEmpty() + if (isThis) "  (this app)" else "") },
+                        headlineContent = { Text((d.customName ?: d.name).orEmpty() + if (isThis) stringResource(R.string.this_app) else "") },
                         supportingContent = {
                             Text(listOfNotNull("${d.appName} ${d.appVersion.orEmpty()}", d.lastUserName, formatDateTime(d.dateLastActivity)).joinToString("  ·  "))
                         },
                         trailingContent = {
                             if (!isThis && d.id != null) {
-                                IconButton(onClick = { signingOut = d }) { Icon(Icons.Filled.Delete, "Sign out device") }
+                                IconButton(onClick = { signingOut = d }) { Icon(Icons.Filled.Delete, stringResource(R.string.sign_out_device)) }
                             }
                         },
                     )
@@ -415,15 +419,15 @@ fun AdminDevicesScreen() {
         val id = d.id
         AlertDialog(
             onDismissRequest = { signingOut = null },
-            title = { Text("Sign out ${(d.customName ?: d.name).orEmpty()}?") },
-            text = { Text("The device's session is ended and ${d.lastUserName ?: "its user"} will need to sign in again on it.") },
+            title = { Text(stringResource(R.string.sign_out_x, (d.customName ?: d.name).orEmpty())) },
+            text = { Text(d.lastUserName?.let { stringResource(R.string.device_remove_body_x, it) } ?: stringResource(R.string.device_remove_body)) },
             confirmButton = {
                 TextButton(onClick = {
                     signingOut = null
-                    if (id != null) actions.run("Device signed out", after = { loader.reload(silent = true) }) { client.deleteDevice(id) }
-                }) { Text("Sign out", color = MaterialTheme.colorScheme.error) }
+                    if (id != null) actions.run(str(R.string.device_signed_out), after = { loader.reload(silent = true) }) { client.deleteDevice(id) }
+                }) { Text(stringResource(R.string.sign_out), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { signingOut = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { signingOut = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -438,28 +442,28 @@ fun AdminKeysScreen() {
     var creating by remember { mutableStateOf(false) }
     var revoking by remember { mutableStateOf<com.vknxworks.jellyctrl.data.api.AuthenticationInfo?>(null) }
     AdminScaffold(
-        "API keys", actions, loader.refreshing, { loader.reload(silent = true) },
-        floating = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("New key") }) },
+        stringResource(R.string.api_keys), actions, loader.refreshing, { loader.reload(silent = true) },
+        floating = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(stringResource(R.string.new_key)) }) },
     ) {
         LoadContent(loader) { keys ->
             if (keys.isEmpty()) {
-                MessageView(Icons.Filled.Info, "No API keys", "Keys let other apps and scripts use this server.")
+                MessageView(Icons.Filled.Info, stringResource(R.string.no_api_keys), stringResource(R.string.keys_let_other_apps_and_scripts))
                 return@LoadContent
             }
             LazyColumn(Modifier.fillMaxSize()) {
                 items(keys, key = { it.accessToken }) { k ->
                     ListItem(
-                        headlineContent = { Text(k.appName ?: "Key") },
+                        headlineContent = { Text(k.appName ?: stringResource(R.string.key)) },
                         supportingContent = { Text("${k.accessToken.take(8)}…  ·  ${formatDateTime(k.dateCreated).orEmpty()}") },
                         trailingContent = {
                             Row {
                                 IconButton(onClick = {
-                                    val clip = ClipData.newPlainText("API key", k.accessToken).apply {
+                                    val clip = ClipData.newPlainText(str(R.string.api_key), k.accessToken).apply {
                                         description.extras = PersistableBundle().apply { putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) }
                                     }
                                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
-                                }) { Icon(Icons.Filled.ContentCopy, "Copy key") }
-                                IconButton(onClick = { revoking = k }) { Icon(Icons.Filled.Delete, "Revoke") }
+                                }) { Icon(Icons.Filled.ContentCopy, stringResource(R.string.copy_key)) }
+                                IconButton(onClick = { revoking = k }) { Icon(Icons.Filled.Delete, stringResource(R.string.revoke)) }
                             }
                         },
                     )
@@ -470,30 +474,30 @@ fun AdminKeysScreen() {
     revoking?.let { k ->
         AlertDialog(
             onDismissRequest = { revoking = null },
-            title = { Text("Revoke ${k.appName ?: "this key"}?") },
-            text = { Text("Any app or script using this key will stop working immediately. This can't be undone.") },
+            title = { Text(k.appName?.let { stringResource(R.string.revoke_x, it) } ?: stringResource(R.string.revoke_this_key)) },
+            text = { Text(stringResource(R.string.any_app_or_script_using_this)) },
             confirmButton = {
                 TextButton(onClick = {
                     revoking = null
-                    actions.run("Key revoked", after = { loader.reload(silent = true) }) { client.revokeApiKey(k.accessToken) }
-                }) { Text("Revoke", color = MaterialTheme.colorScheme.error) }
+                    actions.run(str(R.string.key_revoked), after = { loader.reload(silent = true) }) { client.revokeApiKey(k.accessToken) }
+                }) { Text(stringResource(R.string.revoke), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { revoking = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { revoking = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
     if (creating) {
         var app by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { creating = false },
-            title = { Text("New API key") },
-            text = { OutlinedTextField(app, { app = it }, label = { Text("App name") }, singleLine = true) },
+            title = { Text(stringResource(R.string.new_api_key)) },
+            text = { OutlinedTextField(app, { app = it }, label = { Text(stringResource(R.string.app_name_2)) }, singleLine = true) },
             confirmButton = {
                 TextButton(enabled = app.isNotBlank(), onClick = {
                     creating = false
-                    actions.run("Key created", after = { loader.reload(silent = true) }) { client.createApiKey(app.trim()) }
-                }) { Text("Create") }
+                    actions.run(str(R.string.key_created), after = { loader.reload(silent = true) }) { client.createApiKey(app.trim()) }
+                }) { Text(stringResource(R.string.create)) }
             },
-            dismissButton = { TextButton(onClick = { creating = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { creating = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -514,10 +518,10 @@ fun AdminConfigScreen(section: String, title: String) {
         topActions = {
             IconButton(enabled = edited != null, onClick = {
                 val cfg = edited ?: return@IconButton
-                actions.run("Saved", after = { edited = null; loader.reload(silent = true) }) {
+                actions.run(str(R.string.saved), after = { edited = null; loader.reload(silent = true) }) {
                     if (section.isEmpty()) client.saveServerConfig(cfg) else client.saveNamedConfig(section, cfg)
                 }
-            }) { Icon(Icons.Filled.Save, "Save") }
+            }) { Icon(Icons.Filled.Save, stringResource(R.string.save)) }
         },
     ) {
         LoadContent(loader) { original ->
@@ -525,7 +529,7 @@ fun AdminConfigScreen(section: String, title: String) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
                 if (edited != null) {
                     Text(
-                        "Unsaved changes - tap save at the top. Some settings need a server restart.",
+                        stringResource(R.string.unsaved_changes_tap_save_at_the),
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(16.dp),
@@ -548,7 +552,7 @@ fun EditMetadataScreen(id: String) {
     val loader = rememberLoader("edit-$id") { client.itemRaw(id) }
     var fields by remember { mutableStateOf<Map<String, String>?>(null) }
 
-    AdminScaffold("Edit metadata", actions) {
+    AdminScaffold(stringResource(R.string.edit_metadata), actions) {
         LoadContent(loader) { raw ->
             val keys = listOf(
                 "Name", "OriginalTitle", "SortName", "Overview", "ProductionYear", "PremiereDate", "OfficialRating",
@@ -568,7 +572,7 @@ fun EditMetadataScreen(id: String) {
                     OutlinedTextField(
                         value = current[k].orEmpty(),
                         onValueChange = { v -> fields = current + (k to v) },
-                        label = { Text(humanize(k) + if (k in setOf("Genres", "Tags", "Studios")) " (comma separated)" else "") },
+                        label = { Text(humanize(k) + if (k in setOf("Genres", "Tags", "Studios")) stringResource(R.string.comma_separated) else "") },
                         singleLine = k != "Overview",
                         minLines = if (k == "Overview") 4 else 1,
                         modifier = Modifier.fillMaxWidth(),
@@ -587,8 +591,8 @@ fun EditMetadataScreen(id: String) {
                         "Studios" to JsonArray(list("Studios").map { s -> JsonObject(mapOf("Name" to JsonPrimitive(s))) }),
                     )
                     val updated = raw.withValues(changes)
-                    actions.run("Saved", after = { nav.close(com.vknxworks.jellyctrl.ui.nav.EditMetadataRoute::class) }) { client.updateItem(id, updated) }
-                }, modifier = Modifier.fillMaxWidth()) { Text("Save") }
+                    actions.run(str(R.string.saved), after = { nav.close(com.vknxworks.jellyctrl.ui.nav.EditMetadataRoute::class) }) { client.updateItem(id, updated) }
+                }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save)) }
             }
         }
     }

@@ -95,6 +95,8 @@ import com.vknxworks.jellyctrl.ui.settings.ProfileScreen
 import com.vknxworks.jellyctrl.ui.library.LibrariesScreen
 import com.vknxworks.jellyctrl.ui.settings.QuickConnectApproveScreen
 import com.vknxworks.jellyctrl.ui.settings.SettingsScreen
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 @Composable
 fun AppRoot() {
@@ -112,10 +114,11 @@ fun AppRoot() {
 
 private data class TopDest(val route: Any, val item: TabItem)
 
-private val topDestinations = listOf(
-    TopDest(HomeRoute, TabItem("Home", Icons.Outlined.Home, Icons.Filled.Home)),
-    TopDest(SearchRoute, TabItem("Search", Icons.Outlined.Search, Icons.Filled.Search)),
-    TopDest(LibrariesRoute, TabItem("Library", Icons.Outlined.VideoLibrary, Icons.Filled.VideoLibrary)),
+private val topDestinations: List<TopDest>
+    get() = listOf(
+    TopDest(HomeRoute, TabItem(str(R.string.tab_home), Icons.Outlined.Home, Icons.Filled.Home)),
+    TopDest(SearchRoute, TabItem(str(R.string.tab_search), Icons.Outlined.Search, Icons.Filled.Search)),
+    TopDest(LibrariesRoute, TabItem(str(R.string.tab_library), Icons.Outlined.VideoLibrary, Icons.Filled.VideoLibrary)),
 )
 
 @Composable
@@ -150,9 +153,10 @@ private fun MainScaffold() {
                 navController.navigate(ItemRoute(id)) { launchSingleTop = true }
             } else {
                 val message = when {
-                    result.isFailure -> "Couldn't look it up in Jellyfin: " + result.exceptionOrNull()!!.friendlyMessage()
-                    l is ExternalLink.Movie -> "Couldn't find " + (l.title ?: "this movie") + " in your Jellyfin library"
-                    else -> "Couldn't find " + (l.title ?: "this series") + " in your Jellyfin library"
+                    result.isFailure -> str(R.string.lookup_failed_x, result.exceptionOrNull()!!.friendlyMessage())
+                    l.title != null -> str(R.string.not_in_library_x, l.title)
+                    l is ExternalLink.Movie -> str(R.string.movie_not_in_library)
+                    else -> str(R.string.series_not_in_library)
                 }
                 android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
             }

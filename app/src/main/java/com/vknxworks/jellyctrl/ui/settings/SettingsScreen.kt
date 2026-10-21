@@ -51,11 +51,11 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
+import com.vknxworks.jellyctrl.str
+import androidx.compose.ui.res.pluralStringResource
 
-private val BITRATES = listOf(
-    0 to "Best available", 80 to "80 Mbps", 40 to "40 Mbps", 20 to "20 Mbps", 10 to "10 Mbps",
-    8 to "8 Mbps", 4 to "4 Mbps", 2 to "2 Mbps", 1 to "1 Mbps",
-)
+private val BITRATES: List<Pair<Int, String>>
+    get() = listOf(0 to str(R.string.best_available)) + listOf(80, 40, 20, 10, 8, 4, 2, 1).map { it to str(R.string.x_mbps, it) }
 private val LANGS = listOf(
     "" to "Whatever the file uses", "eng" to "English", "spa" to "Spanish", "fre" to "French", "ger" to "German",
     "ita" to "Italian", "por" to "Portuguese", "dut" to "Dutch", "jpn" to "Japanese", "kor" to "Korean", "chi" to "Chinese",
@@ -94,46 +94,46 @@ fun SettingsScreen() {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { ScreenTopBar("Settings") },
+        topBar = { ScreenTopBar(stringResource(R.string.settings)) },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
-            Group("Appearance") {
-                GroupChoice("Theme", ThemeChoice.entries.map { it to it.label }, s.theme) { v -> update { it.copy(theme = v) } }
-                GroupSwitch("Use wallpaper colours", "Replaces the default colours with ones from your wallpaper", s.dynamicColor) { v ->
+            Group(stringResource(R.string.appearance)) {
+                GroupChoice(stringResource(R.string.theme), ThemeChoice.entries.map { it to it.label }, s.theme) { v -> update { it.copy(theme = v) } }
+                GroupSwitch(stringResource(R.string.use_wallpaper_colours), stringResource(R.string.replaces_the_default_colours_with_ones), s.dynamicColor) { v ->
                     update { it.copy(dynamicColor = v) }
                 }
             }
 
             PrivacyGroup(s) { t -> update(t) }
 
-            Group("Watching") {
-                GroupChoice("Streaming quality", BITRATES, s.maxBitrateMbps) { v -> update { it.copy(maxBitrateMbps = v) } }
-                GroupChoice("Quality on mobile data", listOf(0 to "Same as on Wi-Fi") + BITRATES.drop(1), s.cellularBitrateMbps) { v ->
+            Group(stringResource(R.string.watching)) {
+                GroupChoice(stringResource(R.string.streaming_quality), BITRATES, s.maxBitrateMbps) { v -> update { it.copy(maxBitrateMbps = v) } }
+                GroupChoice(stringResource(R.string.quality_on_mobile_data), listOf(0 to stringResource(R.string.same_as_on_wi_fi)) + BITRATES.drop(1), s.cellularBitrateMbps) { v ->
                     update { it.copy(cellularBitrateMbps = v) }
                 }
-                GroupSwitch("Play the next episode automatically", checked = s.autoplayNext) { v -> update { it.copy(autoplayNext = v) } }
-                GroupChoice("Intros and recaps", SkipSegmentMode.entries.map { it to it.label }, s.skipIntro) { v -> update { it.copy(skipIntro = v) } }
-                GroupChoice("Credits", SkipSegmentMode.entries.map { it to it.label }, s.skipOutro) { v -> update { it.copy(skipOutro = v) } }
+                GroupSwitch(stringResource(R.string.play_the_next_episode_automatically), checked = s.autoplayNext) { v -> update { it.copy(autoplayNext = v) } }
+                GroupChoice(stringResource(R.string.intros_and_recaps), SkipSegmentMode.entries.map { it to it.label }, s.skipIntro) { v -> update { it.copy(skipIntro = v) } }
+                GroupChoice(stringResource(R.string.credits), SkipSegmentMode.entries.map { it to it.label }, s.skipOutro) { v -> update { it.copy(skipOutro = v) } }
             }
 
-            Group("Player") {
-                GroupChoice("Skip forward and back by", listOf(5, 10, 15, 30).map { it to "$it seconds" }, s.seekStepSeconds) { v ->
+            Group(stringResource(R.string.player)) {
+                GroupChoice(stringResource(R.string.skip_forward_and_back_by), listOf(5, 10, 15, 30).map { it to pluralStringResource(R.plurals.x_seconds, it, it) }, s.seekStepSeconds) { v ->
                     update { it.copy(seekStepSeconds = v) }
                 }
-                GroupSwitch("Swipe gestures", "Brightness on the left, volume on the right, sideways to seek", s.gestures) { v -> update { it.copy(gestures = v) } }
-                GroupSwitch("Picture in picture when you leave", checked = s.autoPip) { v -> update { it.copy(autoPip = v) } }
-                GroupChoice("Video player", PlayerEngineChoice.entries.map { it to it.label }, s.engine) { v -> update { it.copy(engine = v) } }
-                GroupSwitch("Hardware decoding in mpv", "Turn off if mpv shows a black picture", s.hwDecoding) { v -> update { it.copy(hwDecoding = v) } }
+                GroupSwitch(stringResource(R.string.swipe_gestures), stringResource(R.string.brightness_on_the_left_volume_on), s.gestures) { v -> update { it.copy(gestures = v) } }
+                GroupSwitch(stringResource(R.string.picture_in_picture_when_you_leave), checked = s.autoPip) { v -> update { it.copy(autoPip = v) } }
+                GroupChoice(stringResource(R.string.video_player), PlayerEngineChoice.entries.map { it to it.label }, s.engine) { v -> update { it.copy(engine = v) } }
+                GroupSwitch(stringResource(R.string.hardware_decoding_in_mpv), stringResource(R.string.turn_off_if_mpv_shows_a), s.hwDecoding) { v -> update { it.copy(hwDecoding = v) } }
             }
 
             val cfg = userCfg.value
             if (cfg != null) {
-                Group("Audio and subtitles", footer = "Saved to your Jellyfin account, so other apps use them too.") {
-                    GroupChoice("Audio language", LANGS, cfg.str("AudioLanguagePreference").orEmpty(), fallbackLabel = cfg.str("AudioLanguagePreference").orEmpty()) { v ->
+                Group(stringResource(R.string.audio_and_subtitles), footer = stringResource(R.string.saved_to_your_jellyfin_account_so)) {
+                    GroupChoice(stringResource(R.string.audio_language), LANGS, cfg.str("AudioLanguagePreference").orEmpty(), fallbackLabel = cfg.str("AudioLanguagePreference").orEmpty()) { v ->
                         saveCfg(mapOf("AudioLanguagePreference" to v))
                     }
                     GroupSwitch("Prefer the file's default audio", checked = cfg.flag("PlayDefaultAudioTrack", true)) { v -> saveCfg(mapOf("PlayDefaultAudioTrack" to v)) }
-                    GroupChoice("Subtitle language", LANGS, cfg.str("SubtitleLanguagePreference").orEmpty(), fallbackLabel = cfg.str("SubtitleLanguagePreference").orEmpty()) { v ->
+                    GroupChoice(stringResource(R.string.subtitle_language), LANGS, cfg.str("SubtitleLanguagePreference").orEmpty(), fallbackLabel = cfg.str("SubtitleLanguagePreference").orEmpty()) { v ->
                         saveCfg(mapOf("SubtitleLanguagePreference" to v))
                     }
                     GroupChoice("Show subtitles", SUB_MODES, cfg.str("SubtitleMode") ?: "Default") { v -> saveCfg(mapOf("SubtitleMode" to v)) }
@@ -143,13 +143,13 @@ fun SettingsScreen() {
                 }
             }
 
-            Group("Music and downloads") {
+            Group(stringResource(R.string.music_and_downloads)) {
                 GroupChoice(
-                    "Music quality",
-                    listOf(1411 to "Original files", 320 to "320 kbps", 256 to "256 kbps", 192 to "192 kbps", 128 to "128 kbps"),
+                    stringResource(R.string.music_quality),
+                    listOf(1411 to stringResource(R.string.original_files), 320 to stringResource(R.string.s_320_kbps), 256 to stringResource(R.string.s_256_kbps), 192 to stringResource(R.string.s_192_kbps), 128 to stringResource(R.string.s_128_kbps)),
                     s.musicBitrateKbps,
                 ) { v -> update { it.copy(musicBitrateKbps = v) } }
-                GroupSwitch("Download on Wi-Fi only", checked = s.downloadWifiOnly) { v -> update { it.copy(downloadWifiOnly = v) } }
+                GroupSwitch(stringResource(R.string.download_on_wi_fi_only), checked = s.downloadWifiOnly) { v -> update { it.copy(downloadWifiOnly = v) } }
             }
 
         }

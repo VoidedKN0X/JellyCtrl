@@ -30,6 +30,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 data class QueueEntry(val itemId: String, val title: String, val artist: String?, val artworkUri: String?)
 
@@ -181,7 +183,7 @@ class MusicController(private val context: Context, private val c: AppContainer)
 
     fun playContainer(item: BaseItemDto, shuffle: Boolean) = launch {
         val tracks = tracksOf(item, shuffle)
-        if (tracks.isEmpty()) throw IllegalStateException("No tracks found")
+        if (tracks.isEmpty()) throw IllegalStateException(str(R.string.no_tracks_found))
         val mc = controller()
         mc.setMediaItems(tracks.map(::mediaItem), 0, 0)
         mc.shuffleModeEnabled = false
@@ -195,7 +197,7 @@ class MusicController(private val context: Context, private val c: AppContainer)
         val wasEmpty = mc.mediaItemCount == 0
         mc.addMediaItems(tracks.map(::mediaItem))
         if (wasEmpty) { mc.prepare(); mc.play() }
-        Toast.makeText(context, "Added ${tracks.size} to queue", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, str(R.string.added_x_to_queue, tracks.size), Toast.LENGTH_SHORT).show()
     }
 
     fun playNextInQueue(item: BaseItemDto) = launch {
@@ -207,7 +209,7 @@ class MusicController(private val context: Context, private val c: AppContainer)
 
     fun instantMix(item: BaseItemDto) = launch {
         val mix = c.api.instantMix(item.id)
-        if (mix.isEmpty()) throw IllegalStateException("No instant mix available")
+        if (mix.isEmpty()) throw IllegalStateException(str(R.string.no_instant_mix_available))
         val mc = controller()
         mc.setMediaItems(mix.map(::mediaItem), 0, 0)
         mc.prepare()

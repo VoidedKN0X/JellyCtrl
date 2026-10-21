@@ -69,6 +69,8 @@ import com.vknxworks.jellyctrl.ui.components.rememberLoader
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
 
 /** Control playback on other Jellyfin clients (TV apps, browsers) signed in to this server. */
 @Composable
@@ -88,12 +90,12 @@ fun RemoteScreen(adminView: Boolean = false) {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { ScreenTopBar(if (adminView) "Active devices" else "Control another device") },
+        topBar = { ScreenTopBar(if (adminView) stringResource(R.string.active_devices) else stringResource(R.string.control_another_device)) },
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             LoadContent(loader) { sessions ->
                 if (sessions.isEmpty()) {
-                    MessageView(Icons.Filled.Devices, "No other devices", "Open Jellyfin on your TV or in a browser with this account and it shows up here.")
+                    MessageView(Icons.Filled.Devices, stringResource(R.string.no_other_devices), stringResource(R.string.open_jellyfin_on_your_tv_or))
                 } else {
                     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(sessions, key = { it.id }) { s -> SessionCard(s, client, adminView) { loader.reload(silent = true) } }
@@ -125,7 +127,7 @@ fun SessionCard(s: SessionInfo, client: JellyfinClient, showUser: Boolean, onCha
                 Icon(Icons.Filled.Devices, null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(s.deviceName ?: "Device", fontWeight = FontWeight.SemiBold)
+                    Text(s.deviceName ?: stringResource(R.string.device), fontWeight = FontWeight.SemiBold)
                     Text(
                         listOfNotNull(s.client, s.applicationVersion, if (showUser) s.userName else null, s.remoteEndPoint).joinToString("  ·  "),
                         style = MaterialTheme.typography.bodySmall,
@@ -133,7 +135,7 @@ fun SessionCard(s: SessionInfo, client: JellyfinClient, showUser: Boolean, onCha
                     )
                 }
                 if (s.supportsRemoteControl) {
-                    IconButton(onClick = { messageOpen = true }) { Icon(Icons.AutoMirrored.Filled.Message, "Send message") }
+                    IconButton(onClick = { messageOpen = true }) { Icon(Icons.AutoMirrored.Filled.Message, stringResource(R.string.send_message)) }
                 }
             }
             if (np != null) {
@@ -165,13 +167,13 @@ fun SessionCard(s: SessionInfo, client: JellyfinClient, showUser: Boolean, onCha
                 }
                 if (s.supportsMediaControl) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                        IconButton(onClick = { cmd { client.sessionPlaystate(s.id, "PreviousTrack") } }) { Icon(Icons.Filled.SkipPrevious, "Previous") }
+                        IconButton(onClick = { cmd { client.sessionPlaystate(s.id, "PreviousTrack") } }) { Icon(Icons.Filled.SkipPrevious, stringResource(R.string.previous)) }
                         val paused = s.playState?.isPaused == true
                         IconButton(onClick = { cmd { client.sessionPlaystate(s.id, if (paused) "Unpause" else "Pause") } }) {
-                            Icon(if (paused) Icons.Filled.PlayArrow else Icons.Filled.Pause, if (paused) "Play" else "Pause")
+                            Icon(if (paused) Icons.Filled.PlayArrow else Icons.Filled.Pause, if (paused) stringResource(R.string.play) else stringResource(R.string.pause))
                         }
-                        IconButton(onClick = { cmd { client.sessionPlaystate(s.id, "Stop") } }) { Icon(Icons.Filled.Stop, "Stop") }
-                        IconButton(onClick = { cmd { client.sessionPlaystate(s.id, "NextTrack") } }) { Icon(Icons.Filled.SkipNext, "Next") }
+                        IconButton(onClick = { cmd { client.sessionPlaystate(s.id, "Stop") } }) { Icon(Icons.Filled.Stop, stringResource(R.string.stop)) }
+                        IconButton(onClick = { cmd { client.sessionPlaystate(s.id, "NextTrack") } }) { Icon(Icons.Filled.SkipNext, stringResource(R.string.next)) }
                     }
                 }
             }
@@ -182,15 +184,15 @@ fun SessionCard(s: SessionInfo, client: JellyfinClient, showUser: Boolean, onCha
         var text by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { messageOpen = false },
-            title = { Text("Message ${s.deviceName ?: "device"}") },
-            text = { OutlinedTextField(text, { text = it }, label = { Text("Message") }) },
+            title = { Text(s.deviceName?.let { stringResource(R.string.message_x, it) } ?: stringResource(R.string.message_device)) },
+            text = { OutlinedTextField(text, { text = it }, label = { Text(stringResource(R.string.message)) }) },
             confirmButton = {
                 TextButton(onClick = {
                     messageOpen = false
                     cmd { client.sessionMessage(s.id, "JellyCtrl", text) }
-                }, enabled = text.isNotBlank()) { Text("Send") }
+                }, enabled = text.isNotBlank()) { Text(stringResource(R.string.send)) }
             },
-            dismissButton = { TextButton(onClick = { messageOpen = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { messageOpen = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

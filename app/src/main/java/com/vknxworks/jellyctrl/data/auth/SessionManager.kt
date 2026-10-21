@@ -27,6 +27,8 @@ import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import java.util.UUID
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 @Serializable
 data class Account(
@@ -148,7 +150,7 @@ class SessionManager(
 
     /** Encrypts a token for saving: with the Keystore, and also with the app lock's key when it's on. */
     private fun storeToken(token: String): String {
-        val inner = if (vault.enabled) vault.seal(token) ?: error("Unlock JellyCtrl first") else token
+        val inner = if (vault.enabled) vault.seal(token) ?: error(str(R.string.unlock_jellyctrl_first)) else token
         return KeystoreCrypto.encrypt(inner)
     }
 
@@ -229,14 +231,14 @@ class SessionManager(
         auth: AuthenticationResult,
         deviceId: String,
     ): Account {
-        val user = auth.user ?: error("Server returned no user")
-        val token = auth.accessToken ?: error("Server returned no access token")
+        val user = auth.user ?: error(str(R.string.server_returned_no_user))
+        val token = auth.accessToken ?: error(str(R.string.server_returned_no_access_token))
         val account = Account(
             serverId = auth.serverId ?: user.serverId ?: serverUrl,
             serverName = serverName,
             serverUrl = JellyfinClient.normalizeBaseUrl(serverUrl),
             userId = user.id,
-            userName = user.name ?: "User",
+            userName = user.name ?: str(R.string.user),
             userImageTag = user.primaryImageTag,
             tokenEnc = storeToken(token),
             deviceId = deviceId,

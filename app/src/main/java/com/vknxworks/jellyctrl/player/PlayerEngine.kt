@@ -3,6 +3,9 @@ package com.vknxworks.jellyctrl.player
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.flow.StateFlow
+import androidx.annotation.StringRes
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 data class EngineState(
     val positionMs: Long = 0,
@@ -27,7 +30,11 @@ sealed interface SubSelection {
     data class External(val jellyfinIndex: Int) : SubSelection
 }
 
-enum class ResizeMode(val label: String) { FIT("Fit"), ZOOM("Crop"), FILL("Stretch") }
+enum class ResizeMode(@StringRes private val labelRes: Int) {
+    FIT(R.string.resize_fit), ZOOM(R.string.resize_crop), FILL(R.string.resize_stretch);
+
+    val label: String get() = str(labelRes)
+}
 
 data class LoadRequest(
     val url: String,

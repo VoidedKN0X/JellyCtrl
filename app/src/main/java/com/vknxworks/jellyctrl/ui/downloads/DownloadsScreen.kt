@@ -47,6 +47,8 @@ import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.MessageView
 import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.formatBytes
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
 
 @Composable
 fun DownloadsScreen() {
@@ -59,7 +61,7 @@ fun DownloadsScreen() {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            ScreenTopBar("Downloads") {
+            ScreenTopBar(stringResource(R.string.downloads)) {
                 if (entries.isNotEmpty()) {
                     Text(
                         formatBytes(c.downloads.usedBytes()),
@@ -74,8 +76,8 @@ fun DownloadsScreen() {
         if (entries.isEmpty()) {
             MessageView(
                 Icons.Outlined.DownloadForOffline,
-                "Nothing downloaded",
-                "Download a film, an episode, a whole season or an album to watch it without a connection.",
+                stringResource(R.string.nothing_downloaded),
+                stringResource(R.string.download_a_film_an_episode_a),
                 Modifier.padding(padding),
             )
             return@Scaffold
@@ -91,10 +93,10 @@ fun DownloadsScreen() {
                         Column {
                             val status = when (e.status) {
                                 DownloadStatus.DONE -> formatBytes(e.totalBytes)
-                                DownloadStatus.RUNNING -> "${(e.progress * 100).toInt()}%  ·  ${formatBytes(e.downloadedBytes)} of ${formatBytes(e.totalBytes)}"
-                                DownloadStatus.QUEUED -> if (settings.downloadWifiOnly) "Waiting for Wi-Fi or queue" else "Queued"
-                                DownloadStatus.PAUSED -> "Paused"
-                                DownloadStatus.FAILED -> "Failed: ${e.error ?: "unknown error"}"
+                                DownloadStatus.RUNNING -> stringResource(R.string.x_x_of_x, (e.progress * 100).toInt(), formatBytes(e.downloadedBytes), formatBytes(e.totalBytes))
+                                DownloadStatus.QUEUED -> if (settings.downloadWifiOnly) stringResource(R.string.waiting_for_wi_fi_or_queue) else stringResource(R.string.queued)
+                                DownloadStatus.PAUSED -> stringResource(R.string.paused)
+                                DownloadStatus.FAILED -> stringResource(R.string.failed_x, e.error ?: stringResource(R.string.unknown_error))
                             }
                             Text(status, style = MaterialTheme.typography.bodySmall)
                             if (e.status == DownloadStatus.RUNNING) {
@@ -110,9 +112,9 @@ fun DownloadsScreen() {
                     trailingContent = {
                         Row {
                             if (e.status == DownloadStatus.FAILED || e.status == DownloadStatus.PAUSED) {
-                                IconButton(onClick = { c.downloads.retry(e.itemId, settings.downloadWifiOnly) }) { Icon(Icons.Filled.Refresh, "Retry") }
+                                IconButton(onClick = { c.downloads.retry(e.itemId, settings.downloadWifiOnly) }) { Icon(Icons.Filled.Refresh, stringResource(R.string.retry)) }
                             }
-                            IconButton(onClick = { confirmDelete = e }) { Icon(Icons.Filled.Delete, "Delete") }
+                            IconButton(onClick = { confirmDelete = e }) { Icon(Icons.Filled.Delete, stringResource(R.string.delete)) }
                         }
                     },
                     modifier = Modifier.clickable(enabled = e.status == DownloadStatus.DONE) {
@@ -127,10 +129,10 @@ fun DownloadsScreen() {
     confirmDelete?.let { e ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text(if (e.status == DownloadStatus.DONE) "Delete download?" else "Cancel download?") },
+            title = { Text(if (e.status == DownloadStatus.DONE) stringResource(R.string.delete_download) else stringResource(R.string.cancel_download)) },
             text = { Text(e.name) },
-            confirmButton = { TextButton(onClick = { c.downloads.cancel(e.itemId); confirmDelete = null }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Keep") } },
+            confirmButton = { TextButton(onClick = { c.downloads.cancel(e.itemId); confirmDelete = null }) { Text(stringResource(R.string.delete)) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.keep)) } },
         )
     }
 }

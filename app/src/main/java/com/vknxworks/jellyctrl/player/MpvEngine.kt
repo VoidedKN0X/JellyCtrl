@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import java.io.File
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 /** libmpv-backed engine. Handles formats Media3 can't (styled ASS subtitles, DTS/TrueHD audio, odd containers) without transcoding. */
 class MpvEngine(
@@ -26,12 +28,12 @@ class MpvEngine(
 
     // mpv does its own TLS. Never run it without certificate verification: no CA bundle, no mpv.
     private val caFile: File = caBundle(context)
-        ?: throw IllegalStateException("mpv can't verify secure connections on this device (no CA certificates found)")
+        ?: throw IllegalStateException(str(R.string.mpv_can_t_verify_secure_connections))
 
     private val _state = MutableStateFlow(EngineState())
     override val state: StateFlow<EngineState> = _state.asStateFlow()
 
-    private val mpv: MPVLib = MPVLib.create(context) ?: throw IllegalStateException("libmpv failed to start")
+    private val mpv: MPVLib = MPVLib.create(context) ?: throw IllegalStateException(str(R.string.libmpv_failed_to_start))
     private var released = false
     private var pending: LoadRequest? = null
     private var surfaceAttached = false
@@ -75,7 +77,7 @@ class MpvEngine(
                 MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART -> _state.update { it.copy(buffering = false) }
                 MPVLib.MpvEvent.MPV_EVENT_END_FILE -> {
                     if (_state.value.durationMs <= 0 && !released) {
-                        _state.update { it.copy(error = lastError ?: "mpv couldn't open this file", buffering = false) }
+                        _state.update { it.copy(error = lastError ?: str(R.string.mpv_couldn_t_open_this_file), buffering = false) }
                     }
                 }
             }
@@ -139,7 +141,7 @@ class MpvEngine(
 
     override fun load(request: LoadRequest) {
         if (!isAllowedSource(request.url)) {
-            _state.value = EngineState(error = "This stream address isn't supported")
+            _state.value = EngineState(error = str(R.string.this_stream_address_isn_t_supported))
             return
         }
         pending = request

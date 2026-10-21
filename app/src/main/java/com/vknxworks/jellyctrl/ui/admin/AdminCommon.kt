@@ -49,6 +49,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.longOrNull
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import androidx.compose.ui.res.pluralStringResource
 
 /** Runs admin actions and reports success/failure in a snackbar. */
 class AdminActions(private val scope: CoroutineScope, val snackbar: SnackbarHostState) {
@@ -162,7 +165,7 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
                     value = "",
                     onValueChange = { onChange(key, JsonPrimitive(it)) },
                     label = { Text(humanize(key)) },
-                    placeholder = { Text("Not set") },
+                    placeholder = { Text(stringResource(R.string.not_set)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 )
@@ -173,7 +176,7 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
                     onValueChange = { t ->
                         onChange(key, JsonArray(t.split(',').map { it.trim() }.filter { it.isNotEmpty() }.map { JsonPrimitive(it) }))
                     },
-                    label = { Text(humanize(key) + " (comma separated)") },
+                    label = { Text(stringResource(R.string.x_comma_separated, humanize(key))) },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
@@ -183,7 +186,7 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
     val skipped = obj.entries.count { (k, v) -> k !in hidden && (v is JsonObject || (v is JsonArray && !v.all { it is JsonPrimitive && it.isString })) }
     if (skipped > 0) {
         Text(
-            "$skipped advanced settings aren't shown here and are kept as they are. Use the web dashboard for those.",
+            pluralStringResource(R.plurals.skipped_advanced_settings, skipped, skipped),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(16.dp),
@@ -203,13 +206,13 @@ private fun SecretField(key: String, value: String, onChange: (String) -> Unit) 
         value = value,
         onValueChange = onChange,
         label = { Text(humanize(key)) },
-        placeholder = { Text("Not set") },
+        placeholder = { Text(stringResource(R.string.not_set)) },
         singleLine = true,
         visualTransformation = if (shown) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
         trailingIcon = {
             IconButton(onClick = { shown = !shown }) {
-                Icon(if (shown) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, if (shown) "Hide" else "Show")
+                Icon(if (shown) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, if (shown) stringResource(R.string.hide) else stringResource(R.string.show))
             }
         },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),

@@ -92,6 +92,8 @@ import com.vknxworks.jellyctrl.ui.nav.RemoteRoute
 import com.vknxworks.jellyctrl.ui.nav.SettingsRoute
 import com.vknxworks.jellyctrl.ui.theme.Gutter
 import kotlinx.coroutines.launch
+import com.vknxworks.jellyctrl.str
+import androidx.compose.ui.res.pluralStringResource
 
 private const val SPONSOR_URL = "https://github.com/sponsors/VoidedKN0X"
 private const val REPO_URL = "https://github.com/VoidedKN0X/JellyCtrl"
@@ -116,17 +118,17 @@ fun ProfileScreen() {
     val hasLiveTv = views.value?.any { it.collectionType == "livetv" } == true
 
     Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("You")
+        ScreenTopBar(stringResource(R.string.you))
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp + LocalBottomClearance.current)) {
             Column(
                 Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 8.dp, bottom = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(Modifier.size(96.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(96.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
                     if (acc?.userImageTag != null && client != null) {
                         ArtImage(client.userImageUrl(acc.userId, acc.userImageTag), Modifier.fillMaxSize())
                     } else {
-                        Text(acc?.userName?.take(1)?.uppercase().orEmpty(), style = MaterialTheme.typography.displaySmall)
+                        Text(acc?.userName?.take(1)?.uppercase().orEmpty(), style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 Spacer(Modifier.height(14.dp))
@@ -138,7 +140,7 @@ fun ProfileScreen() {
                 )
                 if (acc?.serverUrl?.startsWith("http://", true) == true) {
                     Text(
-                        "Not encrypted (HTTP)",
+                        stringResource(R.string.not_encrypted_http),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -146,30 +148,30 @@ fun ProfileScreen() {
             }
 
             Group {
-                GroupRow("Favourites", icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
+                GroupRow(stringResource(R.string.favourites), icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
                 GroupRow(
-                    "Downloads",
-                    if (ready == 0) null else if (ready == 1) "1 ready offline" else "$ready ready offline",
+                    stringResource(R.string.downloads),
+                    if (ready == 0) null else pluralStringResource(R.plurals.ready_offline, ready, ready),
                     icon = Icons.Filled.Download,
                     showChevron = true,
                     onClick = { nav.navigate(DownloadsRoute) },
                 )
-                if (hasLiveTv) GroupRow("Live TV", icon = Icons.Filled.LiveTv, showChevron = true, onClick = { nav.navigate(LiveTvRoute) })
+                if (hasLiveTv) GroupRow(stringResource(R.string.live_tv), icon = Icons.Filled.LiveTv, showChevron = true, onClick = { nav.navigate(LiveTvRoute) })
             }
             Group {
-                GroupRow("Control another device", "Play and pause Jellyfin on your TV or browser", icon = Icons.Filled.Cast, showChevron = true, onClick = { nav.navigate(RemoteRoute) })
-                GroupRow("Sign in another device", "Approve a Quick Connect code", icon = Icons.Filled.Key, showChevron = true, onClick = { nav.navigate(QuickConnectApproveRoute) })
+                GroupRow(stringResource(R.string.control_another_device), stringResource(R.string.play_and_pause_jellyfin_on_your), icon = Icons.Filled.Cast, showChevron = true, onClick = { nav.navigate(RemoteRoute) })
+                GroupRow(stringResource(R.string.sign_in_another_device), stringResource(R.string.approve_a_quick_connect_code), icon = Icons.Filled.Key, showChevron = true, onClick = { nav.navigate(QuickConnectApproveRoute) })
             }
             Group {
-                GroupRow("Settings", icon = Icons.Filled.Settings, showChevron = true, onClick = { nav.navigate(SettingsRoute) })
-                GroupRow("Switch account or server", icon = Icons.Filled.SwapHoriz, showChevron = true, onClick = { nav.navigate(AccountsRoute) })
-                GroupRow("Change password", icon = Icons.Filled.Password, showChevron = true, onClick = { changePassword = true })
+                GroupRow(stringResource(R.string.settings), icon = Icons.Filled.Settings, showChevron = true, onClick = { nav.navigate(SettingsRoute) })
+                GroupRow(stringResource(R.string.switch_account_or_server), icon = Icons.Filled.SwapHoriz, showChevron = true, onClick = { nav.navigate(AccountsRoute) })
+                GroupRow(stringResource(R.string.change_password), icon = Icons.Filled.Password, showChevron = true, onClick = { changePassword = true })
             }
             if (acc?.isAdmin == true) {
                 Group {
                     GroupRow(
-                        "Server dashboard",
-                        "Users, libraries, plugins, tasks and logs",
+                        stringResource(R.string.server_dashboard),
+                        stringResource(R.string.users_libraries_plugins_tasks_and_logs),
                         icon = Icons.Filled.AdminPanelSettings,
                         showChevron = true,
                         onClick = { nav.navigate(AdminRoute) },
@@ -238,29 +240,29 @@ private fun ChangePasswordDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn),
-        title = { Text("Change password") },
+        title = { Text(stringResource(R.string.change_password)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(current, { current = it }, label = { Text("Current password") }, singleLine = true,
+                OutlinedTextField(current, { current = it }, label = { Text(stringResource(R.string.current_password)) }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
-                OutlinedTextField(new, { new = it }, label = { Text("New password") }, singleLine = true,
+                OutlinedTextField(new, { new = it }, label = { Text(stringResource(R.string.new_password)) }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
-                OutlinedTextField(confirm, { confirm = it }, label = { Text("New password again") }, singleLine = true,
+                OutlinedTextField(confirm, { confirm = it }, label = { Text(stringResource(R.string.new_password_again)) }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                if (new != confirm) { error = "The new passwords don't match"; return@TextButton }
+                if (new != confirm) { error = str(R.string.the_new_passwords_don_t_match); return@TextButton }
                 scope.launch {
                     runCatching { c.api.changeOwnPassword(current, new) }
-                        .onSuccess { Toast.makeText(context, "Password changed", Toast.LENGTH_SHORT).show(); onDismiss() }
+                        .onSuccess { Toast.makeText(context, str(R.string.password_changed), Toast.LENGTH_SHORT).show(); onDismiss() }
                         .onFailure { error = it.friendlyMessage() }
                 }
-            }) { Text("Change password") }
+            }) { Text(stringResource(R.string.change_password)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -276,7 +278,7 @@ fun AccountsScreen() {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { ScreenTopBar("Accounts and servers") },
+        topBar = { ScreenTopBar(stringResource(R.string.accounts_and_servers)) },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
             accounts.groupBy { it.serverName to it.serverUrl }.forEach { (server, list) ->
@@ -287,24 +289,24 @@ fun AccountsScreen() {
                         GroupRow(
                             a.userName,
                             when {
-                                isActive && a.isAdmin -> "Signed in now, administrator"
-                                isActive -> "Signed in now"
-                                a.isAdmin -> "Administrator"
-                                else -> "Tap to switch"
+                                isActive && a.isAdmin -> stringResource(R.string.signed_in_now_administrator)
+                                isActive -> stringResource(R.string.signed_in_now)
+                                a.isAdmin -> stringResource(R.string.administrator)
+                                else -> stringResource(R.string.tap_to_switch)
                             },
                             icon = if (isActive) Icons.Filled.CheckCircle else Icons.Filled.Person,
                             iconTint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             onClick = if (isActive) null else ({ scope.launch { c.sessions.switchTo(a.key) }; Unit }),
                         ) {
                             IconButton(onClick = { signOut = a.key }) {
-                                Icon(Icons.AutoMirrored.Filled.Logout, "Sign out ${a.userName}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(Icons.AutoMirrored.Filled.Logout, stringResource(R.string.sign_out_x_2, a.userName), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
                 }
             }
             Group {
-                GroupRow("Add an account or server", icon = Icons.Filled.Add, onClick = { nav.navigate(AddAccountRoute) })
+                GroupRow(stringResource(R.string.add_an_account_or_server), icon = Icons.Filled.Add, onClick = { nav.navigate(AddAccountRoute) })
             }
         }
     }
@@ -313,10 +315,10 @@ fun AccountsScreen() {
         val acc = accounts.firstOrNull { it.key == key }
         AlertDialog(
             onDismissRequest = { signOut = null },
-            title = { Text("Sign out ${acc?.userName}?") },
-            text = { Text("This signs the account out on the server and removes it from this phone. Its downloads stay until you delete them.") },
-            confirmButton = { TextButton(onClick = { signOut = null; scope.launch { c.sessions.signOut(key) } }) { Text("Sign out") } },
-            dismissButton = { TextButton(onClick = { signOut = null }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.sign_out_x, acc?.userName)) },
+            text = { Text(stringResource(R.string.this_signs_the_account_out_on)) },
+            confirmButton = { TextButton(onClick = { signOut = null; scope.launch { c.sessions.signOut(key) } }) { Text(stringResource(R.string.sign_out)) } },
+            dismissButton = { TextButton(onClick = { signOut = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -338,7 +340,7 @@ fun QuickConnectApproveScreen() {
         scope.launch {
             runCatching { c.api.quickConnectAuthorize(code) }
                 .onSuccess { ok ->
-                    Toast.makeText(context, if (ok) "Device signed in" else "That code wasn't accepted. Check it and try again.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, if (ok) str(R.string.device_signed_in) else str(R.string.that_code_wasn_t_accepted_check), Toast.LENGTH_LONG).show()
                     if (ok) nav.close(com.vknxworks.jellyctrl.ui.nav.QuickConnectApproveRoute::class)
                 }
                 .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_LONG).show() }
@@ -349,20 +351,19 @@ fun QuickConnectApproveScreen() {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { ScreenTopBar("Sign in another device") },
+        topBar = { ScreenTopBar(stringResource(R.string.sign_in_another_device)) },
     ) { padding ->
         Column(
             Modifier.padding(padding).padding(horizontal = Gutter, vertical = 16.dp).widthIn(max = 480.dp).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(
-                "On the other device, choose Quick Connect when signing in. Type the six-digit code it shows and it signs in as you.",
+                stringResource(R.string.on_the_other_device_choose_quick),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "Only enter a code from a device you're holding yourself. Never use a code someone sent you" +
-                    if (account?.isAdmin == true) ": it would give them full control of your server." else ".",
+                if (account?.isAdmin == true) stringResource(R.string.quick_connect_warning_admin) else stringResource(R.string.quick_connect_warning),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -377,7 +378,7 @@ fun QuickConnectApproveScreen() {
             )
             Row {
                 PillButton(
-                    if (busy) "Approving" else "Approve",
+                    if (busy) stringResource(R.string.approving) else stringResource(R.string.approve),
                     enabled = code.length == 6 && !busy,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { confirming = true },
@@ -389,16 +390,15 @@ fun QuickConnectApproveScreen() {
     if (confirming) {
         AlertDialog(
             onDismissRequest = { confirming = false },
-            title = { Text("Sign in another device as ${account?.userName ?: "you"}?") },
+            title = { Text(account?.userName?.let { stringResource(R.string.quick_connect_title_x, it) } ?: stringResource(R.string.quick_connect_title)) },
             text = {
                 Text(
-                    "The device showing code $code gets access to everything on your account" +
-                        (if (account?.isAdmin == true) ", including the server dashboard" else "") +
-                        ". An administrator can sign it out again from the server dashboard's device list."
+                    if (account?.isAdmin == true) stringResource(R.string.quick_connect_body_admin, code)
+                    else stringResource(R.string.quick_connect_body, code)
                 )
             },
-            confirmButton = { TextButton(onClick = { confirming = false; approve() }) { Text("Sign it in") } },
-            dismissButton = { TextButton(onClick = { confirming = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { confirming = false; approve() }) { Text(stringResource(R.string.sign_it_in)) } },
+            dismissButton = { TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

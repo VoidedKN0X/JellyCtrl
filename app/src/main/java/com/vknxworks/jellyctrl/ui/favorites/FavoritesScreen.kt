@@ -31,22 +31,26 @@ import com.vknxworks.jellyctrl.ui.components.MessageView
 import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.rememberLoader
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
-private val FAV_GROUPS = listOf(
-    "Movies" to listOf("Movie"),
-    "Shows" to listOf("Series"),
-    "Episodes" to listOf("Episode"),
-    "Collections" to listOf("BoxSet"),
-    "Albums" to listOf("MusicAlbum"),
-    "Artists" to listOf("MusicArtist"),
-    "Songs" to listOf("Audio"),
-    "Videos" to listOf("Video", "MusicVideo"),
-    "Playlists" to listOf("Playlist"),
-    "Channels" to listOf("TvChannel"),
-    "People" to listOf("Person"),
-    "Books" to listOf("Book", "AudioBook"),
-    "Photos" to listOf("Photo", "PhotoAlbum"),
-)
+private val FAV_GROUPS: List<Pair<String, List<String>>>
+    get() = listOf(
+        str(R.string.kind_movies) to listOf("Movie"),
+        str(R.string.kind_shows) to listOf("Series"),
+        str(R.string.kind_episodes) to listOf("Episode"),
+        str(R.string.kind_collections) to listOf("BoxSet"),
+        str(R.string.kind_albums) to listOf("MusicAlbum"),
+        str(R.string.kind_artists) to listOf("MusicArtist"),
+        str(R.string.kind_songs) to listOf("Audio"),
+        str(R.string.kind_videos) to listOf("Video", "MusicVideo"),
+        str(R.string.kind_playlists) to listOf("Playlist"),
+        str(R.string.kind_channels) to listOf("TvChannel"),
+        str(R.string.kind_people) to listOf("Person"),
+        str(R.string.kind_books) to listOf("Book", "AudioBook"),
+        str(R.string.kind_photos) to listOf("Photo", "PhotoAlbum"),
+    )
 
 @Composable
 fun FavoritesScreen() {
@@ -63,16 +67,16 @@ fun FavoritesScreen() {
     }
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = { ScreenTopBar("Favourites") },
+        topBar = { ScreenTopBar(stringResource(R.string.favourites)) },
     ) { padding ->
         PullToRefreshBox(loader.refreshing, onRefresh = { loader.reload(silent = true) }, modifier = Modifier.padding(padding).fillMaxSize()) {
             LoadContent(loader) { groups ->
                 if (groups.isEmpty()) {
-                    MessageView(Icons.Outlined.FavoriteBorder, "No favourites yet", "Tap the heart on any film, show or song to find it here.")
+                    MessageView(Icons.Outlined.FavoriteBorder, stringResource(R.string.no_favourites_yet), stringResource(R.string.tap_the_heart_on_any_film))
                 } else {
                     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
                         items(groups, key = { it.first }) { (label, items) ->
-                            ItemRow(label, items, client, nav::openItem, landscape = label == "Episodes", onLongItem = { menuItem = it })
+                            ItemRow(label, items, client, nav::openItem, landscape = items.firstOrNull()?.type == "Episode", onLongItem = { menuItem = it })
                         }
                     }
                 }

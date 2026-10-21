@@ -78,6 +78,10 @@ import com.vknxworks.jellyctrl.ui.theme.Gutter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
+import androidx.compose.ui.res.pluralStringResource
 
 private data class HomeData(
     val views: List<BaseItemDto>,
@@ -132,8 +136,8 @@ fun HomeScreen() {
             if (data.views.isEmpty()) {
                 MessageView(
                     Icons.Outlined.VideoLibrary,
-                    "No libraries yet",
-                    "This account can't see any libraries. An admin can give access in the server dashboard.",
+                    stringResource(R.string.no_libraries_yet),
+                    stringResource(R.string.this_account_can_t_see_any),
                 )
                 return@LoadContent
             }
@@ -146,27 +150,27 @@ fun HomeScreen() {
                     }
                     item("resume") {
                         ItemRow(
-                            "Continue watching", data.resume, client, nav::openItem, landscape = true,
-                            onMore = if (data.resume.size > 6) ({ nav.navigate(ListRoute("Continue watching", "resume")) }) else null,
+                            stringResource(R.string.continue_watching), data.resume, client, nav::openItem, landscape = true,
+                            onMore = if (data.resume.size > 6) ({ nav.navigate(ListRoute(str(R.string.continue_watching), "resume")) }) else null,
                             onLongItem = { menuItem = it },
                         )
                     }
                     item("nextup") {
                         ItemRow(
-                            "Next up", data.nextUp, client, nav::openItem, landscape = true,
-                            onMore = if (data.nextUp.size > 6) ({ nav.navigate(ListRoute("Next up", "nextup")) }) else null,
+                            stringResource(R.string.next_up), data.nextUp, client, nav::openItem, landscape = true,
+                            onMore = if (data.nextUp.size > 6) ({ nav.navigate(ListRoute(str(R.string.next_up), "nextup")) }) else null,
                             onLongItem = { menuItem = it },
                         )
                     }
                     item("live") {
-                        ItemRow("On TV now", data.liveNow, client, nav::openItem, landscape = true, onMore = { nav.navigate(LiveTvRoute) })
+                        ItemRow(stringResource(R.string.on_tv_now), data.liveNow, client, nav::openItem, landscape = true, onMore = { nav.navigate(LiveTvRoute) })
                     }
                     item("resumeAudio") {
-                        ItemRow("Keep listening", data.resumeAudio, client, nav::openItem, onLongItem = { menuItem = it })
+                        ItemRow(stringResource(R.string.keep_listening), data.resumeAudio, client, nav::openItem, onLongItem = { menuItem = it })
                     }
                     items(data.latest, key = { "latest-" + it.first.id }) { (view, items) ->
                         ItemRow(
-                            "New in ${view.name.orEmpty()}", items, client, nav::openItem,
+                            stringResource(R.string.new_in_x, view.name.orEmpty()), items, client, nav::openItem,
                             onMore = { nav.openItem(view) },
                             onLongItem = { menuItem = it },
                         )
@@ -188,7 +192,7 @@ private fun TopActions(client: JellyfinClient, modifier: Modifier) {
     val acc = session?.account
     Row(modifier.statusBarsPadding().padding(end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { nav.navigate(RemoteRoute) }) {
-            Icon(Icons.Filled.Cast, "Control another device", tint = Color.White)
+            Icon(Icons.Filled.Cast, stringResource(R.string.control_another_device), tint = Color.White)
         }
         IconButton(onClick = { nav.navigate(ProfileRoute) }) {
             Box(Modifier.size(32.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
@@ -249,12 +253,12 @@ private fun Hero(items: List<BaseItemDto>, client: JellyfinClient) {
                             listOfNotNull(
                                 item.productionYear?.toString(),
                                 item.genres.take(2).joinToString(", ").ifBlank { null },
-                                if (item.type == "Movie") formatRuntime(item.runTimeTicks) else item.childCount?.let { if (it == 1) "1 season" else "$it seasons" },
+                                if (item.type == "Movie") formatRuntime(item.runTimeTicks) else item.childCount?.let { pluralStringResource(R.plurals.count_seasons, it, it) },
                             ),
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                             PillButton(
-                                "Play",
+                                stringResource(R.string.play),
                                 onClick = { nav.play(item) },
                                 icon = Icons.Filled.PlayArrow,
                                 container = Color.White,
@@ -268,7 +272,7 @@ private fun Hero(items: List<BaseItemDto>, client: JellyfinClient) {
                             ) {
                                 Icon(Icons.Outlined.Info, null, Modifier.size(20.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Details", style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.details), style = MaterialTheme.typography.titleMedium)
                             }
                         }
                     }

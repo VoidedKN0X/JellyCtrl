@@ -2,6 +2,8 @@ package com.vknxworks.jellyctrl.ui.components
 
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
 /** Image URL helpers that fall back to parent (series/album) artwork the way the Jellyfin web client does. */
 fun JellyfinClient.primaryImage(item: BaseItemDto, width: Int = 400): String? {
@@ -48,7 +50,7 @@ fun formatRuntime(ticks: Long?): String? {
     val totalMin = ticks / 600_000_000L
     val h = totalMin / 60
     val m = totalMin % 60
-    return if (h > 0) "${h}h ${m}m" else "${m}m"
+    return if (h > 0) str(R.string.short_h_m, h, m) else str(R.string.short_m, m)
 }
 
 fun formatClock(ms: Long): String {
@@ -78,7 +80,7 @@ fun BaseItemDto.subtitleLine(): String? = when (type) {
     "MusicAlbum" -> albumArtist ?: artists.firstOrNull()
     "Audio" -> artists.joinToString().ifBlank { albumArtist }
     "Season" -> seriesName
-    "Series" -> productionYear?.let { y -> if (status == "Continuing") "$y - Present" else endDate?.take(4)?.let { if (it != y.toString()) "$y - $it" else "$y" } ?: "$y" }
+    "Series" -> productionYear?.let { y -> if (status == "Continuing") str(R.string.x_present, y) else endDate?.take(4)?.let { if (it != y.toString()) "$y - $it" else "$y" } ?: "$y" }
     "TvChannel" -> currentProgram?.name
     else -> productionYear?.toString()
 }

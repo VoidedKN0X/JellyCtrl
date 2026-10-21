@@ -52,23 +52,27 @@ import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
 
-private val GROUPS = listOf(
-    "Movies" to listOf("Movie"),
-    "Shows" to listOf("Series"),
-    "Episodes" to listOf("Episode"),
-    "Collections" to listOf("BoxSet"),
-    "Albums" to listOf("MusicAlbum"),
-    "Artists" to listOf("MusicArtist"),
-    "Songs" to listOf("Audio"),
-    "Music videos" to listOf("MusicVideo"),
-    "Videos" to listOf("Video"),
-    "Playlists" to listOf("Playlist"),
-    "Channels" to listOf("TvChannel"),
-    "Programs" to listOf("Program"),
-    "Books" to listOf("Book", "AudioBook"),
-    "People" to listOf("Person"),
-)
+private val GROUPS: List<Pair<String, List<String>>>
+    get() = listOf(
+        str(R.string.kind_movies) to listOf("Movie"),
+        str(R.string.kind_shows) to listOf("Series"),
+        str(R.string.kind_episodes) to listOf("Episode"),
+        str(R.string.kind_collections) to listOf("BoxSet"),
+        str(R.string.kind_albums) to listOf("MusicAlbum"),
+        str(R.string.kind_artists) to listOf("MusicArtist"),
+        str(R.string.kind_songs) to listOf("Audio"),
+        str(R.string.kind_music_videos) to listOf("MusicVideo"),
+        str(R.string.kind_videos) to listOf("Video"),
+        str(R.string.kind_playlists) to listOf("Playlist"),
+        str(R.string.kind_channels) to listOf("TvChannel"),
+        str(R.string.kind_programs) to listOf("Program"),
+        str(R.string.kind_books) to listOf("Book", "AudioBook"),
+        str(R.string.kind_people) to listOf("Person"),
+    )
 
 @Composable
 fun SearchScreen() {
@@ -111,14 +115,14 @@ fun SearchScreen() {
     }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        TabTitle("Search")
+        TabTitle(stringResource(R.string.search))
         TextField(
             value = query,
             onValueChange = { query = it },
-            placeholder = { Text("Films, shows, music, people") },
+            placeholder = { Text(stringResource(R.string.films_shows_music_people)) },
             leadingIcon = { Icon(Icons.Filled.Search, null) },
             trailingIcon = {
-                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Clear, "Clear search") }
+                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Clear, stringResource(R.string.clear_search)) }
             },
             singleLine = true,
             shape = CircleShape,
@@ -135,12 +139,12 @@ fun SearchScreen() {
         val r = results
         when {
             loading && r == null -> LoadingView()
-            error != null -> MessageView(Icons.Outlined.SearchOff, "Search didn't work", error)
-            r == null -> MessageView(Icons.Filled.Search, "Find anything on your server", "Start typing a title, actor, artist or song.")
-            r.isEmpty() -> MessageView(Icons.Outlined.SearchOff, "No matches", "Nothing on your server matches \"${query.trim()}\". Check the spelling or try fewer words.")
+            error != null -> MessageView(Icons.Outlined.SearchOff, stringResource(R.string.search_didn_t_work), error)
+            r == null -> MessageView(Icons.Filled.Search, stringResource(R.string.find_anything_on_your_server), stringResource(R.string.start_typing_a_title_actor_artist))
+            r.isEmpty() -> MessageView(Icons.Outlined.SearchOff, stringResource(R.string.no_matches), stringResource(R.string.nothing_on_your_server_matches_x, query.trim()))
             else -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp + LocalBottomClearance.current)) {
                 items(r, key = { it.first }) { (label, items) ->
-                    ItemRow(label, items, client, nav::openItem, landscape = label == "Episodes" || label == "Videos", onLongItem = { menuItem = it })
+                    ItemRow(label, items, client, nav::openItem, landscape = items.firstOrNull()?.type in setOf("Episode", "Video"), onLongItem = { menuItem = it })
                 }
             }
         }

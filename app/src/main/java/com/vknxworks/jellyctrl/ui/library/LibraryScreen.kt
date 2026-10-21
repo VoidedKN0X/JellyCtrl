@@ -65,44 +65,54 @@ import com.vknxworks.jellyctrl.ui.livetv.LiveTvScreen
 import com.vknxworks.jellyctrl.ui.nav.LibraryRoute
 import com.vknxworks.jellyctrl.ui.nav.ListRoute
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.str
+import androidx.annotation.StringRes
 
-enum class SortOption(val label: String, val fields: List<String>, val ascLabel: String, val descLabel: String) {
-    NAME("Name", listOf("SortName"), "A to Z", "Z to A"),
-    ADDED("Date added", listOf("DateCreated", "SortName"), "oldest first", "newest first"),
-    RELEASED("Release date", listOf("PremiereDate", "ProductionYear", "SortName"), "oldest first", "newest first"),
-    RATING("Rating", listOf("CommunityRating", "SortName"), "lowest first", "highest first"),
-    CRITIC("Critic rating", listOf("CriticRating", "SortName"), "lowest first", "highest first"),
-    PLAYED("Last watched", listOf("DatePlayed", "SortName"), "longest ago", "most recent"),
-    RUNTIME("Length", listOf("Runtime", "SortName"), "shortest first", "longest first"),
-    PLAYCOUNT("Times played", listOf("PlayCount", "SortName"), "fewest first", "most first"),
-    RANDOM("Random", listOf("Random"), "", ""),
+enum class SortOption(@StringRes private val labelRes: Int, val fields: List<String>, @StringRes private val ascRes: Int, @StringRes private val descRes: Int) {
+    NAME(R.string.sort_name, listOf("SortName"), R.string.order_a_to_z, R.string.order_z_to_a),
+    ADDED(R.string.sort_date_added, listOf("DateCreated", "SortName"), R.string.order_oldest_first, R.string.order_newest_first),
+    RELEASED(R.string.sort_release_date, listOf("PremiereDate", "ProductionYear", "SortName"), R.string.order_oldest_first, R.string.order_newest_first),
+    RATING(R.string.sort_rating, listOf("CommunityRating", "SortName"), R.string.order_lowest_first, R.string.order_highest_first),
+    CRITIC(R.string.sort_critic_rating, listOf("CriticRating", "SortName"), R.string.order_lowest_first, R.string.order_highest_first),
+    PLAYED(R.string.sort_last_watched, listOf("DatePlayed", "SortName"), R.string.order_longest_ago, R.string.order_most_recent),
+    RUNTIME(R.string.sort_length, listOf("Runtime", "SortName"), R.string.order_shortest_first, R.string.order_longest_first),
+    PLAYCOUNT(R.string.sort_times_played, listOf("PlayCount", "SortName"), R.string.order_fewest_first, R.string.order_most_first),
+    RANDOM(R.string.sort_random, listOf("Random"), 0, 0);
+
+    val label: String get() = str(labelRes)
+    val ascLabel: String get() = if (ascRes == 0) "" else str(ascRes)
+    val descLabel: String get() = if (descRes == 0) "" else str(descRes)
 }
 
-enum class FilterOption(val label: String, val value: String) {
-    UNPLAYED("Unwatched", "IsUnplayed"),
-    PLAYED("Watched", "IsPlayed"),
-    FAVORITES("Favourites", "IsFavorite"),
-    RESUMABLE("In progress", "IsResumable"),
+enum class FilterOption(@StringRes private val labelRes: Int, val value: String) {
+    UNPLAYED(R.string.filter_unwatched, "IsUnplayed"),
+    PLAYED(R.string.filter_watched, "IsPlayed"),
+    FAVORITES(R.string.filter_favourites, "IsFavorite"),
+    RESUMABLE(R.string.filter_in_progress, "IsResumable");
+
+    val label: String get() = str(labelRes)
 }
 
 private data class LibTab(val label: String, val types: List<String>, val kind: String = "items", val recursive: Boolean = true)
 
 private fun tabsFor(collectionType: String?): List<LibTab> = when (collectionType) {
-    "movies" -> listOf(LibTab("Movies", listOf("Movie")), LibTab("Genres", listOf("Movie"), "genres"))
-    "tvshows" -> listOf(LibTab("Shows", listOf("Series")), LibTab("Episodes", listOf("Episode")), LibTab("Genres", listOf("Series"), "genres"))
+    "movies" -> listOf(LibTab(str(R.string.movies), listOf("Movie")), LibTab(str(R.string.genres), listOf("Movie"), "genres"))
+    "tvshows" -> listOf(LibTab(str(R.string.shows), listOf("Series")), LibTab(str(R.string.episodes), listOf("Episode")), LibTab(str(R.string.genres), listOf("Series"), "genres"))
     "music" -> listOf(
-        LibTab("Albums", listOf("MusicAlbum")),
-        LibTab("Album artists", emptyList(), "artists"),
-        LibTab("Songs", listOf("Audio")),
-        LibTab("Playlists", listOf("Playlist"), "playlists"),
-        LibTab("Genres", listOf("MusicAlbum"), "genres"),
+        LibTab(str(R.string.albums), listOf("MusicAlbum")),
+        LibTab(str(R.string.album_artists), emptyList(), "artists"),
+        LibTab(str(R.string.songs), listOf("Audio")),
+        LibTab(str(R.string.playlists), listOf("Playlist"), "playlists"),
+        LibTab(str(R.string.genres), listOf("MusicAlbum"), "genres"),
     )
-    "musicvideos" -> listOf(LibTab("Videos", listOf("MusicVideo")))
-    "boxsets" -> listOf(LibTab("Collections", listOf("BoxSet")))
-    "playlists" -> listOf(LibTab("Playlists", listOf("Playlist"), "playlists"))
-    "books" -> listOf(LibTab("Books", listOf("Book", "AudioBook")))
-    "photos", "homevideos", "folders" -> listOf(LibTab("Folders", emptyList(), recursive = false))
-    else -> listOf(LibTab("All", emptyList(), recursive = false))
+    "musicvideos" -> listOf(LibTab(str(R.string.videos), listOf("MusicVideo")))
+    "boxsets" -> listOf(LibTab(str(R.string.collections), listOf("BoxSet")))
+    "playlists" -> listOf(LibTab(str(R.string.playlists), listOf("Playlist"), "playlists"))
+    "books" -> listOf(LibTab(str(R.string.books), listOf("Book", "AudioBook")))
+    "photos", "homevideos", "folders" -> listOf(LibTab(str(R.string.folders), emptyList(), recursive = false))
+    else -> listOf(LibTab(str(R.string.all), emptyList(), recursive = false))
 }
 
 @Composable
@@ -130,7 +140,7 @@ fun LibraryScreen(route: LibraryRoute) {
                     if (canSortFilter) {
                         IconButton(onClick = {
                             nav.shuffle(BaseItemDto(id = route.id, type = "CollectionFolder", collectionType = route.collectionType, isFolder = true))
-                        }) { Icon(Icons.Filled.Shuffle, "Shuffle") }
+                        }) { Icon(Icons.Filled.Shuffle, stringResource(R.string.shuffle)) }
                     }
                 }
                 if (tabs.size > 1) {
@@ -194,9 +204,9 @@ fun LibraryScreen(route: LibraryRoute) {
     if (showSort) {
         val options = SortOption.entries.flatMap { o ->
             if (o == SortOption.RANDOM) listOf((o to false) to o.label)
-            else listOf((o to false) to "${o.label}, ${o.ascLabel}", (o to true) to "${o.label}, ${o.descLabel}")
+            else listOf((o to false) to str(R.string.sort_with_order, o.label, o.ascLabel), (o to true) to str(R.string.sort_with_order, o.label, o.descLabel))
         }
-        ChoiceSheet("Sort by", options, sort to descending, onDismiss = { showSort = false }) { (o, d) ->
+        ChoiceSheet(stringResource(R.string.sort_by), options, sort to descending, onDismiss = { showSort = false }) { (o, d) ->
             sort = o
             descending = d
             showSort = false
@@ -229,7 +239,7 @@ private fun LibraryGrid(parentId: String, tab: LibTab, sort: SortOption, descend
         loader, client,
         onItem = { nav.openItem(it) },
         onLongItem = { menuItem = it },
-        emptyText = if (filters.isEmpty()) "This library is empty" else "Nothing matches these filters",
+        emptyText = if (filters.isEmpty()) stringResource(R.string.this_library_is_empty) else stringResource(R.string.nothing_matches_these_filters),
     )
     menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }) }
 }
