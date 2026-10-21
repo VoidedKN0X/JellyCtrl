@@ -4,6 +4,12 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.2.1 (2026-10-21)
+
+### Security
+
+- **The app lock drops your sign-in sooner after music stops.** In 0.2.0, once you had played music, JellyCtrl kept the sign-in in memory while locked for as long as the app was running, even after the music had stopped. Now only music that's actually playing or paused with a queue (with its notification up) keeps it; when you stop the music or the queue ends while JellyCtrl is locked, the sign-in is dropped until you unlock.
+
 ## v0.2.0 (2026-10-21)
 
 JellyCtrl gets the app lock every Ctrl app shares.
