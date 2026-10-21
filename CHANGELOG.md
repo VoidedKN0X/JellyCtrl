@@ -4,6 +4,18 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.2.2 (2026-10-21)
+
+### Changed
+
+- **Hide in screenshots and recent apps** now reads "Screenshots, screen recordings and the recent apps view show a blank screen", the same as in the other Ctrl apps.
+- **README**: the App lock section now uses the same wording as the other Ctrl apps.
+
+### Security
+
+- **The lock and PIN screens can't be captured.** While JellyCtrl shows the lock screen, or a screen for choosing, changing or turning off the app PIN, screenshots and screen recordings come out black, in the video player too, whatever "Hide in screenshots and recent apps" is set to.
+- **No snapshot at start-up**: the recent-apps view shows a blank card from the moment JellyCtrl opens, before its settings are read.
+
 ## v0.2.1 (2026-10-21)
 
 ### Security
