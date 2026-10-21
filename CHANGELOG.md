@@ -4,6 +4,12 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.2.7 (2026-10-21)
+
+### Fixed
+
+- **Fingerprint unlock works again after you leave the app.** Once you'd left JellyCtrl with the back gesture or by swiping home, the lock screen no longer asked for your fingerprint when you came back, and tapping **Use fingerprint** did nothing either; only the PIN worked until the app was force-closed. The fingerprint prompt was asked for while the app was still coming back on screen, and the phone dropped it without answering, which left JellyCtrl waiting for an answer that never came. Now the prompt only opens once JellyCtrl is fully back on screen, a prompt that never answered can't block the next one, and the lock screen offers your fingerprint again every time you come back to it, not just the first time after it locked. This includes the lock screen over the video player, for example when you open a video full screen again from picture-in-picture. The same applies to the one-time check with your phone's screen lock for people updating from the old app lock.
+
 ## v0.2.6 (2026-10-21)
 
 ### Security
