@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vknxworks.jellyctrl.AppContainer
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.Request
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.ItemQuery
 import com.vknxworks.jellyctrl.data.api.MediaSegment
@@ -29,6 +30,7 @@ import com.vknxworks.jellyctrl.data.api.ticksToMs
 import com.vknxworks.jellyctrl.data.settings.PlayerEngineChoice
 import com.vknxworks.jellyctrl.data.settings.SkipSegmentMode
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +42,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
@@ -53,6 +56,9 @@ data class PlayerArgs(
     val containerId: String?,
     val shuffle: Boolean,
 )
+
+/** How many redirects on the signed-in server are followed for mpv before giving up. */
+private const val MAX_MPV_REDIRECTS = 5
 
 class PlayerViewModel(
     private val c: AppContainer,
@@ -202,17 +208,18 @@ class PlayerViewModel(
 
     private fun currentMaxBitrate(): Long = maxBitrateOverride ?: settings.maxBitrateBps(c.isOnCellular())
 
-    private fun startEngine(resolved: ResolvedPlayback, startMs: Long) {
+    private suspend fun startEngine(resolved: ResolvedPlayback, startMs: Long) {
         val current = _engine.value
         val engine = if (current != null && current.kind() == resolved.engine) current else {
             current?.release()
             createEngine(resolved.engine).also { _engine.value = it }
         }
+        val url = if (engine is MpvEngine && !resolved.offline) finalUrlForMpv(resolved.url) else resolved.url
         playback = resolved
         reportedStart = false
         engine.load(
             LoadRequest(
-                url = resolved.url,
+                url = url,
                 startMs = startMs,
                 isHls = resolved.isHls,
                 externalSubs = resolved.externalSubs,
@@ -233,6 +240,29 @@ class PlayerViewModel(
             notice = e.message?.let { str(R.string.mpv_unavailable_x_using_media3, it) } ?: str(R.string.mpv_unavailable_using_media3)
             Media3Engine(appContext, c.http)
         }
+    }
+
+    /**
+     * mpv sends its request headers (and so the token) to wherever a redirect points. So for mpv the server's
+     * redirects are followed here first, with OkHttp, which only authenticates the signed-in server, and mpv
+     * gets the final address: it only adds the token while that is still the signed-in server.
+     */
+    private suspend fun finalUrlForMpv(url: String): String {
+        if (mpvAuthHeader(url) == null) return url
+        val noRedirects = c.http.newBuilder().followRedirects(false).followSslRedirects(false).build()
+        var current = url
+        repeat(MAX_MPV_REDIRECTS) {
+            val from = current
+            val target = withContext(Dispatchers.IO) {
+                noRedirects.newCall(Request.Builder().url(from).header("Range", "bytes=0-0").build()).execute().use { r ->
+                    if (!r.isRedirect) null else r.header("Location")?.let { from.toHttpUrlOrNull()?.resolve(it)?.toString() }
+                }
+            } ?: return from
+            // Somewhere else: mpv opens that address without the token.
+            if (mpvAuthHeader(target) == null) return target
+            current = target
+        }
+        throw IllegalStateException(str(R.string.too_many_redirects))
     }
 
     /** Header line for mpv: only for the signed-in server, never for third-party or unapproved HTTP URLs. */
