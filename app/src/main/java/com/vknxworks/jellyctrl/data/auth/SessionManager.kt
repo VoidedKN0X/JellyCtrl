@@ -10,6 +10,7 @@ import com.vknxworks.jellyctrl.data.api.PlainJson
 import com.vknxworks.jellyctrl.data.api.logout
 import com.vknxworks.jellyctrl.data.api.postCapabilities
 import com.vknxworks.jellyctrl.data.appDataStore
+import com.vknxworks.jellyctrl.data.lock.LockVault
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -42,10 +45,14 @@ data class Account(
 
 data class ActiveSession(val account: Account, val client: JellyfinClient)
 
-/** Saved servers/accounts and the currently active one. Tokens are stored encrypted with the Keystore. */
+/**
+ * Saved servers/accounts and the currently active one. Tokens are stored encrypted with the Keystore and,
+ * with the app lock on, also sealed with the app lock's key, so they can only be read while it's unlocked.
+ */
 class SessionManager(
     private val context: Context,
     private val http: OkHttpClient,
+    private val vault: LockVault,
     private val scope: CoroutineScope,
 ) {
     private val accountsKey = stringPreferencesKey("accounts")
@@ -60,6 +67,22 @@ class SessionManager(
 
     private val _ready = MutableStateFlow(false)
     val ready: StateFlow<Boolean> = _ready.asStateFlow()
+
+    /** The saved accounts have been read (their tokens may still be sealed while the app is locked). */
+    private val _loaded = MutableStateFlow(false)
+    val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
+
+    private val mutex = Mutex()
+
+    /** The app is locked (only ever true with the app lock on). */
+    @Volatile private var locked = false
+
+    /**
+     * Set by the app: whether music or a video is playing or downloads are running. Those keep the
+     * signed-in session (and so its token) in memory while the app is locked, so playback, media
+     * controls and downloads carry on. Everything else drops it until the next unlock.
+     */
+    @Volatile var mediaBusy: () -> Boolean = { false }
 
     private var installId: String = ""
 
@@ -90,7 +113,7 @@ class SessionManager(
         scope.launch { load() }
     }
 
-    private suspend fun load() {
+    private suspend fun load() = mutex.withLock {
         val prefs = context.appDataStore.data.first()
         installId = prefs[installIdKey] ?: UUID.randomUUID().toString().also { id ->
             context.appDataStore.edit { it[installIdKey] = id }
@@ -99,9 +122,91 @@ class SessionManager(
             runCatching { PlainJson.decodeFromString(ListSerializer(Account.serializer()), it) }.getOrNull()
         }.orEmpty()
         _accounts.value = list
-        val activeId = prefs[activeKey]
+        _loaded.value = true
+        // With the app lock on, the token can only be decrypted after unlocking; onUnlocked() continues.
+        if (vault.enabled && !vault.isOpen) {
+            locked = true
+            return@withLock
+        }
+        activateSaved()
+        _ready.value = true
+    }
+
+    private suspend fun activateSaved() {
+        val activeId = context.appDataStore.data.first()[activeKey]
+        val list = _accounts.value
         val acc = list.firstOrNull { it.key == activeId } ?: list.firstOrNull()
-        if (acc != null) activate(acc)
+        if (acc != null) activate(acc) else _active.value = null
+    }
+
+    /** The token of [acc], or null while it's sealed by the app lock and the app is locked. */
+    private fun tokenOf(acc: Account): String? {
+        val plain = KeystoreCrypto.decrypt(acc.tokenEnc) ?: return null
+        if (!LockVault.isSealed(plain)) return plain
+        return vault.open(plain) ?: _active.value?.takeIf { it.account.key == acc.key }?.client?.accessToken
+    }
+
+    /** Encrypts a token for saving: with the Keystore, and also with the app lock's key when it's on. */
+    private fun storeToken(token: String): String {
+        val inner = if (vault.enabled) vault.seal(token) ?: error("Unlock JellyCtrl first") else token
+        return KeystoreCrypto.encrypt(inner)
+    }
+
+    /** The app locked: forget the session and its token until the next unlock, unless media still needs it. */
+    fun onLocked() {
+        if (!vault.enabled) return
+        locked = true
+        if (!mediaBusy()) dropSession()
+    }
+
+    /** Music, a video or the downloads stopped: if the app is locked, nothing needs the session any more. */
+    fun mediaStopped() {
+        if (locked && vault.enabled && !mediaBusy()) dropSession()
+    }
+
+    private fun dropSession() {
+        scope.launch {
+            mutex.withLock {
+                if (!locked || mediaBusy()) return@withLock
+                _ready.value = false
+                _active.value = null
+            }
+        }
+    }
+
+    /** The app unlocked: decrypt the token and open the session again. */
+    fun onUnlocked() {
+        locked = false
+        scope.launch {
+            mutex.withLock {
+                if (!_loaded.value) return@withLock // load() is still running and will activate it
+                if (_active.value == null) activateSaved()
+                _ready.value = true
+            }
+        }
+    }
+
+    /** The app lock was turned on: seal every saved token with its key too. */
+    suspend fun sealTokens() = reencryptTokens(seal = true)
+
+    /** The app lock is being turned off (while unlocked): back to Keystore-only encryption. */
+    suspend fun unsealTokens() = reencryptTokens(seal = false)
+
+    private suspend fun reencryptTokens(seal: Boolean) = mutex.withLock {
+        val list = _accounts.value.map { acc ->
+            val token = tokenOf(acc) ?: return@map acc
+            acc.copy(tokenEnc = if (seal) storeToken(token) else KeystoreCrypto.encrypt(token))
+        }
+        persist(list, context.appDataStore.data.first()[activeKey])
+        _active.value?.let { s -> list.firstOrNull { it.key == s.account.key }?.let { _active.value = s.copy(account = it) } }
+    }
+
+    /** "Forgot PIN?": the tokens can't be decrypted any more, so forget every account (they can't be revoked). */
+    suspend fun forgetAllAccounts() = mutex.withLock {
+        _active.value = null
+        persist(emptyList(), null)
+        clearCachedImages()
+        locked = false
         _ready.value = true
     }
 
@@ -133,7 +238,7 @@ class SessionManager(
             userId = user.id,
             userName = user.name ?: "User",
             userImageTag = user.primaryImageTag,
-            tokenEnc = KeystoreCrypto.encrypt(token),
+            tokenEnc = storeToken(token),
             deviceId = deviceId,
             isAdmin = user.policy?.isAdministrator == true,
         )
@@ -187,10 +292,14 @@ class SessionManager(
         _active.value = _active.value?.copy(account = updated)
     }
 
+    /** A client for [acc], or null while its token is sealed by the app lock and nothing has it in memory. */
     fun clientFor(acc: Account): JellyfinClient? {
-        val token = KeystoreCrypto.decrypt(acc.tokenEnc) ?: return null
+        val token = tokenOf(acc) ?: return null
         return JellyfinClient(acc.serverUrl, token, acc.userId, acc.deviceId, deviceName, http)
     }
+
+    /** The app is locked and the token of [acc] isn't available (a download has to wait for the unlock). */
+    fun isSealedNow(acc: Account): Boolean = vault.enabled && !vault.isOpen && clientFor(acc) == null
 
     private fun activate(acc: Account) {
         val client = clientFor(acc)

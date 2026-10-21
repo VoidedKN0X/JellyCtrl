@@ -277,23 +277,8 @@ private val ADMIN_ROUTES = listOf(
  */
 @Composable
 private fun ProtectWindow(protect: Boolean) {
-    // Unwrap: the composition's context can be a wrapper around the activity; a plain cast would then
-    // silently skip the protection.
-    var ctx: android.content.Context? = LocalContext.current
-    while (ctx is android.content.ContextWrapper && ctx !is android.app.Activity) ctx = ctx.baseContext
-    val activity = ctx as? android.app.Activity ?: return
-    androidx.compose.runtime.DisposableEffect(protect, activity) {
-        if (protect) {
-            activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
-            activity.setRecentsScreenshotEnabled(false)
-        }
-        onDispose {
-            if (protect) {
-                activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
-                activity.setRecentsScreenshotEnabled(true)
-            }
-        }
-    }
+    // MainActivity sets FLAG_SECURE and blanks the recent-apps preview while any screen asks for it.
+    com.vknxworks.jellyctrl.ui.lock.SecureScreen(protect)
 }
 
 @Composable

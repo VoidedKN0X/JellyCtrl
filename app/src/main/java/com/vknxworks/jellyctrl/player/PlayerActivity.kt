@@ -17,7 +17,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +33,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.vknxworks.jellyctrl.container
+import com.vknxworks.jellyctrl.ui.lock.AppLockOverlay
+import com.vknxworks.jellyctrl.ui.lock.lockCovering
 import com.vknxworks.jellyctrl.ui.theme.JellyCtrlTheme
 import com.vknxworks.jellyctrl.data.settings.ThemeChoice
 
@@ -59,6 +65,7 @@ class PlayerActivity : ComponentActivity() {
         }
         ContextCompat.registerReceiver(this, pipReceiver, IntentFilter(ACTION_PIP_TOGGLE), ContextCompat.RECEIVER_NOT_EXPORTED)
 
+        val c = applicationContext.container
         setContent {
             JellyCtrlTheme(ThemeChoice.DARK) {
                 val engine by vm.engine.collectAsState()
@@ -68,14 +75,31 @@ class PlayerActivity : ComponentActivity() {
                     updatePipParams(st)
                 }
                 LaunchedEffect(vm.finished) { if (vm.finished) finish() }
-                PlayerScreen(
-                    vm = vm,
-                    inPip = inPip,
-                    onBack = { finish() },
-                    onEnterPip = { enterPip() },
-                    rotationLocked = requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED,
-                    onToggleRotationLock = { toggleRotationLock() },
-                )
+                val settings by c.settings.settings.collectAsState()
+                val stored by c.settings.stored.collectAsState(initial = null)
+                // Until the settings are read, trust the synchronous read made at start-up.
+                val lockSetting = stored?.appLock ?: c.lockAtStart
+                val covered = lockCovering(lockSetting, c.vault)
+                // The video window is never in screenshots or the recent-apps preview with "Hide in screenshots" on.
+                LaunchedEffect(settings.hideScreens, c.vault.enabled) {
+                    if (settings.hideScreens) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    setRecentsScreenshotEnabled(!settings.hideScreens && !c.vault.enabled)
+                }
+                Box(Modifier.fillMaxSize()) {
+                    // The player stays underneath the lock screen (paused), hidden from TalkBack too.
+                    Box(if (covered) Modifier.fillMaxSize().clearAndSetSemantics { } else Modifier.fillMaxSize()) {
+                        PlayerScreen(
+                            vm = vm,
+                            inPip = inPip,
+                            onBack = { finish() },
+                            onEnterPip = { enterPip() },
+                            rotationLocked = requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED,
+                            onToggleRotationLock = { toggleRotationLock() },
+                        )
+                    }
+                    if (!inPip) AppLockOverlay(lockSetting)
+                }
             }
         }
     }
@@ -151,10 +175,18 @@ class PlayerActivity : ComponentActivity() {
         inPip = isInPictureInPictureMode
     }
 
+    override fun onStart() {
+        super.onStart()
+        visible++
+    }
+
     override fun onStop() {
         super.onStop()
         // Leaving the app without PiP pauses playback (the progress gets reported on pause).
         if (!isInPictureInPictureMode) vm.engine.value?.pause()
+        visible = (visible - 1).coerceAtLeast(0)
+        // With the app locked, the sign-in was only kept in memory for this video.
+        applicationContext.container.sessions.mediaStopped()
     }
 
     override fun onDestroy() {
@@ -163,6 +195,10 @@ class PlayerActivity : ComponentActivity() {
     }
 
     companion object {
+        /** Started video players (on screen or in picture-in-picture): they keep the sign-in while locked. */
+        @Volatile var visible = 0
+            private set
+
         private const val ACTION_PIP_TOGGLE = "com.vknxworks.jellyctrl.PIP_TOGGLE"
         private const val EXTRA_ITEM = "item"
         private const val EXTRA_START = "start"

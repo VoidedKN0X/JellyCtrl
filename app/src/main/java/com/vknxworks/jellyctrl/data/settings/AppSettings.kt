@@ -1,11 +1,13 @@
 package com.vknxworks.jellyctrl.data.settings
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.data.appDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +27,16 @@ enum class ThemeChoice(val label: String) { SYSTEM("Follow system"), DARK("Dark"
 
 enum class SkipSegmentMode(val label: String) { ASK("Show skip button"), AUTO("Skip automatically"), OFF("Off") }
 
+/** How long the app can be in the background before the app lock asks again. -1: only after a restart. */
+enum class LockTimeout(@StringRes val label: Int, val millis: Long) {
+    IMMEDIATELY(R.string.lock_again_immediately, 0L),
+    MINUTE_1(R.string.lock_again_1m, 60_000L),
+    MINUTES_5(R.string.lock_again_5m, 5 * 60_000L),
+    MINUTES_15(R.string.lock_again_15m, 15 * 60_000L),
+    HOUR_1(R.string.lock_again_1h, 60 * 60_000L),
+    RESTART(R.string.lock_again_restart, -1L),
+}
+
 data class AppSettings(
     val engine: PlayerEngineChoice = PlayerEngineChoice.AUTO,
     /** 0 = no limit (direct play whenever possible). */
@@ -43,6 +55,11 @@ data class AppSettings(
     val hwDecoding: Boolean = true,
     /** Server dashboard screens are hidden from screenshots, screen recording and the recent-apps preview. */
     val protectAdminScreens: Boolean = true,
+    /** The app lock is on (the PIN itself lives in LockVault). */
+    val appLock: Boolean = false,
+    val lockTimeout: LockTimeout = LockTimeout.IMMEDIATELY,
+    /** Blocks screenshots and screen recording everywhere, and blanks the recent-apps preview. */
+    val hideScreens: Boolean = false,
 ) {
     fun maxBitrateBps(onCellular: Boolean): Long {
         val mbps = if (onCellular && cellularBitrateMbps > 0) cellularBitrateMbps else maxBitrateMbps
@@ -67,6 +84,9 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val musicBitrate = intPreferencesKey("music_bitrate")
         val hwDec = booleanPreferencesKey("hw_decoding")
         val protectAdmin = booleanPreferencesKey("protect_admin_screens")
+        val appLock = booleanPreferencesKey("app_lock")
+        val lockTimeout = stringPreferencesKey("lock_timeout")
+        val hideScreens = booleanPreferencesKey("hide_screens")
         /** Left over from the optional stats removed in 0.1.24; deleted at start and on every save. */
         val legacy = listOf(booleanPreferencesKey("usage_stats"), booleanPreferencesKey("usage_stats_asked"))
     }
@@ -99,6 +119,9 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         musicBitrateKbps = this[K.musicBitrate] ?: 320,
         hwDecoding = this[K.hwDec] ?: true,
         protectAdminScreens = this[K.protectAdmin] ?: true,
+        appLock = this[K.appLock] ?: false,
+        lockTimeout = enumOr(this[K.lockTimeout], LockTimeout.IMMEDIATELY),
+        hideScreens = this[K.hideScreens] ?: false,
     )
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
@@ -119,6 +142,9 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             p[K.musicBitrate] = s.musicBitrateKbps
             p[K.hwDec] = s.hwDecoding
             p[K.protectAdmin] = s.protectAdminScreens
+            p[K.appLock] = s.appLock
+            p[K.lockTimeout] = s.lockTimeout.name
+            p[K.hideScreens] = s.hideScreens
             K.legacy.forEach { p.remove(it) }
         }
     }

@@ -22,6 +22,8 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Remote control** for your other Jellyfin devices
 - **Full admin dashboard**: users, libraries, plugins, scheduled tasks, logs, devices, API keys and server settings
 - **Protect the server dashboard** (admins, on by default): dashboard screens can't be screenshotted or recorded, and the recent-apps preview is blank
+- **App lock** with its own PIN and optional fingerprint unlock; your sign-ins stay encrypted while the app is locked, and music and downloads that are already running carry on
+- **Hide in screenshots and recent apps** for the whole app, if you want it
 - **Finds servers on your network**; Quick Connect sign-in, and approve Quick Connect codes for other devices; several accounts
 - Picture-in-picture, swipe gestures, audio and subtitle language preferences, a separate quality limit for mobile data
 
@@ -58,9 +60,18 @@ If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X
 
 Favourites, downloads, Live TV, remote control, **Settings**, accounts and the server dashboard are behind your profile picture at the top right.
 
+## App lock
+
+Turn it on in **Settings > Privacy and security > App lock**. JellyCtrl then asks for its own app PIN (at least 6 digits, separate from your phone's; very obvious ones are refused) and, if you like, your fingerprint. The PIN is still needed after the phone restarts and at least every 72 hours. **Lock again** sets when it asks again: as soon as you leave the app (the default), after 1, 5 or 15 minutes or 1 hour away, or only when the app restarts.
+
+- While JellyCtrl is locked, your sign-ins are encrypted with the PIN, and the key that decrypts them is wiped from memory. The PIN itself is never stored, and it can't be guessed on another device: it's mixed with a secret in the phone's secure hardware.
+- Wrong PINs make you wait: 30 seconds after 5 tries, doubling up to 15 minutes, even if you restart the app or change the clock.
+- **Music and downloads keep going.** Music that's already playing and downloads in progress carry on while JellyCtrl is locked, with their controls in the notification, on the lock screen and on Bluetooth devices. A video waits, paused, under the lock screen. It keeps the sign-in it needs in memory until it stops; starting something new needs an unlock. Downloads that were waiting when the phone restarted start after you unlock.
+- **Forgot your PIN?** The lock screen can remove every account and the downloads from the phone, so you can sign in again. Nothing changes on your Jellyfin server.
+
 ## Privacy
 
-**Telemetry-free.** JellyCtrl has no analytics, crash reporting, usage stats or tracking of any kind. It only talks to your own Jellyfin server. Artwork comes through your server, never straight from sites like TMDB; trailers and links to sites like IMDb only open in your browser when you tap them.
+**Telemetry-free.** JellyCtrl has no analytics, crash reporting, usage stats or tracking of any kind. It only talks to your own Jellyfin server. Finding servers sends a short "where are you?" message on your own Wi-Fi network only, which Jellyfin servers there answer. Artwork comes through your server, never straight from sites like TMDB; trailers and links to sites like IMDb only open in your browser when you tap them. Your password is never stored: JellyCtrl keeps only the access token your server gives it, encrypted on the phone (and with your app PIN while the app lock is on), and only sends it to that server.
 
 ## Build from source
 
@@ -90,6 +101,7 @@ Native Android apps for self-hosted services and everyday tools, all with the sa
 
 | App | What it's for |
 | --- | --- |
+| [AdCtrl](https://github.com/VoidedKN0X/AdCtrl) | Control your AdGuard Home DNS server |
 | [ArrCtrl](https://github.com/VoidedKN0X/ArrCtrl) | Radarr, Sonarr, Prowlarr, Bazarr, qBittorrent, autobrr and Cleanuparr in one app |
 | [BeamCtrl](https://github.com/VoidedKN0X/BeamCtrl) | TV remote for phones with an IR blaster |
 | [CraftyCtrl](https://github.com/VoidedKN0X/CraftyCtrl) | Manage Minecraft servers on Crafty Controller |
@@ -98,6 +110,7 @@ Native Android apps for self-hosted services and everyday tools, all with the sa
 | [FrigateCtrl](https://github.com/VoidedKN0X/FrigateCtrl) | Watch and review your Frigate NVR cameras |
 | [ImmichCtrl](https://github.com/VoidedKN0X/ImmichCtrl) | Photos and backup for your Immich server |
 | **JellyCtrl** (this app) | Movies, shows, music and Live TV from Jellyfin |
+| [MemoCtrl](https://github.com/VoidedKN0X/MemoCtrl) | Notes on your Memos server |
 | [NaviCtrl](https://github.com/VoidedKN0X/NaviCtrl) | Music player for Navidrome servers |
 | [PaperCtrl](https://github.com/VoidedKN0X/PaperCtrl) | Scan and browse documents on Paperless-ngx |
 | [PrintCtrl](https://github.com/VoidedKN0X/PrintCtrl) | Bambu Lab printers through Bambuddy, and Spoolman spools |
