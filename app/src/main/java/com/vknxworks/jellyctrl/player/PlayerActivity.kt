@@ -30,11 +30,15 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.ui.lock.AppLockOverlay
+import com.vknxworks.jellyctrl.ui.lock.AppLock
+import com.vknxworks.jellyctrl.ui.lock.LockWindow
 import com.vknxworks.jellyctrl.ui.lock.lockCovering
+import com.vknxworks.jellyctrl.ui.lock.lockLocked
 import com.vknxworks.jellyctrl.ui.theme.JellyCtrlTheme
 import com.vknxworks.jellyctrl.data.settings.ThemeChoice
 import com.vknxworks.jellyctrl.R
@@ -98,7 +102,13 @@ class PlayerActivity : ComponentActivity() {
                             onToggleRotationLock = { toggleRotationLock() },
                         )
                     }
-                    if (!inPip) AppLockOverlay(lockSetting)
+                    // Locked: the lock screen gets a window of its own, so the player's sheets that were open can't
+                    // stay above it and a hardware keyboard can't reach the controls underneath. The video itself
+                    // stays where it is, so it carries on after unlocking.
+                    val locked = lockLocked(lockSetting, c.vault)
+                    if (!inPip) {
+                        if (locked) LockWindow { AppLockOverlay(lockSetting) } else AppLockOverlay(lockSetting)
+                    }
                 }
             }
         }
@@ -173,6 +183,26 @@ class PlayerActivity : ComponentActivity() {
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPip = isInPictureInPictureMode
+        val c = applicationContext.container
+        val timeout = c.settings.settings.value.lockTimeout.millis
+        if (isInPictureInPictureMode) {
+            // The app stays "on screen" in picture-in-picture, so the app-wide check never sees it leave: count
+            // this as leaving. "As soon as you leave" locks now; the video keeps playing in its small window
+            // (it keeps the sign-in it needs) and the lock screen shows when you open it full screen.
+            AppLock.onBackground(c.lockEnabled, timeout)
+        } else if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            // Opened full screen again (when closed, the activity has already stopped): check the time away.
+            AppLock.onForeground(c.lockEnabled, timeout)
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        // Leaving for picture-in-picture: lock before the small window appears.
+        val c = applicationContext.container
+        if (c.settings.settings.value.autoPip && playingForPip) {
+            AppLock.onBackground(c.lockEnabled, c.settings.settings.value.lockTimeout.millis)
+        }
     }
 
     override fun onStart() {

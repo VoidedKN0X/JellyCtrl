@@ -120,6 +120,7 @@
     <string name="this_file_can_t_be_played">This file can\'t be played or transcoded for this device</string>
     <string name="this_account_isn_t_allowed_to">This account isn\'t allowed to play this</string>
     <string name="no_compatible_stream_try_another_player">No compatible stream - try another player engine in settings</string>
+    <string name="too_many_redirects">The server sent the video on to other addresses too many times</string>
     <string name="too_many_streams_on_this_server">Too many streams on this server right now</string>
     <string name="playback_error_x">Playback error: %1$s</string>
     <string name="skip_intro">Skip intro</string>

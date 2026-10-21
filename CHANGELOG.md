@@ -4,6 +4,19 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.2.6 (2026-10-21)
+
+### Security
+
+- **Nothing stays usable on top of the lock screen any more.** When JellyCtrl locked while a menu, dialog or sheet was open (for example the actions sheet of a movie or episode, or the audio and subtitle or settings sheet in the player), that window stayed on top of the lock screen and could still be read and tapped, and a hardware keyboard could still move to buttons hidden behind the lock. While JellyCtrl is locked, its screens are now closed completely instead of only covered, and in the video player the lock screen gets a window of its own above everything else. After you unlock you're back on the same screen and tab as before (an open menu or sheet is closed). Music and downloads carry on as before while the app is locked.
+- **The app lock now also works while a video plays in picture-in-picture.** JellyCtrl never counted sending a video to the small picture-in-picture window as leaving the app, so it never locked, however long the video played. Now it does: with **Lock again: as soon as you leave** it locks the moment the video goes to picture-in-picture, and with a lock time it counts from then. The video keeps playing in its small window; the lock screen shows when you open it full screen or go back to JellyCtrl.
+- **Your Jellyfin sign-in no longer follows a redirect to another website when a video plays with mpv.** mpv sent your sign-in to wherever the server redirected the video (for example a video file that lives on another website), so that website could see it. JellyCtrl now follows the server's redirects itself before starting mpv, and mpv only gets your sign-in while the address is still your Jellyfin server. If the server redirects too often, playback stops with a message instead.
+- **Sign-ins are always sealed with your app PIN when the app lock is on.** If JellyCtrl was closed at exactly the wrong moment while you turned the app lock on, your saved sign-ins could stay protected by the phone's keystore only, without the extra encryption from your PIN. JellyCtrl now checks this every time you unlock (and at start-up when it's unlocked) and seals any sign-in that isn't sealed yet.
+
+### Privacy
+
+- **No hidden dependency list in the app file any more**: the build tools used to tuck an encrypted list of the libraries JellyCtrl is built with into the APK's signature block. Only Google can read it, so nobody checking the app could see what it holds. It's now left out, the same as in the other Ctrl apps. Nothing changes in how the app works.
+
 ## v0.2.5 (2026-10-21)
 
 A tidy-up release that makes JellyCtrl match the other Ctrl apps.

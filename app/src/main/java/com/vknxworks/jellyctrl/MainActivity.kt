@@ -19,6 +19,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.core.content.ContextCompat
@@ -30,6 +31,7 @@ import com.vknxworks.jellyctrl.ui.lock.AppLock
 import com.vknxworks.jellyctrl.ui.lock.AppLockOverlay
 import com.vknxworks.jellyctrl.ui.lock.ScreenPrivacy
 import com.vknxworks.jellyctrl.ui.lock.lockCovering
+import com.vknxworks.jellyctrl.ui.lock.lockLocked
 import com.vknxworks.jellyctrl.ui.theme.JellyCtrlTheme
 
 class MainActivity : ComponentActivity() {
@@ -69,10 +71,21 @@ class MainActivity : ComponentActivity() {
             // "Hide in recent apps" (off by default). With the app lock on, Recents always shows a blank
             // card: a preview there would show what's behind the PIN.
             WindowPrivacy(this, secure, hideRecents = settings.hideRecents || lockSetting || c.vault.enabled)
+            // Locked (not just asked for the PIN again): the app's screens aren't composed at all. Dialogs, menus
+            // and sheets are windows of their own that would stay above (and usable over) the lock screen, and a
+            // hardware keyboard could still reach covered controls. Their state, including where you were, is
+            // kept here and comes back on unlock. Music and downloads carry on: they don't depend on these screens.
+            val locked = lockLocked(lockSetting, c.vault)
+            val savedRoot = rememberSaveableStateHolder()
             JellyCtrlTheme(settings.theme, settings.dynamicColor) {
                 Box(Modifier.fillMaxSize()) {
-                    // The app stays underneath (so nothing you typed is lost), hidden from TalkBack too.
-                    Box(if (covered) Modifier.fillMaxSize().clearAndSetSemantics { } else Modifier.fillMaxSize()) { AppRoot() }
+                    // While the PIN is asked again, the app stays underneath (so nothing you typed is lost), hidden
+                    // from TalkBack too.
+                    if (!locked) {
+                        Box(if (covered) Modifier.fillMaxSize().clearAndSetSemantics { } else Modifier.fillMaxSize()) {
+                            savedRoot.SaveableStateProvider("root") { AppRoot() }
+                        }
+                    }
                     AppLockOverlay(lockSetting)
                 }
             }
@@ -82,6 +95,13 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         ExternalLink.from(intent)?.let { container.pendingLink.value = it }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Coming back while a video plays in picture-in-picture: the app never left the screen as a whole, so
+        // check the time away here (it counts from when the video went to picture-in-picture).
+        AppLock.onForeground(container.lockEnabled, container.settings.settings.value.lockTimeout.millis)
     }
 
     /** Asked the first time something wants to show a notification (downloads, music). */

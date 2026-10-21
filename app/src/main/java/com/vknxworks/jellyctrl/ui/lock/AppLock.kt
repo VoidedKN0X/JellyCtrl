@@ -60,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -112,6 +113,9 @@ object AppLock {
 
     fun onBackground(enabled: Boolean, timeoutMillis: Long) {
         if (authenticating) return
+        // Already away (a video went to picture-in-picture before the app left the screen): the time away
+        // counts from then.
+        if (backgroundAt > 0L) return
         backgroundAt = SystemClock.elapsedRealtime()
         // Only right after the app opened something itself; leaving later still counts.
         exemptTrip = expectReturnAt > 0 && backgroundAt - expectReturnAt < 5_000
@@ -250,6 +254,28 @@ tailrec fun Context.findActivity(): Activity? = when (this) {
 /** Whether the app is covered by a lock or PIN screen right now. */
 fun lockCovering(lockSetting: Boolean, vault: LockVault): Boolean =
     (lockSetting && !vault.enabled) || (vault.enabled && !AppLock.unlocked) || AppLock.request != null
+
+/** Locked (or the old lock still waiting for a PIN): the app's screens must not be usable at all. */
+fun lockLocked(lockSetting: Boolean, vault: LockVault): Boolean =
+    (lockSetting && !vault.enabled) || (vault.enabled && !AppLock.unlocked)
+
+/** The lock screen in a full-screen window of its own, so dialogs, menus and sheets that were open can't show above it. */
+@Composable
+fun LockWindow(content: @Composable () -> Unit) {
+    // Opaque cover in the app's own window (also behind the system bars).
+    Surface(Modifier.fillMaxSize().clearAndSetSemantics { }, color = MaterialTheme.colorScheme.background) {}
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = {},
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+            // Its own window, so it needs its own FLAG_SECURE: never in screenshots or recordings.
+            securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn,
+        ),
+    ) { content() }
+}
 
 /**
  * The lock and PIN screens shown on top of the app. The app underneath stays where it was, so

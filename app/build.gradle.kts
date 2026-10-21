@@ -21,8 +21,8 @@ android {
         minSdk = 33
         targetSdk = 36
         // Bump both to publish a new release (see CHANGELOG.md).
-        versionCode = 32
-        versionName = "0.2.5"
+        versionCode = 33
+        versionName = "0.2.6"
 
         ndk {
             // 64-bit ARM phones and tablets only (arm64-v8a), like every Ctrl app; keeps mpv's native libs small.
@@ -74,6 +74,12 @@ android {
     packaging {
         resources.excludes += listOf("/META-INF/{AL2.0,LGPL2.1}", "/META-INF/INDEX.LIST")
         jniLibs.useLegacyPackaging = false
+    }
+
+    // No dependency metadata blob in the APK: it's encrypted for Google Play, so nobody checking the build can read it.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 
     lint {
