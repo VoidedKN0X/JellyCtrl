@@ -80,12 +80,12 @@ class PlayerActivity : ComponentActivity() {
                 // Until the settings are read, trust the synchronous read made at start-up.
                 val lockSetting = stored?.appLock ?: c.lockAtStart
                 val covered = lockCovering(lockSetting, c.vault)
-                // The video window is never in screenshots or the recent-apps preview with "Hide in screenshots" on.
-                val secure = settings.hideScreens || covered
-                LaunchedEffect(secure, c.vault.enabled) {
+                // The video follows "Hide in screenshots" and "Hide in recent apps"; it's always hidden under the lock screen.
+                val secure = settings.hideScreenshots || covered
+                LaunchedEffect(secure, settings.hideRecents) {
                     if (secure) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                    setRecentsScreenshotEnabled(!secure && !c.vault.enabled)
+                    setRecentsScreenshotEnabled(!secure && !settings.hideRecents)
                 }
                 Box(Modifier.fillMaxSize()) {
                     // The player stays underneath the lock screen (paused), hidden from TalkBack too.

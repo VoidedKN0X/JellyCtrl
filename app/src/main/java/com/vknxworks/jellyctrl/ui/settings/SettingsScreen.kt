@@ -2,8 +2,8 @@ package com.vknxworks.jellyctrl.ui.settings
 
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material.icons.outlined.Timer
@@ -104,7 +104,7 @@ fun SettingsScreen() {
                 }
             }
 
-            PrivacyGroup(s, isAdmin = c.sessions.active.value?.account?.isAdmin == true) { t -> update(t) }
+            PrivacyGroup(s) { t -> update(t) }
 
             Group("Watching") {
                 GroupChoice("Streaming quality", BITRATES, s.maxBitrateMbps) { v -> update { it.copy(maxBitrateMbps = v) } }
@@ -156,9 +156,9 @@ fun SettingsScreen() {
     }
 }
 
-/** Privacy and security: the shared Ctrl series app lock, screenshot protection and the admin dashboard. */
+/** Privacy and security: the shared Ctrl series app lock, and hiding in screenshots and recent apps. */
 @Composable
-private fun PrivacyGroup(s: AppSettings, isAdmin: Boolean, update: ((AppSettings) -> AppSettings) -> Unit) {
+private fun PrivacyGroup(s: AppSettings, update: ((AppSettings) -> AppSettings) -> Unit) {
     val context = LocalContext.current
     val c = context.container
     val bioAvailable = remember { AppLock.biometricAvailable(context) }
@@ -216,18 +216,16 @@ private fun PrivacyGroup(s: AppSettings, isAdmin: Boolean, update: ((AppSettings
             ) { v -> update { it.copy(lockTimeout = v) } }
         }
         GroupSwitch(
-            stringResource(R.string.hide_screens),
-            stringResource(R.string.hide_screens_subtitle),
-            s.hideScreens,
+            stringResource(R.string.hide_screenshots),
+            stringResource(R.string.hide_screenshots_subtitle),
+            s.hideScreenshots,
             icon = Icons.Outlined.VisibilityOff,
-        ) { v -> update { it.copy(hideScreens = v) } }
-        if (isAdmin) {
-            GroupSwitch(
-                stringResource(R.string.protect_dashboard),
-                stringResource(R.string.protect_dashboard_subtitle),
-                s.protectAdminScreens,
-                icon = Icons.Outlined.AdminPanelSettings,
-            ) { v -> update { it.copy(protectAdminScreens = v) } }
-        }
+        ) { v -> update { it.copy(hideScreenshots = v) } }
+        GroupSwitch(
+            stringResource(R.string.hide_recents),
+            stringResource(R.string.hide_recents_subtitle),
+            s.hideRecents,
+            icon = Icons.Outlined.Layers,
+        ) { v -> update { it.copy(hideRecents = v) } }
     }
 }

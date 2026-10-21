@@ -4,6 +4,16 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.2.3 (2026-10-21)
+
+### Changed
+
+- **Hide in screenshots** and **Hide in recent apps** are now two separate switches in Settings › Privacy and security, both off by default. **Hide in screenshots** makes screenshots and screen recordings show a blank screen; **Hide in recent apps** makes the recent apps view show a blank card instead of the app, while screenshots still work. If you had turned on the single "Hide in screenshots and recent apps" switch, both are on after the update.
+- **The recent apps view no longer goes blank just because the app lock is on.** It follows **Hide in recent apps** now, so turn that on if you want a blank card there.
+- **Protect the server dashboard is gone**: the two switches cover it. Before, server dashboard screens were hidden from screenshots and the recent-apps view by default; now they follow **Hide in screenshots** and **Hide in recent apps** like the rest of the app, so turn those on if you want that back. The dashboard screens where API keys, user passwords or credential settings are typed or shown (API keys, Users, a user's page and server settings) are still always hidden.
+- **Always hidden, whatever the switches say**: the lock screen, choosing or changing the app PIN, the sign-in screen and the Change password dialog, because a password or PIN is typed or shown there.
+- **README**: describes the two switches.
+
 ## v0.2.2 (2026-10-21)
 
 ### Changed

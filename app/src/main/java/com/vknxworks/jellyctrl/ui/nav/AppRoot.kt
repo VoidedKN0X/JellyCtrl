@@ -128,8 +128,10 @@ private fun MainScaffold() {
     val selectedIndex = topDestinations.indexOfFirst { top -> dest?.hierarchy?.any { it.hasRoute(top.route::class) } == true }
     val onNowPlaying = dest?.hasRoute(NowPlayingRoute::class) == true
     val settings by context.container.settings.settings.collectAsStateWithLifecycle()
-    val onAdminScreen = dest != null && ADMIN_ROUTES.any { dest.hasRoute(it) }
-    ProtectWindow(onAdminScreen && settings.protectAdminScreens)
+    // Dashboard screens where API keys, passwords or credential settings are typed or shown are always kept
+    // out of screenshots and the recent-apps view; the rest follow "Hide in screenshots" and "Hide in recent apps".
+    val onSecretScreen = dest != null && SECRET_ADMIN_ROUTES.any { dest.hasRoute(it) }
+    ProtectWindow(onSecretScreen)
 
     // "Play in JellyCtrl" from ArrCtrl: find the movie or episode in this library and open its page.
     // One long-lived collector: clearing the pending link must not restart (and so cancel) a lookup in progress.
@@ -264,12 +266,8 @@ private fun PhoneLayout(
     }
 }
 
-/** Server dashboard screens show API keys, logs, users and server settings. */
-private val ADMIN_ROUTES = listOf(
-    AdminRoute::class, AdminUsersRoute::class, AdminUserRoute::class, AdminLibrariesRoute::class, AdminTasksRoute::class,
-    AdminPluginsRoute::class, AdminCatalogRoute::class, AdminLogsRoute::class, AdminLogRoute::class, AdminActivityRoute::class,
-    AdminDevicesRoute::class, AdminKeysRoute::class, AdminConfigRoute::class,
-)
+/** Server dashboard screens where API keys, user passwords or credential settings are typed or shown. */
+private val SECRET_ADMIN_ROUTES = listOf(AdminUsersRoute::class, AdminUserRoute::class, AdminKeysRoute::class, AdminConfigRoute::class)
 
 /**
  * While [protect] is on, the window can't be captured (screenshots, screen recording, casting the screen)
