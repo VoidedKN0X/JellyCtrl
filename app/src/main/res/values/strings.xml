@@ -62,7 +62,7 @@
     <string name="lock_delete_digit">Delete</string>
     <string name="app_lock_subtitle">Ask for an app PIN (and optionally your fingerprint) when opening JellyCtrl. While locked, your sign-ins stay encrypted with the PIN, and the recent-apps screen hides your library.</string>
     <string name="app_lock_footer">Music that\'s already playing and downloads in progress carry on while JellyCtrl is locked, with their controls in the notification and on the lock screen. They keep the sign-in they need in memory until they stop; anything new needs an unlock.</string>
-    <string name="hide_screens_subtitle">Screenshots and screen recordings of JellyCtrl come out black, and the recent-apps screen shows a blank card</string>
+    <string name="hide_screens_subtitle">Screenshots, screen recordings and the recent apps view show a blank screen</string>
     <string name="protect_dashboard">Protect the server dashboard</string>
     <string name="protect_dashboard_subtitle">API keys, server logs, users and server settings can\'t be captured by screenshots or screen recording, and the recent-apps preview is blank while they\'re open</string>
     <string name="lock_prompt_subtitle">Your Jellyfin library</string>
