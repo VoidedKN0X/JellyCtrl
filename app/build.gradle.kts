@@ -21,8 +21,8 @@ android {
         minSdk = 33
         targetSdk = 36
         // Bump both to publish a new release (see CHANGELOG.md).
-        versionCode = 34
-        versionName = "0.2.7"
+        versionCode = 35
+        versionName = "0.2.8"
 
         ndk {
             // 64-bit ARM phones and tablets only (arm64-v8a), like every Ctrl app; keeps mpv's native libs small.
