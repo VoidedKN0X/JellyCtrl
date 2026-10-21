@@ -21,9 +21,8 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Favourites** and photo libraries
 - **Remote control** for your other Jellyfin devices
 - **Full admin dashboard**: users, libraries, plugins, scheduled tasks, logs, devices, API keys and server settings
-- **Protect the server dashboard** (admins, on by default): dashboard screens can't be screenshotted or recorded, and the recent-apps preview is blank
 - **App lock** with its own PIN and optional fingerprint unlock; your sign-ins stay encrypted while the app is locked, and music and downloads that are already running carry on
-- **Hide in screenshots and recent apps** for the whole app, if you want it
+- **Hide in screenshots** and **Hide in recent apps**, two separate switches, both off by default
 - **Finds servers on your network**; Quick Connect sign-in, and approve Quick Connect codes for other devices; several accounts
 - Picture-in-picture, swipe gestures, audio and subtitle language preferences, a separate quality limit for mobile data
 
@@ -71,9 +70,9 @@ Turn it on under **Settings > Privacy and security > App lock**. It's off until 
 - **Lock again:** as soon as you leave the app (the default), after 1, 5 or 15 minutes or 1 hour away, or only when the app restarts. Opening a trailer or link in your browser and answering the notification permission question don't count as leaving, unless you stay away for more than 5 minutes.
 - **Change app PIN** asks for your current PIN first, and turning the app lock off asks for the PIN too.
 - **Forgot your PIN?** It can't be recovered, because it encrypts your sign-ins. The lock screen offers to remove every account and delete the downloads and cached pictures kept on the phone; nothing changes on your Jellyfin server.
-- **With the app lock on**, the recent-apps screen always shows a blank card. Music that's already playing (or paused with a queue) and downloads in progress carry on while JellyCtrl is locked, with their controls in the notification, on the lock screen and on Bluetooth devices: they keep the sign-in they need in memory until they stop, and anything new needs an unlock. A video waits, paused, under the lock screen, and downloads that were waiting when the phone restarted start after you unlock.
+- **With the app lock on**, music that's already playing (or paused with a queue) and downloads in progress carry on while JellyCtrl is locked, with their controls in the notification, on the lock screen and on Bluetooth devices: they keep the sign-in they need in memory until they stop, and anything new needs an unlock. A video waits, paused, under the lock screen, and downloads that were waiting when the phone restarted start after you unlock.
 
-**Hide in screenshots and recent apps** (in the same section, also without the app lock) keeps JellyCtrl out of screenshots, screen recordings and the recent-apps view. The sign-in screen, the Change password dialog and the lock screen are always hidden, and so is the server dashboard while **Protect the server dashboard** is on.
+**Hide in screenshots** and **Hide in recent apps** (the last two switches in the same section, both off by default, also without the app lock): the first makes screenshots and screen recordings of JellyCtrl show a blank screen, the second makes the recent apps view show a blank card instead of the app. The sign-in screen, the Change password dialog and the lock screen are always hidden, and so are the server dashboard screens that show API keys, user passwords or credential settings.
 
 ## Privacy
 

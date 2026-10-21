@@ -53,13 +53,13 @@ data class AppSettings(
     val downloadWifiOnly: Boolean = true,
     val musicBitrateKbps: Int = 320,
     val hwDecoding: Boolean = true,
-    /** Server dashboard screens are hidden from screenshots, screen recording and the recent-apps preview. */
-    val protectAdminScreens: Boolean = true,
     /** The app lock is on (the PIN itself lives in LockVault). */
     val appLock: Boolean = false,
     val lockTimeout: LockTimeout = LockTimeout.IMMEDIATELY,
-    /** Blocks screenshots and screen recording everywhere, and blanks the recent-apps preview. */
-    val hideScreens: Boolean = false,
+    /** Hide in screenshots: FLAG_SECURE on the app's windows (which also blanks the recent-apps preview). */
+    val hideScreenshots: Boolean = false,
+    /** Hide in recent apps: the recent-apps view shows a blank card. Screenshots still work. */
+    val hideRecents: Boolean = false,
 ) {
     fun maxBitrateBps(onCellular: Boolean): Long {
         val mbps = if (onCellular && cellularBitrateMbps > 0) cellularBitrateMbps else maxBitrateMbps
@@ -83,10 +83,12 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val wifiOnly = booleanPreferencesKey("download_wifi_only")
         val musicBitrate = intPreferencesKey("music_bitrate")
         val hwDec = booleanPreferencesKey("hw_decoding")
-        val protectAdmin = booleanPreferencesKey("protect_admin_screens")
         val appLock = booleanPreferencesKey("app_lock")
         val lockTimeout = stringPreferencesKey("lock_timeout")
+        /** The single "Hide in screenshots and recent apps" switch of the previous version: "on" carries over to both. */
         val hideScreens = booleanPreferencesKey("hide_screens")
+        val hideScreenshots = booleanPreferencesKey("hide_screenshots")
+        val hideRecents = booleanPreferencesKey("hide_recents")
         /** Left over from the optional stats removed in 0.1.24; deleted at start and on every save. */
         val legacy = listOf(booleanPreferencesKey("usage_stats"), booleanPreferencesKey("usage_stats_asked"))
     }
@@ -118,10 +120,10 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         downloadWifiOnly = this[K.wifiOnly] ?: true,
         musicBitrateKbps = this[K.musicBitrate] ?: 320,
         hwDecoding = this[K.hwDec] ?: true,
-        protectAdminScreens = this[K.protectAdmin] ?: true,
         appLock = this[K.appLock] ?: false,
         lockTimeout = enumOr(this[K.lockTimeout], LockTimeout.IMMEDIATELY),
-        hideScreens = this[K.hideScreens] ?: false,
+        hideScreenshots = this[K.hideScreenshots] ?: this[K.hideScreens] ?: false,
+        hideRecents = this[K.hideRecents] ?: this[K.hideScreens] ?: false,
     )
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
@@ -141,10 +143,13 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             p[K.wifiOnly] = s.downloadWifiOnly
             p[K.musicBitrate] = s.musicBitrateKbps
             p[K.hwDec] = s.hwDecoding
-            p[K.protectAdmin] = s.protectAdminScreens
+            // "Protect the server dashboard" (before 0.2.3) is covered by the two switches now.
+            p.remove(booleanPreferencesKey("protect_admin_screens"))
             p[K.appLock] = s.appLock
             p[K.lockTimeout] = s.lockTimeout.name
-            p[K.hideScreens] = s.hideScreens
+            p[K.hideScreenshots] = s.hideScreenshots
+            p[K.hideRecents] = s.hideRecents
+            p.remove(K.hideScreens)
             K.legacy.forEach { p.remove(it) }
         }
     }
