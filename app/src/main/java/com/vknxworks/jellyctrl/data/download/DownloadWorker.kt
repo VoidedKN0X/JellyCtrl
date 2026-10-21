@@ -31,10 +31,12 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val itemId = inputData.getString(KEY_ITEM_ID) ?: return@withContext Result.failure()
-        c.sessions.ready.filter { it }.first()
+        c.sessions.loaded.filter { it }.first()
         val entry = repo.find(itemId) ?: return@withContext Result.failure()
         val account = c.sessions.accounts.value.firstOrNull { it.key == entry.accountKey }
             ?: return@withContext fail(itemId, "Account was signed out")
+        // JellyCtrl restarted while the app lock is on: the token stays sealed until you unlock, so wait.
+        if (c.sessions.isSealedNow(account)) return@withContext Result.retry()
         val client = c.sessions.clientFor(account) ?: return@withContext fail(itemId, "Account token unavailable")
 
         runCatching { setForeground(foregroundInfo(entry.name, 0f)) }

@@ -215,6 +215,8 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
     val server = vm.server ?: return
     var showPassword by remember { mutableStateOf(false) }
     val secure = server.url.startsWith("https://")
+    // The password field stays out of screenshots, screen recordings and the recent-apps preview.
+    com.vknxworks.jellyctrl.ui.lock.SecureScreen()
 
     Row(
         Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainer).padding(14.dp),

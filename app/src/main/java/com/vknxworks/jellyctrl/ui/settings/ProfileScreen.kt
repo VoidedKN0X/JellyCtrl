@@ -221,7 +221,7 @@ fun ProfileScreen() {
 
 /** Opens one of the app's own https links (sponsor page, issues, source, licence) in the browser. */
 private fun openLink(context: android.content.Context, url: String) {
-    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) }
+    runCatching { com.vknxworks.jellyctrl.ui.lock.AppLock.expectReturn(); context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) }
 }
 
 @Composable
@@ -233,8 +233,11 @@ private fun ChangePasswordDialog(onDismiss: () -> Unit) {
     var new by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    // Passwords stay out of screenshots and screen recordings.
+    com.vknxworks.jellyctrl.ui.lock.SecureScreen()
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn),
         title = { Text("Change password") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

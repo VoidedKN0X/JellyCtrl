@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -150,6 +151,19 @@ class DownloadRepository(private val context: Context, private val scope: Corout
         _entries.update { list -> list.map { if (it.itemId == itemId) change(it) else it } }
         if (persist) save()
     }
+
+    /** "Forgot PIN?" in the app lock: every download, its files and anything still queued. */
+    suspend fun deleteAll() {
+        WorkManager.getInstance(context).cancelAllWorkByTag(DownloadWorker.TAG)
+        mutex.withLock {
+            _entries.value = emptyList()
+            withContext(Dispatchers.IO) { dir.listFiles()?.forEach { it.deleteRecursively() } }
+            save()
+        }
+    }
+
+    /** Something is queued or downloading. */
+    fun busy(): Boolean = _entries.value.any { it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.RUNNING }
 
     fun usedBytes(): Long = dir.listFiles()?.sumOf { it.length() } ?: 0L
 

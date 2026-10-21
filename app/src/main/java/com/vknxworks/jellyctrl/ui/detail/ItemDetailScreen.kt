@@ -936,5 +936,5 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
 private fun openWebLink(context: android.content.Context, url: String) {
     val uri = Uri.parse(url.trim())
     if (uri.scheme?.lowercase() !in setOf("http", "https") || uri.host.isNullOrBlank()) return
-    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)) }
+    runCatching { com.vknxworks.jellyctrl.ui.lock.AppLock.expectReturn(); context.startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)) }
 }

@@ -1,6 +1,22 @@
 package com.vknxworks.jellyctrl.ui.settings
 
 import android.widget.Toast
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Password
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
+import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.data.lock.LockVault
+import com.vknxworks.jellyctrl.data.settings.LockTimeout
+import com.vknxworks.jellyctrl.ui.components.GroupRow
+import com.vknxworks.jellyctrl.ui.lock.AppLock
+import com.vknxworks.jellyctrl.ui.lock.PinRequest
+import com.vknxworks.jellyctrl.ui.lock.findActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -81,6 +97,15 @@ fun SettingsScreen() {
         topBar = { ScreenTopBar("Settings") },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
+            Group("Appearance") {
+                GroupChoice("Theme", ThemeChoice.entries.map { it to it.label }, s.theme) { v -> update { it.copy(theme = v) } }
+                GroupSwitch("Use wallpaper colours", "Replaces the default colours with ones from your wallpaper", s.dynamicColor) { v ->
+                    update { it.copy(dynamicColor = v) }
+                }
+            }
+
+            PrivacyGroup(s, isAdmin = c.sessions.active.value?.account?.isAdmin == true) { t -> update(t) }
+
             Group("Watching") {
                 GroupChoice("Streaming quality", BITRATES, s.maxBitrateMbps) { v -> update { it.copy(maxBitrateMbps = v) } }
                 GroupChoice("Quality on mobile data", listOf(0 to "Same as on Wi-Fi") + BITRATES.drop(1), s.cellularBitrateMbps) { v ->
@@ -127,21 +152,82 @@ fun SettingsScreen() {
                 GroupSwitch("Download on Wi-Fi only", checked = s.downloadWifiOnly) { v -> update { it.copy(downloadWifiOnly = v) } }
             }
 
-            if (c.sessions.active.value?.account?.isAdmin == true) {
-                Group(
-                    "Privacy",
-                    footer = "API keys, server logs, users and server settings can't be captured by screenshots or screen recording, and the recent-apps preview is blank while they're open.",
-                ) {
-                    GroupSwitch("Protect the server dashboard", checked = s.protectAdminScreens) { v -> update { it.copy(protectAdminScreens = v) } }
-                }
-            }
+        }
+    }
+}
 
-            Group("Appearance") {
-                GroupChoice("Theme", ThemeChoice.entries.map { it to it.label }, s.theme) { v -> update { it.copy(theme = v) } }
-                GroupSwitch("Use wallpaper colours", "Replaces the default colours with ones from your wallpaper", s.dynamicColor) { v ->
-                    update { it.copy(dynamicColor = v) }
+/** Privacy and security: the shared Ctrl series app lock, screenshot protection and the admin dashboard. */
+@Composable
+private fun PrivacyGroup(s: AppSettings, isAdmin: Boolean, update: ((AppSettings) -> AppSettings) -> Unit) {
+    val context = LocalContext.current
+    val c = context.container
+    val bioAvailable = remember { AppLock.biometricAvailable(context) }
+    val lockOn = c.vault.enabled
+    Group(
+        stringResource(R.string.group_privacy_security),
+        footer = if (lockOn) stringResource(R.string.app_lock_footer) else null,
+    ) {
+        GroupSwitch(
+            stringResource(R.string.app_lock),
+            stringResource(R.string.app_lock_subtitle),
+            lockOn,
+            icon = Icons.Outlined.Lock,
+        ) { on -> AppLock.request = if (on) PinRequest.ENABLE else PinRequest.DISABLE }
+        if (lockOn) {
+            GroupRow(
+                stringResource(R.string.lock_change_pin),
+                stringResource(R.string.lock_change_pin_subtitle, LockVault.PIN_MIN),
+                icon = Icons.Outlined.Password,
+                showChevron = true,
+                onClick = { AppLock.request = PinRequest.CHANGE },
+            )
+            GroupSwitch(
+                stringResource(R.string.lock_fingerprint),
+                stringResource(if (bioAvailable || c.vault.biometricEnabled) R.string.lock_fingerprint_subtitle else R.string.lock_fingerprint_unavailable),
+                c.vault.biometricEnabled,
+                icon = Icons.Outlined.Fingerprint,
+            ) { on ->
+                if (!on) {
+                    c.vault.disableBiometric()
+                } else if (bioAvailable) {
+                    val activity = context.findActivity()
+                    val cipher = c.vault.biometricEnrolCipher()
+                    if (activity == null || cipher == null) {
+                        Toast.makeText(context, context.getString(R.string.lock_fingerprint_setup_failed), Toast.LENGTH_SHORT).show()
+                    } else {
+                        AppLock.biometricPrompt(
+                            activity,
+                            context.getString(R.string.lock_fingerprint_enable_title),
+                            context.getString(R.string.lock_fingerprint_enable_subtitle),
+                            cipher,
+                        ) { unlocked ->
+                            if (!c.vault.finishBiometricEnrol(unlocked)) {
+                                Toast.makeText(context, context.getString(R.string.lock_fingerprint_setup_failed), Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 }
             }
+            GroupChoice(
+                stringResource(R.string.lock_again),
+                LockTimeout.entries.map { it to stringResource(it.label) },
+                s.lockTimeout,
+                icon = Icons.Outlined.Timer,
+            ) { v -> update { it.copy(lockTimeout = v) } }
+        }
+        GroupSwitch(
+            stringResource(R.string.hide_screens),
+            stringResource(R.string.hide_screens_subtitle),
+            s.hideScreens,
+            icon = Icons.Outlined.VisibilityOff,
+        ) { v -> update { it.copy(hideScreens = v) } }
+        if (isAdmin) {
+            GroupSwitch(
+                stringResource(R.string.protect_dashboard),
+                stringResource(R.string.protect_dashboard_subtitle),
+                s.protectAdminScreens,
+                icon = Icons.Outlined.AdminPanelSettings,
+            ) { v -> update { it.copy(protectAdminScreens = v) } }
         }
     }
 }
