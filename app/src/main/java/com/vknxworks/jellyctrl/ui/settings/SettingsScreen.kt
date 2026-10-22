@@ -2,6 +2,12 @@ package com.vknxworks.jellyctrl.ui.settings
 
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
+import com.vknxworks.jellyctrl.ui.components.openNotificationSettings
+import com.vknxworks.jellyctrl.ui.components.rememberNotificationAccess
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Text
+import androidx.compose.material.icons.outlined.NotificationsOff
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Lock
@@ -105,6 +111,29 @@ fun SettingsScreen() {
             }
 
             PrivacyGroup(s) { t -> update(t) }
+
+            // Music controls live in a notification: say so when Android blocks it. Checked again on every return.
+            val notifications = rememberNotificationAccess()
+            Group(stringResource(R.string.notifications), footer = stringResource(R.string.notifications_footer)) {
+                if (notifications.granted) {
+                    GroupRow(
+                        stringResource(R.string.notifications_allowed),
+                        stringResource(R.string.notifications_allowed_summary),
+                        Icons.Outlined.Notifications,
+                        showChevron = true,
+                        onClick = { openNotificationSettings(context) },
+                    )
+                } else {
+                    GroupRow(
+                        stringResource(R.string.notifications_are_blocked),
+                        stringResource(R.string.notifications_are_blocked_summary),
+                        Icons.Outlined.NotificationsOff,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        onClick = { notifications.request() },
+                        trailing = { TextButton(onClick = { notifications.request() }) { Text(stringResource(R.string.allow)) } },
+                    )
+                }
+            }
 
             Group(stringResource(R.string.watching)) {
                 GroupChoice(stringResource(R.string.streaming_quality), BITRATES, s.maxBitrateMbps) { v -> update { it.copy(maxBitrateMbps = v) } }
