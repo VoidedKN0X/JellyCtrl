@@ -2,7 +2,6 @@ package com.vknxworks.jellyctrl
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import com.vknxworks.jellyctrl.ui.lock.WindowPrivacy
 import android.graphics.Color
@@ -22,7 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.core.content.ContextCompat
+import com.vknxworks.jellyctrl.ui.components.NotificationPermission
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vknxworks.jellyctrl.data.settings.ThemeChoice
 import com.vknxworks.jellyctrl.ui.nav.AppRoot
@@ -106,7 +105,9 @@ class MainActivity : ComponentActivity() {
 
     /** Asked the first time something wants to show a notification (downloads, music). */
     fun ensureNotificationPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        // Only if Android's question was never shown: asked automatically at most once, so it never nags.
+        if (!NotificationPermission.hasPermission(this) && !NotificationPermission.asked(this)) {
+            NotificationPermission.markAsked(this)
             AppLock.expectReturn()
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }

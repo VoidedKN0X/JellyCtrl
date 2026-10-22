@@ -1,5 +1,6 @@
 package com.vknxworks.jellyctrl.ui.nav
 
+import com.vknxworks.jellyctrl.ui.components.AskForNotificationsOnce
 import kotlinx.coroutines.flow.filterNotNull
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
 import androidx.compose.animation.AnimatedVisibility
@@ -124,6 +125,10 @@ private val topDestinations: List<TopDest>
 @Composable
 private fun MainScaffold() {
     val navController = rememberNavController()
+    // Ask once for notifications when the app's own screens are first shown: signed in, unlocked (nothing of the
+    // app is composed while locked) and no PIN screen on top, so the dialog isn't hidden behind or dropped by the
+    // lock. The music controls (and download progress) can't show without them. Settings can ask again later.
+    AskForNotificationsOnce(ready = com.vknxworks.jellyctrl.ui.lock.AppLock.request == null)
     val context = LocalContext.current
     val navigator = remember(navController) { Navigator(navController, context) }
     val backStack by navController.currentBackStackEntryAsState()
