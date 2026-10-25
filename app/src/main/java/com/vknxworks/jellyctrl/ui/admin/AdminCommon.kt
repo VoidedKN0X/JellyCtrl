@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -52,6 +52,10 @@ import kotlinx.serialization.json.longOrNull
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 import androidx.compose.ui.res.pluralStringResource
+import com.vknxworks.jellyctrl.ui.components.CtrlTextField
+import com.vknxworks.jellyctrl.ui.components.CtrlListItem
+import com.vknxworks.jellyctrl.ui.components.CtrlSwitch
+
 
 /** Runs admin actions and reports success/failure in a snackbar. */
 class AdminActions(private val scope: CoroutineScope, val snackbar: SnackbarHostState) {
@@ -130,14 +134,14 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
         when {
             value is JsonPrimitive && value.booleanOrNull != null && !value.isString -> {
                 val checked = value.booleanOrNull == true
-                ListItem(
+                CtrlListItem(
                     headlineContent = { Text(humanize(key)) },
-                    trailingContent = { Switch(checked, onCheckedChange = { onChange(key, JsonPrimitive(it)) }) },
+                    trailingContent = { CtrlSwitch(checked, onCheckedChange = { onChange(key, JsonPrimitive(it)) }) },
                     modifier = Modifier.clickable { onChange(key, JsonPrimitive(!checked)) },
                 )
             }
             value is JsonPrimitive && !value.isString && (value.longOrNull != null || value.doubleOrNull != null) -> {
-                OutlinedTextField(
+                CtrlTextField(
                     value = value.content,
                     onValueChange = { t ->
                         val num: JsonPrimitive? = t.toLongOrNull()?.let { JsonPrimitive(it) } ?: t.toDoubleOrNull()?.let { JsonPrimitive(it) }
@@ -151,7 +155,7 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
             }
             value is JsonPrimitive && value.isString && isSecretKey(key) -> SecretField(key, value.content) { onChange(key, JsonPrimitive(it)) }
             value is JsonPrimitive && value.isString -> {
-                OutlinedTextField(
+                CtrlTextField(
                     value = value.content,
                     onValueChange = { onChange(key, JsonPrimitive(it)) },
                     label = { Text(humanize(key)) },
@@ -161,7 +165,7 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
             }
             value is JsonNull && isSecretKey(key) -> SecretField(key, "") { onChange(key, JsonPrimitive(it)) }
             value is JsonNull -> {
-                OutlinedTextField(
+                CtrlTextField(
                     value = "",
                     onValueChange = { onChange(key, JsonPrimitive(it)) },
                     label = { Text(humanize(key)) },
@@ -171,7 +175,7 @@ fun ColumnScope.JsonFieldsEditor(obj: JsonObject, onChange: (String, JsonElement
                 )
             }
             value is JsonArray && value.all { it is JsonPrimitive && it.isString } -> {
-                OutlinedTextField(
+                CtrlTextField(
                     value = value.joinToString(", ") { (it as JsonPrimitive).content },
                     onValueChange = { t ->
                         onChange(key, JsonArray(t.split(',').map { it.trim() }.filter { it.isNotEmpty() }.map { JsonPrimitive(it) }))
@@ -202,7 +206,7 @@ fun isSecretKey(key: String): Boolean = SECRET_KEY_RE.containsMatchIn(key)
 @Composable
 private fun SecretField(key: String, value: String, onChange: (String) -> Unit) {
     var shown by rememberSaveable(key) { mutableStateOf(false) }
-    OutlinedTextField(
+    CtrlTextField(
         value = value,
         onValueChange = onChange,
         label = { Text(humanize(key)) },
@@ -212,7 +216,7 @@ private fun SecretField(key: String, value: String, onChange: (String) -> Unit) 
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
         trailingIcon = {
             IconButton(onClick = { shown = !shown }) {
-                Icon(if (shown) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, if (shown) stringResource(R.string.hide) else stringResource(R.string.show))
+                Icon(if (shown) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, if (shown) stringResource(R.string.hide) else stringResource(R.string.show))
             }
         },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -224,9 +228,9 @@ fun JsonObject.with(key: String, value: JsonElement): JsonObject = JsonObject(to
 @Composable
 fun SectionTitle(text: String) {
     Text(
-        text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 6.dp),
+        text.uppercase(),
+        style = com.vknxworks.jellyctrl.ui.theme.CtrlType.Label,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 20.dp, top = 22.dp, bottom = 8.dp),
     )
 }

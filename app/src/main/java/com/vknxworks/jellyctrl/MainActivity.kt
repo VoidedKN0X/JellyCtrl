@@ -11,7 +11,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import android.view.WindowManager
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.DisposableEffect
@@ -23,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.vknxworks.jellyctrl.ui.components.NotificationPermission
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.vknxworks.jellyctrl.data.settings.ThemeChoice
 import com.vknxworks.jellyctrl.ui.nav.AppRoot
 import com.vknxworks.jellyctrl.ui.nav.ExternalLink
 import com.vknxworks.jellyctrl.ui.lock.AppLock
@@ -33,13 +31,19 @@ import com.vknxworks.jellyctrl.ui.lock.lockCovering
 import com.vknxworks.jellyctrl.ui.lock.lockLocked
 import com.vknxworks.jellyctrl.ui.theme.JellyCtrlTheme
 
+/** The Ctrl / Signal background (#08080A), used for the status and navigation bars. */
+private val SIGNAL_BACKGROUND = Color.rgb(0x08, 0x08, 0x0A)
+
 class MainActivity : ComponentActivity() {
 
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(SIGNAL_BACKGROUND),
+            navigationBarStyle = SystemBarStyle.dark(SIGNAL_BACKGROUND),
+        )
         // Recents shows a blank card until the settings are read (then "Hide in recent apps" decides).
         setRecentsScreenshotEnabled(false)
         val c = container
@@ -48,15 +52,9 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             val settings by c.settings.settings.collectAsStateWithLifecycle()
-            val dark = when (settings.theme) {
-                ThemeChoice.SYSTEM -> isSystemInDarkTheme()
-                ThemeChoice.LIGHT -> false
-                ThemeChoice.DARK, ThemeChoice.BLACK -> true
-            }
-            // Keep status and navigation bar icons readable when the app theme differs from the system's.
-            DisposableEffect(dark) {
-                val style = if (dark) SystemBarStyle.dark(Color.TRANSPARENT)
-                else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+            // The Signal look is always dark: light status and navigation bar icons over the near-black background.
+            DisposableEffect(Unit) {
+                val style = SystemBarStyle.dark(SIGNAL_BACKGROUND)
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
                 onDispose { }
             }
@@ -76,7 +74,7 @@ class MainActivity : ComponentActivity() {
             // kept here and comes back on unlock. Music and downloads carry on: they don't depend on these screens.
             val locked = lockLocked(lockSetting, c.vault)
             val savedRoot = rememberSaveableStateHolder()
-            JellyCtrlTheme(settings.theme, settings.dynamicColor) {
+            JellyCtrlTheme {
                 Box(Modifier.fillMaxSize()) {
                     // While the PIN is asked again, the app stays underneath (so nothing you typed is lost), hidden
                     // from TalkBack too.

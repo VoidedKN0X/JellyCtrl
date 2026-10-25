@@ -690,4 +690,27 @@
     <string name="notifications_are_blocked_summary">Android isn\'t letting JellyCtrl show notifications, so the music controls on the notification and lock screen and the progress of downloads stay hidden. Tap Allow to turn them on.</string>
     <string name="notifications_footer">Music controls and download progress show in a notification. Android 13 and newer only shows them once you allow notifications for JellyCtrl.</string>
     <string name="allow">Allow</string>
+    <plurals name="count_libraries_label">
+        <item quantity="one">%1$d library</item>
+        <item quantity="other">%1$d libraries</item>
+    </plurals>
+    <string name="ctrl_footer">GOOGLE-FREE · TELEMETRY-FREE · ARM64</string>
+    <string name="lock_brand">VKNXWORKS · CTRL</string>
+    <string name="lock_locked">Locked</string>
+    <string name="home_label_featured">NEW · %1$d OF %2$d</string>
+    <string name="home_label_continue">CONTINUE WATCHING</string>
+    <string name="home_x_left">%1$s left</string>
+    <string name="group_library_label">Your stuff</string>
+    <string name="group_devices_label">Devices</string>
+    <string name="group_app_label">App</string>
+    <string name="group_server_label">Server</string>
+    <string name="np_playing_from">Playing from</string>
+    <string name="type_movie">Movie</string>
+    <string name="type_series">Series</string>
+    <string name="type_collection">Collection</string>
+    <string name="type_music_video">Music video</string>
+    <string name="type_video">Video</string>
+    <string name="type_channel">Channel</string>
+    <string name="type_program">Programme</string>
+    <string name="type_recording">Recording</string>
 </resources>

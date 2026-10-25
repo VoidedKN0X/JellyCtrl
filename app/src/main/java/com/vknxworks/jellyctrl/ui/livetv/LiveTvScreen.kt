@@ -19,8 +19,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.outlined.LiveTv
 import androidx.compose.material3.AlertDialog
@@ -80,6 +80,10 @@ import java.time.temporal.ChronoUnit
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+import com.vknxworks.jellyctrl.ui.components.CtrlListItem
+import com.vknxworks.jellyctrl.ui.components.CtrlProgressBar
+
 
 @Composable
 fun LiveTvScreen() {
@@ -123,18 +127,18 @@ private fun Channels() {
         LazyColumn(Modifier.fillMaxSize()) {
             items(channels, key = { it.id }) { ch ->
                 val prog = ch.currentProgram
-                ListItem(
+                CtrlListItem(
                     headlineContent = { Text(listOfNotNull(ch.channelNumber, ch.name).joinToString("  "), fontWeight = FontWeight.Medium) },
                     supportingContent = {
                         Column {
                             Text(prog?.name ?: stringResource(R.string.no_guide_data), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             programProgress(prog)?.let { p ->
-                                LinearProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), drawStopIndicator = {})
+                                CtrlProgressBar(progress = { p }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), drawStopIndicator = {})
                             }
                         }
                     },
                     leadingContent = {
-                        Box(Modifier.size(width = 72.dp, height = 44.dp).clip(RoundedCornerShape(6.dp))) {
+                        Box(Modifier.size(width = 72.dp, height = 44.dp).clip(RoundedCornerShape(10.dp))) {
                             ArtImage(client.primaryImage(ch, 200), Modifier.fillMaxSize(), contentScale = ContentScale.Fit, placeholderText = ch.channelNumber ?: ch.name)
                         }
                     },
@@ -187,7 +191,9 @@ private fun Guide() {
                                     onClick = { if (live) PlayerActivity.start(context, ch.id, startMs = 0) else recordTarget = p },
                                     onLongClick = { recordTarget = p },
                                 ),
-                                colors = if (live) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer) else CardDefaults.cardColors(),
+                                colors = if (live) CardDefaults.cardColors(containerColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.Accent, contentColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.OnAccent) else CardDefaults.cardColors(containerColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.Surface),
+                                shape = com.vknxworks.jellyctrl.ui.theme.CtrlShapes.Card,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, if (live) com.vknxworks.jellyctrl.ui.theme.CtrlColors.Accent else com.vknxworks.jellyctrl.ui.theme.CtrlColors.Outline),
                             ) {
                                 Column(Modifier.padding(10.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -207,7 +213,7 @@ private fun Guide() {
         }
     }
     recordTarget?.let { p ->
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { recordTarget = null },
             title = { Text(p.name.orEmpty()) },
             text = {
@@ -265,7 +271,7 @@ private fun Timers() {
         }
         LazyColumn(Modifier.fillMaxSize()) {
             items(timers, key = { it.id ?: it.programId ?: it.name.orEmpty() }) { t ->
-                ListItem(
+                CtrlListItem(
                     headlineContent = { Text(t.name.orEmpty()) },
                     supportingContent = { Text("${t.channelName.orEmpty()}  ·  ${formatDateTime(t.startDate) ?: ""}") },
                     trailingContent = {
@@ -276,7 +282,7 @@ private fun Timers() {
                                     .onSuccess { loader.reload(silent = true) }
                                     .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                             }
-                        }) { Icon(Icons.Filled.Delete, stringResource(R.string.cancel)) }
+                        }) { Icon(Icons.Outlined.Delete, stringResource(R.string.cancel)) }
                     },
                 )
             }

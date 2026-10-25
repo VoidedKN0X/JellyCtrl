@@ -4,6 +4,33 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.3.0 (2026-10-25)
+
+A new look: JellyCtrl now uses **Ctrl / Signal**, the design shared by every Ctrl series app. Everything works as before; only how it looks has changed.
+
+### Changed
+
+- **Dark only, with one accent colour.** JellyCtrl now always uses a near-black background (#08080A) with dark grey cards and a single lavender accent (#B48CFF) for the things that matter most. The status and navigation bars match the background, with light icons, and the app runs edge to edge.
+- **New typefaces.** All text is now set in Space Grotesk, and numbers, times, codes and the small section labels use JetBrains Mono. Both fonts are bundled in the app (nothing is downloaded), replacing Manrope.
+- **New top bar.** The main tabs show the **JELLY/CTRL** wordmark on the left and your profile picture (or initials) on the right in a rounded square, with a small accent square while you're signed in. Tapping it still opens the You page with your settings. Pages you open from there have a square back button and the page title.
+- **Home.** What you were last watching now sits at the top on a large accent card showing how far you are (in per cent), the title, the time left and a progress bar, with a play button straight on the card. The new-arrivals carousel below it is now a set of rounded cards with a mono "NEW · 1 OF 6" label, and the Play and Details buttons are rounded rectangles. The remote-control button moved into the top bar.
+- **Posters and rows.** Posters, thumbnails and chapter images have 14dp rounded corners and a thin border. Row headings are larger and "See all" is a small mono label. Watched ticks and unwatched counts are small accent squares, and resume progress is drawn in the accent colour.
+- **Title pages.** The back button is a rounded square, a mono label above the title says what it is (movie, series, collection…), and the artwork fades into the dark background. Episode and track lists are plain rows with thin dividers, two-digit episode and track numbers, mono runtimes, and an accent dot for watched episodes and the song that's playing. Genres, links and season pickers are rounded rectangles; the selected season is filled with the accent. Cast photos are rounded squares, and the file details use a mono layout.
+- **Video player.** The controls use rounded-square buttons: back, audio and subtitles and playback options at the top, skip back and forward next to a large accent play/pause button in the middle. Times and the chapter name are in mono, the seek bar and its handle are in the accent colour, and "Skip intro", the up-next card, the gesture hints and the error screen follow the new style.
+- **Now playing (music).** A plain dark background instead of a colour taken from the album art, rounded-square buttons, a 28dp-rounded album cover, a large accent play/pause button, mono times, and a "PLAYING FROM" label with the album at the top. The queue shows numbered rows with dividers. The mini player is a floating dark card with an accent play button.
+- **Colours no longer change with the artwork.** Title pages and the music player used to tint themselves with a colour from the poster or album art; they now always use the one accent colour.
+- **Bottom navigation.** The tab bar is now a floating dark bar with rounded corners and a thin border, 28dp above the bottom of the screen. The selected tab is an accent block with its icon and name; the other tabs show only their icon. Pages scroll clear of it as before. On tablets the side rail uses the same accent.
+- **Switches.** All switches (settings, server dashboard, player options) are now rounded rectangles: accent with a dark knob when on, grey when off. They still work with TalkBack as switches.
+- **App lock.** The lock screen has a lavender lock badge, a "VKNXWORKS · CTRL" label and a large "Locked" title. PIN digits are shown as small squares that fill with the accent as you type, the keypad has rounded-square keys in JetBrains Mono, and the fingerprint button is now the outlined accent key at the bottom left of the keypad (it becomes OK once you've typed enough digits for a longer PIN). Delete is the key at the bottom right. How the lock works is unchanged.
+- **You page.** Your picture or initials are shown in a large accent square next to your name and server address (in mono). The rows are grouped into cards with mono headings (Your stuff, Devices, App, Server, About). **Support JellyCtrl** is now an accent button at the bottom, followed by the version and "GOOGLE-FREE · TELEMETRY-FREE · ARM64".
+- **Settings and the server dashboard.** Groups are dark cards with thin borders and lines between rows, under mono section labels. Icons are outlined throughout, and the settings row on the You page uses a sliders icon instead of a gear.
+- **Dialogs, sheets and text fields.** Dialogs and bottom sheets are dark cards with 26dp corners and a thin border. Text fields (sign-in, search, passwords, the dashboard) are dark with a thin border that turns lavender when you type in them. Progress bars are 6dp tall with rounded ends. The Search and Library tabs have a mono label above their title, and the Library tiles have rounded corners with the library type as a label.
+- **Sign-in screen.** Shows the JELLY/CTRL wordmark, the new text fields and buttons, rounded-square user pictures, and the Quick Connect code in large mono digits.
+
+### Removed
+
+- **Theme and wallpaper colours settings.** **Settings > Appearance** (Follow system, Dark, Light, Pure black, and Use wallpaper colours) is gone: the Signal look is dark only and doesn't use wallpaper (Material You) colours. Whatever you had chosen before is ignored.
+
 ## v0.2.9 (2026-10-22)
 
 ### Fixed

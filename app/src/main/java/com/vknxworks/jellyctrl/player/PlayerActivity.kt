@@ -40,7 +40,6 @@ import com.vknxworks.jellyctrl.ui.lock.LockWindow
 import com.vknxworks.jellyctrl.ui.lock.lockCovering
 import com.vknxworks.jellyctrl.ui.lock.lockLocked
 import com.vknxworks.jellyctrl.ui.theme.JellyCtrlTheme
-import com.vknxworks.jellyctrl.data.settings.ThemeChoice
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
 
@@ -73,7 +72,7 @@ class PlayerActivity : ComponentActivity() {
 
         val c = applicationContext.container
         setContent {
-            JellyCtrlTheme(ThemeChoice.DARK) {
+            JellyCtrlTheme {
                 val engine by vm.engine.collectAsState()
                 val st = engine?.state?.collectAsState()?.value ?: EngineState()
                 LaunchedEffect(st.playWhenReady, st.videoWidth, st.videoHeight, vm.loading) {

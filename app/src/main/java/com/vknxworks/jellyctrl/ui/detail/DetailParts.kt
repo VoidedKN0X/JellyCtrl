@@ -1,5 +1,10 @@
 package com.vknxworks.jellyctrl.ui.detail
 
+import com.vknxworks.jellyctrl.ui.components.ctrlSurface
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import com.vknxworks.jellyctrl.ui.theme.CtrlType
+import androidx.compose.foundation.border
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -93,10 +98,11 @@ fun TagRow(labels: List<String>, onClick: (String) -> Unit) {
                 l,
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .clip(CtrlShapes.Chip)
+                    .background(CtrlColors.Surface)
+                    .border(1.dp, CtrlColors.ControlOutline, CtrlShapes.Chip)
                     .clickable { onClick(l) }
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }
     }
@@ -109,10 +115,10 @@ fun PeopleRow(title: String, people: List<BaseItemPerson>, client: JellyfinClien
     LazyRow(contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         items(people.distinctBy { it.id + (it.role ?: "") + (it.type ?: "") }, key = { it.id + (it.role ?: "") + (it.type ?: "") }) { p ->
             Column(
-                Modifier.width(88.dp).clip(MaterialTheme.shapes.small).clickable { onPerson(p) },
+                Modifier.width(88.dp).clip(CtrlShapes.Control).clickable { onPerson(p) },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(Modifier.size(80.dp).clip(CircleShape)) {
+                Box(Modifier.size(80.dp).clip(CtrlShapes.Card).border(1.dp, CtrlColors.Outline, CtrlShapes.Card)) {
                     ArtImage(
                         p.primaryImageTag?.let { client.imageUrl(p.id, "Primary", it, 200) },
                         Modifier.fillMaxSize(),
@@ -143,8 +149,8 @@ fun ChaptersRow(itemId: String, chapters: List<ChapterInfo>, client: JellyfinCli
     SectionHeader(stringResource(R.string.chapters))
     LazyRow(contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         items(chapters.withIndex().toList(), key = { it.index }) { (i, ch) ->
-            Column(Modifier.width(200.dp).clip(MaterialTheme.shapes.small).clickable { onChapter(ch) }) {
-                Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(MaterialTheme.shapes.small)) {
+            Column(Modifier.width(200.dp).clip(CtrlShapes.Poster).clickable { onChapter(ch) }) {
+                Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(CtrlShapes.Poster).border(1.dp, CtrlColors.Outline, CtrlShapes.Poster)) {
                     ArtImage(ch.imageTag?.let { client.imageUrl(itemId, "Chapter", it, 400, index = i) }, Modifier.fillMaxSize(), placeholderText = ch.name)
                 }
                 Text(
@@ -156,7 +162,7 @@ fun ChaptersRow(itemId: String, chapters: List<ChapterInfo>, client: JellyfinCli
                 )
                 Text(
                     formatClock(ch.startPositionTicks.ticksToMs()),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = CtrlType.Mono,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -178,14 +184,14 @@ fun MediaInfoBlock(streams: List<MediaStream>, container: String?, sizeBytes: Lo
     val video = streams.firstOrNull { it.type == "Video" }
     Column(Modifier.fillMaxWidth().padding(horizontal = Gutter, vertical = 8.dp)) {
         Text(
-            if (open) stringResource(R.string.hide_file_details) else stringResource(R.string.show_file_details),
-            style = MaterialTheme.typography.labelLarge,
+            (if (open) stringResource(R.string.hide_file_details) else stringResource(R.string.show_file_details)).uppercase(),
+            style = CtrlType.LabelStrong,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clip(CircleShape).clickable { open = !open }.padding(vertical = 8.dp),
+            modifier = Modifier.clip(CtrlShapes.Badge).clickable { open = !open }.padding(vertical = 10.dp, horizontal = 2.dp),
         )
         if (open) {
             Column(
-                Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainer).padding(16.dp),
+                Modifier.fillMaxWidth().ctrlSurface().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 container?.let { InfoLine(stringResource(R.string.file), it.uppercase() + (sizeBytes?.let { s -> ", " + formatBytes(s) } ?: "")) }
@@ -209,8 +215,8 @@ fun MediaInfoBlock(streams: List<MediaStream>, container: String?, sizeBytes: Lo
 @Composable
 private fun InfoLine(label: String, value: String) {
     Row {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(76.dp))
-        Text(value, style = MaterialTheme.typography.bodySmall)
+        Text(label.uppercase(), style = CtrlType.Label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(88.dp))
+        Text(value, style = CtrlType.Mono)
     }
 }
 

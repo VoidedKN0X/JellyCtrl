@@ -1,5 +1,20 @@
 package com.vknxworks.jellyctrl.ui.detail
 
+import com.vknxworks.jellyctrl.ui.components.CtrlIconSquare
+import com.vknxworks.jellyctrl.ui.components.CtrlSectionLabel
+import com.vknxworks.jellyctrl.ui.components.CtrlStatusDot
+import com.vknxworks.jellyctrl.ui.components.CtrlProgressBar
+import com.vknxworks.jellyctrl.ui.components.ctrlSurface
+import com.vknxworks.jellyctrl.ui.components.ctrlTopDivider
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import com.vknxworks.jellyctrl.ui.theme.CtrlType
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -33,23 +48,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.PlaylistAdd
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.DownloadDone
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.Subtitles
-import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.outlined.Subtitles
+import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material3.AlertDialog
@@ -131,7 +145,6 @@ import com.vknxworks.jellyctrl.ui.nav.ListRoute
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import com.vknxworks.jellyctrl.ui.theme.ArtworkTint
 import com.vknxworks.jellyctrl.ui.theme.Gutter
-import com.vknxworks.jellyctrl.ui.theme.rememberArtworkColor
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -140,6 +153,9 @@ import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
 import androidx.compose.ui.res.pluralStringResource
 import com.vknxworks.jellyctrl.plural
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+import com.vknxworks.jellyctrl.ui.components.CtrlSheet
+
 
 /** Everything a detail page shows, loaded in parallel. */
 private data class Detail(
@@ -226,16 +242,18 @@ fun ItemDetailScreen(id: String) {
     val nav = LocalNavigator.current
     val loader = rememberLoader("detail-$id") { loadDetail(client, id) }
     val item = loader.value?.item
-    val seed = rememberArtworkColor(item?.let { client.primaryImage(it, 300) })
+    val seed: androidx.compose.ui.graphics.Color? = null
 
     ArtworkTint(seed) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             LoadContent(loader) { d -> DetailBody(d, client) { loader.reload(silent = true) } }
-            IconButton(
+            CtrlIconSquare(
+                Icons.AutoMirrored.Outlined.ArrowBack,
+                stringResource(R.string.back),
                 onClick = nav::back,
-                modifier = Modifier.statusBarsPadding().padding(start = 8.dp, top = 4.dp)
-                    .clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)),
-            ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = Color.White) }
+                modifier = Modifier.statusBarsPadding().padding(start = Gutter, top = 8.dp),
+                container = CtrlColors.Surface.copy(alpha = 0.85f),
+            )
         }
     }
 }
@@ -332,8 +350,9 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
                                     link.name ?: stringResource(R.string.link),
                                     style = MaterialTheme.typography.labelLarge,
                                     modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                        .clip(CtrlShapes.Chip)
+                                        .background(CtrlColors.Surface)
+                                        .border(1.dp, CtrlColors.ControlOutline, CtrlShapes.Chip)
                                         .clickable { link.url?.let { u -> openWebLink(ctx, u) } }
                                         .padding(horizontal = 14.dp, vertical = 8.dp),
                                 )
@@ -361,9 +380,9 @@ private fun Hero(item: BaseItemDto, client: JellyfinClient, wide: Boolean, width
         Box(
             Modifier.fillMaxSize().background(
                 Brush.verticalGradient(
-                    0f to Color.Black.copy(alpha = 0.4f),
-                    0.22f to Color.Transparent,
-                    0.6f to bg.copy(alpha = 0.55f),
+                    0f to bg.copy(alpha = 0.55f),
+                    0.2f to Color.Transparent,
+                    0.55f to bg.copy(alpha = 0.45f),
                     1f to bg,
                 )
             )
@@ -373,12 +392,13 @@ private fun Hero(item: BaseItemDto, client: JellyfinClient, wide: Boolean, width
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (item.type == "Episode" || item.type == "Season") {
-                Text(
+                CtrlSectionLabel(
                     item.seriesName.orEmpty(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable { item.seriesId?.let { nav.navigate(ItemRoute(it)) } },
+                    color = CtrlColors.Accent,
+                    modifier = Modifier.clickable { item.seriesId?.let { nav.navigate(ItemRoute(it)) } }.padding(vertical = 4.dp),
                 )
+            } else {
+                item.type?.let { CtrlSectionLabel(typeLabel(it), color = CtrlColors.Accent) }
             }
             val logo = if (item.type == "Episode") null else client.logoImage(item, 800)
             if (logo != null) {
@@ -386,7 +406,7 @@ private fun Hero(item: BaseItemDto, client: JellyfinClient, wide: Boolean, width
             } else {
                 Text(
                     item.name.orEmpty(),
-                    style = if (wide) MaterialTheme.typography.displayMedium else MaterialTheme.typography.headlineLarge,
+                    style = if (wide) MaterialTheme.typography.displayLarge else MaterialTheme.typography.headlineLarge,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -415,7 +435,8 @@ private fun SquareHeader(item: BaseItemDto, client: JellyfinClient) {
                 .widthIn(max = 280.dp)
                 .fillMaxWidth(0.68f)
                 .aspectRatio(1f)
-                .clip(if (item.type == "MusicArtist") CircleShape else MaterialTheme.shapes.large),
+                .clip(CtrlShapes.Hero)
+                .border(1.dp, CtrlColors.Outline, CtrlShapes.Hero),
         ) {
             ArtImage(client.primaryImage(item, 700), Modifier.fillMaxSize(), placeholderText = item.name)
         }
@@ -424,9 +445,9 @@ private fun SquareHeader(item: BaseItemDto, client: JellyfinClient) {
         if (item.type == "MusicAlbum") {
             val artist = item.albumArtists.firstOrNull()
             Text(
-                artist?.name ?: item.albumArtist.orEmpty(),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
+                (artist?.name ?: item.albumArtist.orEmpty()).uppercase(),
+                style = CtrlType.LabelStrong.copy(fontSize = 12.sp),
+                color = CtrlColors.Accent,
                 modifier = Modifier.clickable { artist?.id?.let { nav.navigate(ItemRoute(it)) } },
             )
         }
@@ -440,7 +461,7 @@ private fun PersonHeader(item: BaseItemDto, client: JellyfinClient) {
         Modifier.fillMaxWidth().statusBarsPadding().padding(top = 56.dp, start = Gutter, end = Gutter),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(168.dp).clip(CircleShape)) {
+        Box(Modifier.size(168.dp).clip(CtrlShapes.Hero).border(1.dp, CtrlColors.Outline, CtrlShapes.Hero)) {
             ArtImage(client.primaryImage(item, 400), Modifier.fillMaxSize(), placeholderText = item.name)
         }
         Spacer(Modifier.height(16.dp))
@@ -537,9 +558,9 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
                 )
                 item.resumeProgress()?.let { p ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.weight(1f).clip(CircleShape)) { ArtProgress(p) }
+                        CtrlProgressBar({ p }, Modifier.weight(1f), color = CtrlColors.Accent)
                         Spacer(Modifier.width(12.dp))
-                        Text(item.timeLeft().orEmpty(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(item.timeLeft().orEmpty(), style = CtrlType.Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -547,17 +568,17 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             if (item.type != "Person") {
-                RoundAction(Icons.Filled.Check, if (played) stringResource(R.string.watched) else stringResource(R.string.mark_watched), { toggle { c.api.setPlayed(item.id, !played) } }, active = played)
+                RoundAction(Icons.Outlined.Check, if (played) stringResource(R.string.watched) else stringResource(R.string.mark_watched), { toggle { c.api.setPlayed(item.id, !played) } }, active = played)
             }
             RoundAction(
-                if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                if (fav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                 stringResource(R.string.favourite),
                 { toggle { c.api.setFavorite(item.id, !fav) } },
                 active = fav,
             )
             if ((isVideo && item.canDownload) || item.type in setOf("Season", "Series", "MusicAlbum")) {
                 RoundAction(
-                    if (dl?.status == DownloadStatus.DONE) Icons.Filled.DownloadDone else Icons.Filled.Download,
+                    if (dl?.status == DownloadStatus.DONE) Icons.Outlined.DownloadDone else Icons.Outlined.Download,
                     when (dl?.status) {
                         DownloadStatus.DONE -> stringResource(R.string.downloaded)
                         DownloadStatus.RUNNING, DownloadStatus.QUEUED -> stringResource(R.string.downloading)
@@ -572,20 +593,19 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
                     item.remoteTrailers.firstOrNull()?.url?.let { openWebLink(context, it) }
                 })
             }
-            RoundAction(Icons.Filled.MoreHoriz, stringResource(R.string.more), { more = true })
+            RoundAction(Icons.Outlined.MoreHoriz, stringResource(R.string.more), { more = true })
         }
 
         if (isVideo && source != null && (audioStreams.size > 1 || subStreams.isNotEmpty() || sources.size > 1)) {
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .ctrlSurface()
                     .clickable { tracksOpen = true }
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Filled.Subtitles, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.Outlined.Subtitles, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(audio?.label() ?: stringResource(R.string.default_audio), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -597,7 +617,7 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -654,7 +674,7 @@ private fun TracksSheet(
     onSub: (MediaStream?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+    CtrlSheet(onDismissRequest = onDismiss) {
         Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
             if (sources.size > 1) {
                 SheetTitle(stringResource(R.string.version))
@@ -694,7 +714,7 @@ private fun CheckLine(title: String, selected: Boolean, subtitle: String? = null
             Text(title, style = MaterialTheme.typography.bodyLarge, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (selected) Icon(Icons.Filled.Check, stringResource(R.string.selected), tint = MaterialTheme.colorScheme.primary)
+        if (selected) Icon(Icons.Outlined.Check, stringResource(R.string.selected), tint = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -723,7 +743,7 @@ private fun MoreSheet(
         return
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+    CtrlSheet(onDismissRequest = onDismiss) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
             Text(
                 item.name.orEmpty(),
@@ -736,11 +756,11 @@ private fun MoreSheet(
             if (resumeMs > 0 && isVideo) SheetAction(Icons.Filled.Replay, stringResource(R.string.play_from_the_beginning)) { act(onPlayFromStart) }
             if (item.isFolder && item.type != "Person") SheetAction(Icons.Filled.Shuffle, stringResource(R.string.shuffle)) { act { nav.shuffle(item) } }
             if (item.type in setOf("MusicArtist", "MusicAlbum", "Audio")) SheetAction(Icons.Outlined.AutoAwesome, stringResource(R.string.instant_mix)) { act { c.music.instantMix(item) } }
-            if (item.type != "Playlist" && item.type != "Person") SheetAction(Icons.AutoMirrored.Filled.PlaylistAdd, stringResource(R.string.add_to_playlist)) { playlist = true }
-            if (item.type == "Episode" && item.seriesId != null) SheetAction(Icons.Filled.Tv, stringResource(R.string.go_to_show)) { act { nav.navigate(ItemRoute(item.seriesId)) } }
+            if (item.type != "Playlist" && item.type != "Person") SheetAction(Icons.AutoMirrored.Outlined.PlaylistAdd, stringResource(R.string.add_to_playlist)) { playlist = true }
+            if (item.type == "Episode" && item.seriesId != null) SheetAction(Icons.Outlined.Tv, stringResource(R.string.go_to_show)) { act { nav.navigate(ItemRoute(item.seriesId)) } }
             if (isAdmin) {
-                SheetAction(Icons.Filled.Edit, stringResource(R.string.edit_details)) { act { nav.navigate(EditMetadataRoute(item.id)) } }
-                SheetAction(Icons.Filled.Refresh, stringResource(R.string.refresh_metadata)) {
+                SheetAction(Icons.Outlined.Edit, stringResource(R.string.edit_details)) { act { nav.navigate(EditMetadataRoute(item.id)) } }
+                SheetAction(Icons.Outlined.Refresh, stringResource(R.string.refresh_metadata)) {
                     act {
                         scope.launch {
                             runCatching { c.api.refreshItem(item.id, replaceAll = false) }
@@ -751,13 +771,13 @@ private fun MoreSheet(
                 }
             }
             if (item.canDelete) {
-                SheetAction(Icons.Filled.Delete, stringResource(R.string.delete_from_server), destructive = true) { confirmDelete = true }
+                SheetAction(Icons.Outlined.Delete, stringResource(R.string.delete_from_server), destructive = true) { confirmDelete = true }
             }
         }
     }
 
     if (confirmDelete) {
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(stringResource(R.string.delete_x, item.name.orEmpty())) },
             text = { Text(stringResource(R.string.this_removes_the_files_from_the)) },
@@ -801,10 +821,11 @@ private fun SeasonChips(seasons: List<BaseItemDto>, selected: String?, onSelect:
             Text(
                 s.name ?: stringResource(R.string.season_x, s.indexNumber?.toString().orEmpty()),
                 style = MaterialTheme.typography.labelLarge,
-                color = if (isSel) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                color = if (isSel) CtrlColors.OnAccent else CtrlColors.Text,
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .background(if (isSel) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .clip(CtrlShapes.Chip)
+                    .background(if (isSel) CtrlColors.Accent else CtrlColors.Surface)
+                    .border(1.dp, if (isSel) CtrlColors.Accent else CtrlColors.ControlOutline, CtrlShapes.Chip)
                     .clickable { onSelect(s.id) }
                     .padding(horizontal = 16.dp, vertical = 9.dp),
             )
@@ -817,14 +838,16 @@ fun EpisodeRow(ep: BaseItemDto, client: JellyfinClient, onClick: () -> Unit, onP
     Row(
         Modifier
             .fillMaxWidth()
+            .padding(horizontal = Gutter)
+            .ctrlTopDivider()
             .combinedClickable(onClick = onClick, onLongClick = onLong)
-            .padding(horizontal = Gutter, vertical = 10.dp),
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Box(Modifier.width(148.dp).aspectRatio(16f / 9f).clip(MaterialTheme.shapes.small).clickable(onClick = onPlay)) {
+        Box(Modifier.width(148.dp).aspectRatio(16f / 9f).clip(CtrlShapes.Poster).border(1.dp, CtrlColors.Outline, CtrlShapes.Poster).clickable(onClick = onPlay)) {
             ArtImage(client.landscapeImage(ep, 400), Modifier.fillMaxSize(), placeholderText = ep.name)
             Box(
-                Modifier.align(Alignment.Center).size(36.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)),
+                Modifier.align(Alignment.Center).size(36.dp).clip(CtrlShapes.Badge).background(CtrlColors.Background.copy(alpha = 0.65f)),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.PlayArrow, stringResource(R.string.play), tint = Color.White, modifier = Modifier.size(22.dp)) }
             ep.resumeProgress()?.let { ArtProgress(it, Modifier.align(Alignment.BottomCenter)) }
@@ -832,21 +855,25 @@ fun EpisodeRow(ep: BaseItemDto, client: JellyfinClient, onClick: () -> Unit, onP
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                ep.indexNumber?.let {
+                    Text("%02d".format(it), style = CtrlType.Mono, color = CtrlColors.Muted)
+                    Spacer(Modifier.width(8.dp))
+                }
                 Text(
-                    listOfNotNull(ep.indexNumber?.let { "$it." }, ep.name).joinToString(" "),
-                    style = MaterialTheme.typography.titleSmall,
+                    ep.name.orEmpty(),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 if (ep.userData?.played == true) {
                     Spacer(Modifier.width(6.dp))
-                    Icon(Icons.Filled.Check, stringResource(R.string.watched), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                    CtrlStatusDot(CtrlColors.Accent, Modifier.semantics { contentDescription = str(R.string.watched) })
                 }
             }
             Text(
-                listOfNotNull(ep.timeLeft() ?: formatRuntime(ep.runTimeTicks), airDateText(ep)).joinToString("   "),
-                style = MaterialTheme.typography.bodySmall,
+                listOfNotNull(ep.timeLeft() ?: formatRuntime(ep.runTimeTicks), airDateText(ep)).joinToString(" · ").uppercase(),
+                style = CtrlType.Mono.copy(fontSize = 11.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             ep.overview?.let {
@@ -876,15 +903,17 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
     if (multiDisc && !isPlaylist && (index == 0 || d.children[index - 1].parentIndexNumber != track.parentIndexNumber)) {
         Text(
             stringResource(R.string.disc_x, track.parentIndexNumber ?: 1),
-            style = MaterialTheme.typography.titleSmall,
+            style = CtrlType.Label,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = Gutter, top = 16.dp, bottom = 4.dp),
+            modifier = Modifier.padding(start = Gutter, top = 16.dp, bottom = 8.dp),
         )
     }
     val audioTracks = d.children.filter { it.mediaType == "Audio" }
     Row(
         Modifier
             .fillMaxWidth()
+            .padding(horizontal = Gutter)
+            .ctrlTopDivider()
             .heightIn(min = 60.dp)
             .combinedClickable(
                 onClick = {
@@ -893,15 +922,15 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
                 },
                 onLongClick = { onLong(track) },
             )
-            .padding(horizontal = Gutter, vertical = 8.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (isPlaylist) {
-            Box(Modifier.size(44.dp).clip(MaterialTheme.shapes.extraSmall)) { ArtImage(client.primaryImage(track, 120), Modifier.fillMaxSize()) }
+            Box(Modifier.size(44.dp).clip(CtrlShapes.Badge)) { ArtImage(client.primaryImage(track, 120), Modifier.fillMaxSize()) }
         } else {
             Text(
-                "${track.indexNumber ?: index + 1}",
-                style = MaterialTheme.typography.labelLarge,
+                "%02d".format(track.indexNumber ?: (index + 1)),
+                style = CtrlType.Mono,
                 color = if (playing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.width(28.dp),
             )
@@ -910,7 +939,7 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
         Column(Modifier.weight(1f)) {
             Text(
                 track.name.orEmpty(),
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                 color = if (playing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -921,7 +950,11 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
                 Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
-        Text(formatClock((track.runTimeTicks ?: 0).ticksToMs()), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (playing) {
+            CtrlStatusDot(CtrlColors.Accent)
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(formatClock((track.runTimeTicks ?: 0).ticksToMs()), style = CtrlType.Mono, color = if (playing) CtrlColors.Accent else MaterialTheme.colorScheme.onSurfaceVariant)
         if (isPlaylist && track.playlistItemId != null) {
             IconButton(onClick = {
                 scope.launch {
@@ -929,7 +962,7 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
                         .onSuccess { reload() }
                         .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
                 }
-            }) { Icon(Icons.Filled.Delete, stringResource(R.string.remove_from_playlist), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }) { Icon(Icons.Outlined.Delete, stringResource(R.string.remove_from_playlist), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }
@@ -942,4 +975,17 @@ private fun openWebLink(context: android.content.Context, url: String) {
     val uri = Uri.parse(url.trim())
     if (uri.scheme?.lowercase() !in setOf("http", "https") || uri.host.isNullOrBlank()) return
     runCatching { com.vknxworks.jellyctrl.ui.lock.AppLock.expectReturn(); context.startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)) }
+}
+
+/** Mono label above a title on its page, e.g. "MOVIE", "SERIES". */
+private fun typeLabel(type: String): String = when (type) {
+    "Movie" -> str(R.string.type_movie)
+    "Series" -> str(R.string.type_series)
+    "BoxSet" -> str(R.string.type_collection)
+    "MusicVideo" -> str(R.string.type_music_video)
+    "Video" -> str(R.string.type_video)
+    "TvChannel" -> str(R.string.type_channel)
+    "Program" -> str(R.string.type_program)
+    "Recording" -> str(R.string.type_recording)
+    else -> type
 }

@@ -1,5 +1,7 @@
 package com.vknxworks.jellyctrl.ui.search
 
+import com.vknxworks.jellyctrl.ui.components.CtrlTextField
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,8 +13,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -115,23 +117,16 @@ fun SearchScreen() {
     }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        TabTitle(stringResource(R.string.search))
-        TextField(
+        TabTitle(stringResource(R.string.search), label = stringResource(R.string.app_name).uppercase() + " · " + stringResource(R.string.search).uppercase())
+        CtrlTextField(
             value = query,
             onValueChange = { query = it },
             placeholder = { Text(stringResource(R.string.films_shows_music_people)) },
-            leadingIcon = { Icon(Icons.Filled.Search, null) },
+            leadingIcon = { Icon(Icons.Outlined.Search, null, Modifier.size(20.dp)) },
             trailingIcon = {
-                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Clear, stringResource(R.string.clear_search)) }
+                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Outlined.Clear, stringResource(R.string.clear_search)) }
             },
             singleLine = true,
-            shape = CircleShape,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-            ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
             modifier = Modifier.fillMaxWidth().padding(horizontal = Gutter, vertical = 4.dp).focusRequester(focus),
@@ -140,7 +135,7 @@ fun SearchScreen() {
         when {
             loading && r == null -> LoadingView()
             error != null -> MessageView(Icons.Outlined.SearchOff, stringResource(R.string.search_didn_t_work), error)
-            r == null -> MessageView(Icons.Filled.Search, stringResource(R.string.find_anything_on_your_server), stringResource(R.string.start_typing_a_title_actor_artist))
+            r == null -> MessageView(Icons.Outlined.Search, stringResource(R.string.find_anything_on_your_server), stringResource(R.string.start_typing_a_title_actor_artist))
             r.isEmpty() -> MessageView(Icons.Outlined.SearchOff, stringResource(R.string.no_matches), stringResource(R.string.nothing_on_your_server_matches_x, query.trim()))
             else -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp + LocalBottomClearance.current)) {
                 items(r, key = { it.first }) { (label, items) ->

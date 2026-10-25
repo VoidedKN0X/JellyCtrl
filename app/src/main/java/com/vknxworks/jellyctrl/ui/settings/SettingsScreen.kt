@@ -46,7 +46,6 @@ import com.vknxworks.jellyctrl.data.api.withValues
 import com.vknxworks.jellyctrl.data.settings.AppSettings
 import com.vknxworks.jellyctrl.data.settings.PlayerEngineChoice
 import com.vknxworks.jellyctrl.data.settings.SkipSegmentMode
-import com.vknxworks.jellyctrl.data.settings.ThemeChoice
 import com.vknxworks.jellyctrl.ui.components.Group
 import com.vknxworks.jellyctrl.ui.components.GroupChoice
 import com.vknxworks.jellyctrl.ui.components.GroupSwitch
@@ -103,13 +102,6 @@ fun SettingsScreen() {
         topBar = { ScreenTopBar(stringResource(R.string.settings)) },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
-            Group(stringResource(R.string.appearance)) {
-                GroupChoice(stringResource(R.string.theme), ThemeChoice.entries.map { it to it.label }, s.theme) { v -> update { it.copy(theme = v) } }
-                GroupSwitch(stringResource(R.string.use_wallpaper_colours), stringResource(R.string.replaces_the_default_colours_with_ones), s.dynamicColor) { v ->
-                    update { it.copy(dynamicColor = v) }
-                }
-            }
-
             PrivacyGroup(s) { t -> update(t) }
 
             // Music controls live in a notification: say so when Android blocks it. Checked again on every return.

@@ -15,8 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.DownloadForOffline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -49,6 +49,10 @@ import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.formatBytes
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+import com.vknxworks.jellyctrl.ui.components.CtrlListItem
+import com.vknxworks.jellyctrl.ui.components.CtrlProgressBar
+
 
 @Composable
 fun DownloadsScreen() {
@@ -87,7 +91,7 @@ fun DownloadsScreen() {
             items(sorted, key = { it.itemId }) { e ->
                 val item = e.item
                 val poster = c.downloads.poster(e)?.takeIf { it.exists() }
-                ListItem(
+                CtrlListItem(
                     headlineContent = { Text(if (e.seriesName != null) "${e.seriesName} · ${e.name}" else e.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
                     supportingContent = {
                         Column {
@@ -100,21 +104,21 @@ fun DownloadsScreen() {
                             }
                             Text(status, style = MaterialTheme.typography.bodySmall)
                             if (e.status == DownloadStatus.RUNNING) {
-                                LinearProgressIndicator(progress = { e.progress }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), drawStopIndicator = {})
+                                CtrlProgressBar(progress = { e.progress }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), drawStopIndicator = {})
                             }
                         }
                     },
                     leadingContent = {
-                        Box(Modifier.width(if (item.type == "Episode") 96.dp else 56.dp).aspectRatio(if (item.type == "Episode") 16f / 9f else if (item.mediaType == "Audio") 1f else 2f / 3f).clip(RoundedCornerShape(6.dp))) {
+                        Box(Modifier.width(if (item.type == "Episode") 96.dp else 56.dp).aspectRatio(if (item.type == "Episode") 16f / 9f else if (item.mediaType == "Audio") 1f else 2f / 3f).clip(RoundedCornerShape(10.dp))) {
                             ArtImage(poster?.let { android.net.Uri.fromFile(it).toString() }, Modifier.fillMaxSize(), placeholderText = e.name)
                         }
                     },
                     trailingContent = {
                         Row {
                             if (e.status == DownloadStatus.FAILED || e.status == DownloadStatus.PAUSED) {
-                                IconButton(onClick = { c.downloads.retry(e.itemId, settings.downloadWifiOnly) }) { Icon(Icons.Filled.Refresh, stringResource(R.string.retry)) }
+                                IconButton(onClick = { c.downloads.retry(e.itemId, settings.downloadWifiOnly) }) { Icon(Icons.Outlined.Refresh, stringResource(R.string.retry)) }
                             }
-                            IconButton(onClick = { confirmDelete = e }) { Icon(Icons.Filled.Delete, stringResource(R.string.delete)) }
+                            IconButton(onClick = { confirmDelete = e }) { Icon(Icons.Outlined.Delete, stringResource(R.string.delete)) }
                         }
                     },
                     modifier = Modifier.clickable(enabled = e.status == DownloadStatus.DONE) {
@@ -127,7 +131,7 @@ fun DownloadsScreen() {
     }
 
     confirmDelete?.let { e ->
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { confirmDelete = null },
             title = { Text(if (e.status == DownloadStatus.DONE) stringResource(R.string.delete_download) else stringResource(R.string.cancel_download)) },
             text = { Text(e.name) },

@@ -1,11 +1,15 @@
 package com.vknxworks.jellyctrl.ui.library
 
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import androidx.compose.foundation.border
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import com.vknxworks.jellyctrl.ui.components.ChoiceSheet
@@ -23,10 +27,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Sort
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -69,6 +73,8 @@ import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
 import androidx.annotation.StringRes
+import com.vknxworks.jellyctrl.ui.components.CtrlListItem
+
 
 enum class SortOption(@StringRes private val labelRes: Int, val fields: List<String>, @StringRes private val ascRes: Int, @StringRes private val descRes: Int) {
     NAME(R.string.sort_name, listOf("SortName"), R.string.order_a_to_z, R.string.order_z_to_a),
@@ -153,10 +159,11 @@ fun LibraryScreen(route: LibraryRoute) {
                             Text(
                                 tabs[i].label,
                                 style = MaterialTheme.typography.labelLarge,
-                                color = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                color = if (selected) CtrlColors.OnAccent else CtrlColors.Text,
                                 modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceContainerHigh)
+                                    .clip(CtrlShapes.Chip)
+                                    .background(if (selected) CtrlColors.Accent else CtrlColors.Surface)
+                                    .border(1.dp, if (selected) CtrlColors.Accent else CtrlColors.ControlOutline, CtrlShapes.Chip)
                                     .clickable { tabIndex = i }
                                     .padding(horizontal = 16.dp, vertical = 9.dp),
                             )
@@ -174,9 +181,11 @@ fun LibraryScreen(route: LibraryRoute) {
                                 onClick = { showSort = true },
                                 label = { Text(sort.label) },
                                 leadingIcon = {
-                                    Icon(if (descending) Icons.Filled.ArrowDownward else Icons.Filled.ArrowUpward, null, Modifier.size(16.dp))
+                                    Icon(if (descending) Icons.Outlined.ArrowDownward else Icons.Outlined.ArrowUpward, null, Modifier.size(16.dp))
                                 },
-                                shape = CircleShape,
+                                shape = CtrlShapes.Chip,
+                                colors = ctrlChipColors(),
+                                border = ctrlChipBorder(sort != SortOption.NAME || descending),
                             )
                         }
                         items(FilterOption.entries) { f ->
@@ -184,7 +193,9 @@ fun LibraryScreen(route: LibraryRoute) {
                                 selected = f in filters,
                                 onClick = { filters = if (f in filters) filters - f else filters + f },
                                 label = { Text(f.label) },
-                                shape = CircleShape,
+                                shape = CtrlShapes.Chip,
+                                colors = ctrlChipColors(),
+                                border = ctrlChipBorder(f in filters),
                             )
                         }
                     }
@@ -264,7 +275,7 @@ private fun GenreList(parentId: String, types: List<String>) {
     LoadContent(loader) { genres ->
         LazyColumn(Modifier.fillMaxSize()) {
             items(genres, key = { it.id }) { g ->
-                ListItem(
+                CtrlListItem(
                     headlineContent = { Text(g.name.orEmpty()) },
                     modifier = Modifier.fillMaxWidth().clickable {
                         nav.navigate(ListRoute(g.name.orEmpty(), "genre", g.name, parentId, types.joinToString(",")))
@@ -274,3 +285,22 @@ private fun GenreList(parentId: String, types: List<String>) {
         }
     }
 }
+
+@androidx.compose.runtime.Composable
+private fun ctrlChipColors() = FilterChipDefaults.filterChipColors(
+    containerColor = CtrlColors.Surface,
+    labelColor = CtrlColors.Text,
+    selectedContainerColor = CtrlColors.Accent,
+    selectedLabelColor = CtrlColors.OnAccent,
+    selectedLeadingIconColor = CtrlColors.OnAccent,
+)
+
+@androidx.compose.runtime.Composable
+private fun ctrlChipBorder(selected: Boolean) = FilterChipDefaults.filterChipBorder(
+    enabled = true,
+    selected = selected,
+    borderColor = CtrlColors.ControlOutline,
+    selectedBorderColor = CtrlColors.Accent,
+    borderWidth = 1.dp,
+    selectedBorderWidth = 1.dp,
+)

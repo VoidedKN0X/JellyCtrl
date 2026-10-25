@@ -18,9 +18,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Message
-import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Message
+import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
@@ -71,6 +71,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+import com.vknxworks.jellyctrl.ui.components.CtrlTextField
+import com.vknxworks.jellyctrl.ui.components.CtrlProgressBar
+
 
 /** Control playback on other Jellyfin clients (TV apps, browsers) signed in to this server. */
 @Composable
@@ -95,7 +99,7 @@ fun RemoteScreen(adminView: Boolean = false) {
         Box(Modifier.padding(padding).fillMaxSize()) {
             LoadContent(loader) { sessions ->
                 if (sessions.isEmpty()) {
-                    MessageView(Icons.Filled.Devices, stringResource(R.string.no_other_devices), stringResource(R.string.open_jellyfin_on_your_tv_or))
+                    MessageView(Icons.Outlined.Devices, stringResource(R.string.no_other_devices), stringResource(R.string.open_jellyfin_on_your_tv_or))
                 } else {
                     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(sessions, key = { it.id }) { s -> SessionCard(s, client, adminView) { loader.reload(silent = true) } }
@@ -121,10 +125,15 @@ fun SessionCard(s: SessionInfo, client: JellyfinClient, showUser: Boolean, onCha
         }
     }
 
-    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(
+        Modifier.fillMaxWidth(),
+        shape = com.vknxworks.jellyctrl.ui.theme.CtrlShapes.Card,
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.Surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, com.vknxworks.jellyctrl.ui.theme.CtrlColors.Outline),
+    ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Devices, null, tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Devices, null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(s.deviceName ?: stringResource(R.string.device), fontWeight = FontWeight.SemiBold)
@@ -135,13 +144,13 @@ fun SessionCard(s: SessionInfo, client: JellyfinClient, showUser: Boolean, onCha
                     )
                 }
                 if (s.supportsRemoteControl) {
-                    IconButton(onClick = { messageOpen = true }) { Icon(Icons.AutoMirrored.Filled.Message, stringResource(R.string.send_message)) }
+                    IconButton(onClick = { messageOpen = true }) { Icon(Icons.AutoMirrored.Outlined.Message, stringResource(R.string.send_message)) }
                 }
             }
             if (np != null) {
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(width = 96.dp, height = 54.dp).clip(RoundedCornerShape(6.dp))) {
+                    Box(Modifier.size(width = 96.dp, height = 54.dp).clip(RoundedCornerShape(10.dp))) {
                         ArtImage(client.landscapeImage(np, 300), Modifier.fillMaxSize())
                     }
                     Spacer(Modifier.width(10.dp))
@@ -161,7 +170,7 @@ fun SessionCard(s: SessionInfo, client: JellyfinClient, showUser: Boolean, onCha
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         if (dur > 0) {
-                            LinearProgressIndicator(progress = { (pos.toFloat() / dur).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), drawStopIndicator = {})
+                            CtrlProgressBar(progress = { (pos.toFloat() / dur).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), drawStopIndicator = {})
                         }
                     }
                 }
@@ -182,10 +191,10 @@ fun SessionCard(s: SessionInfo, client: JellyfinClient, showUser: Boolean, onCha
 
     if (messageOpen) {
         var text by remember { mutableStateOf("") }
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { messageOpen = false },
             title = { Text(s.deviceName?.let { stringResource(R.string.message_x, it) } ?: stringResource(R.string.message_device)) },
-            text = { OutlinedTextField(text, { text = it }, label = { Text(stringResource(R.string.message)) }) },
+            text = { CtrlTextField(text, { text = it }, label = { Text(stringResource(R.string.message)) }) },
             confirmButton = {
                 TextButton(onClick = {
                     messageOpen = false

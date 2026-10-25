@@ -22,9 +22,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
@@ -78,9 +75,10 @@ import com.vknxworks.jellyctrl.ui.admin.EditMetadataScreen
 import com.vknxworks.jellyctrl.ui.auth.ServerSetupFlow
 import com.vknxworks.jellyctrl.ui.components.LoadingView
 import com.vknxworks.jellyctrl.ui.components.LocalBottomClearance
-import com.vknxworks.jellyctrl.ui.components.LocalHazeState
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
+import com.vknxworks.jellyctrl.ui.components.CtrlBottomBar
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.vknxworks.jellyctrl.ui.detail.ItemDetailScreen
 import com.vknxworks.jellyctrl.ui.downloads.DownloadsScreen
 import com.vknxworks.jellyctrl.ui.favorites.FavoritesScreen
@@ -117,9 +115,9 @@ private data class TopDest(val route: Any, val item: TabItem)
 
 private val topDestinations: List<TopDest>
     get() = listOf(
-    TopDest(HomeRoute, TabItem(str(R.string.tab_home), Icons.Outlined.Home, Icons.Filled.Home)),
-    TopDest(SearchRoute, TabItem(str(R.string.tab_search), Icons.Outlined.Search, Icons.Filled.Search)),
-    TopDest(LibrariesRoute, TabItem(str(R.string.tab_library), Icons.Outlined.VideoLibrary, Icons.Filled.VideoLibrary)),
+    TopDest(HomeRoute, TabItem(str(R.string.tab_home), Icons.Outlined.Home, Icons.Outlined.Home)),
+    TopDest(SearchRoute, TabItem(str(R.string.tab_search), Icons.Outlined.Search, Icons.Outlined.Search)),
+    TopDest(LibrariesRoute, TabItem(str(R.string.tab_library), Icons.Outlined.VideoLibrary, Icons.Outlined.VideoLibrary)),
 )
 
 @Composable
@@ -193,6 +191,13 @@ private fun MainScaffold() {
                                 onClick = { selectTab(i) },
                                 icon = { Icon(if (selected) top.item.selectedIcon else top.item.icon, contentDescription = top.item.label) },
                                 label = { Text(top.item.label) },
+                                colors = NavigationRailItemDefaults.colors(
+                                    selectedIconColor = CtrlColors.OnAccent,
+                                    selectedTextColor = CtrlColors.Text,
+                                    indicatorColor = CtrlColors.Accent,
+                                    unselectedIconColor = CtrlColors.Muted,
+                                    unselectedTextColor = CtrlColors.Muted,
+                                ),
                             )
                         }
                         Spacer(Modifier.weight(1f))
@@ -231,19 +236,16 @@ private fun PhoneLayout(
     onSelect: (Int) -> Unit,
     onOpenNowPlaying: () -> Unit,
 ) {
-    val hazeState = rememberHazeState()
     val density = LocalDensity.current
     var overlayHeight by remember { mutableStateOf(0.dp) }
 
     CompositionLocalProvider(
-        LocalHazeState provides hazeState,
         LocalBottomClearance provides if (showTabs) overlayHeight else 0.dp,
     ) {
         Box(Modifier.fillMaxSize()) {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .hazeSource(hazeState)
                     .then(if (showTabs) Modifier else Modifier.padding(bottom = overlayHeight)),
             ) {
                 AppNavHost(navController)
@@ -254,9 +256,9 @@ private fun PhoneLayout(
                     .fillMaxWidth()
                     .onSizeChanged { overlayHeight = with(density) { it.height.toDp() } }
                     .navigationBarsPadding()
-                    .padding(bottom = if (showTabs) 12.dp else 4.dp),
+                    .padding(bottom = if (showTabs) 28.dp else 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (showMiniPlayer) MiniPlayer(onOpen = onOpenNowPlaying)
                 AnimatedVisibility(
@@ -264,7 +266,7 @@ private fun PhoneLayout(
                     enter = fadeIn() + slideInVertically { it / 2 },
                     exit = fadeOut() + slideOutVertically { it / 2 },
                 ) {
-                    GlassTabBar(
+                    CtrlBottomBar(
                         items = topDestinations.map { it.item },
                         selectedIndex = selectedIndex,
                         onSelect = onSelect,
