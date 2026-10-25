@@ -58,6 +58,8 @@ interface PlayerEngine {
     fun setSpeed(speed: Float)
     fun selectAudio(ordinal: Int)
     fun selectSubtitle(selection: SubSelection)
+    /** Side-loads one more external subtitle file into what's playing now and switches to it. */
+    fun addExternalSubtitle(sub: ExternalSub)
     fun release()
 
     @Composable

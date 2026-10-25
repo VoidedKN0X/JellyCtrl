@@ -713,4 +713,28 @@
     <string name="type_channel">Channel</string>
     <string name="type_program">Programme</string>
     <string name="type_recording">Recording</string>
+    <!-- Subtitle search (the server's subtitle providers, e.g. OpenSubtitles) -->
+    <string name="subs_search_action">Search for subtitles</string>
+    <string name="subs_search_hint">Find and download subtitles with the server\'s subtitle plugins</string>
+    <string name="subs_search_title">Download subtitles</string>
+    <string name="subs_language">Language</string>
+    <string name="subs_download">Download</string>
+    <string name="subs_rating_x">★ %1$s</string>
+    <string name="subs_downloads_x">%1$d downloads</string>
+    <string name="subs_tag_exact">Exact match</string>
+    <string name="subs_tag_hi">Hearing impaired</string>
+    <string name="subs_tag_forced">Forced</string>
+    <string name="subs_tag_machine">Machine translated</string>
+    <string name="subs_none_title">No subtitles found</string>
+    <string name="subs_none_body">The subtitle providers on your server found nothing in this language. Try another language. If no search ever finds anything, the server may not have a subtitle plugin such as OpenSubtitles installed.</string>
+    <string name="subs_no_provider_title">No subtitle provider on the server</string>
+    <string name="subs_no_provider_body">Your Jellyfin server has no subtitle plugin. A server admin can install one (for example OpenSubtitles) in the Jellyfin dashboard under Plugins, then sign in to it in the plugin\'s settings.</string>
+    <string name="subs_failed_title">Couldn\'t search for subtitles</string>
+    <string name="subs_not_allowed">This account isn\'t allowed to manage subtitles. A server admin can allow it in the user\'s settings (Allow subtitle management).</string>
+    <string name="subs_download_failed">The download failed: %1$s</string>
+    <string name="subs_downloaded_x">Subtitles downloaded: %1$s</string>
+    <string name="subs_downloaded_not_ready">Subtitles downloaded. The server is still adding them; they\'ll be in the subtitle list in a moment.</string>
+    <!-- Open in ArrCtrl -->
+    <string name="open_in_arrctrl">Open in ArrCtrl</string>
+    <string name="arrctrl_open_failed">Couldn\'t open ArrCtrl</string>
 </resources>
