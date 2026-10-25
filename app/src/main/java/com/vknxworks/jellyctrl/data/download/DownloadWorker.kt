@@ -117,6 +117,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
     private fun foregroundInfo(title: String, progress: Float): ForegroundInfo {
         val n: Notification = NotificationCompat.Builder(applicationContext, JellyCtrlApp.CHANNEL_DOWNLOADS)
             .setSmallIcon(R.drawable.ic_notification)
+            // Signal accent: lavender in dark mode, the darker violet in light mode (see values-night).
+            .setColor(applicationContext.getColor(R.color.notification_accent))
             .setContentTitle(str(R.string.downloading_x, title))
             .setOnlyAlertOnce(true)
             .setOngoing(true)

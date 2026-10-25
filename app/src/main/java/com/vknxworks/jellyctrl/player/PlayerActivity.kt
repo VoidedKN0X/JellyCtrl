@@ -62,7 +62,11 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Always dark, like the player itself: light bar icons whatever theme the phone uses.
+        enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.BLACK),
+            navigationBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.BLACK),
+        )
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         hideSystemBars()
         if (resources.configuration.smallestScreenWidthDp < 600) {
@@ -72,7 +76,8 @@ class PlayerActivity : ComponentActivity() {
 
         val c = applicationContext.container
         setContent {
-            JellyCtrlTheme {
+            // The video player stays dark in both themes: nothing bright next to the picture.
+            JellyCtrlTheme(dark = true) {
                 val engine by vm.engine.collectAsState()
                 val st = engine?.state?.collectAsState()?.value ?: EngineState()
                 LaunchedEffect(st.playWhenReady, st.videoWidth, st.videoHeight, vm.loading) {

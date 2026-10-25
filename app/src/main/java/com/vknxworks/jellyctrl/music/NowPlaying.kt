@@ -308,7 +308,7 @@ private fun QueueList(s: MusicState) {
                 Text(
                     "%02d".format(i + 1),
                     style = CtrlType.Mono,
-                    color = if (current) CtrlColors.Accent else CtrlColors.Muted,
+                    color = if (current) CtrlColors.AccentText else CtrlColors.Muted,
                     modifier = Modifier.width(30.dp),
                 )
                 Box(Modifier.size(44.dp).clip(CtrlShapes.Badge)) { ArtImage(e.artworkUri, Modifier.fillMaxSize()) }

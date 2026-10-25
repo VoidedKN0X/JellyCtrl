@@ -732,7 +732,7 @@ private fun PinPadScreen(
             )
             Spacer(Modifier.height(28.dp))
             Box(Modifier.height(20.dp).offset { IntOffset(shake.roundToInt(), 0) }, contentAlignment = Alignment.Center) {
-                if (checking) CircularProgressIndicator(Modifier.size(20.dp), color = CtrlColors.Accent, strokeWidth = 2.dp)
+                if (checking) CircularProgressIndicator(Modifier.size(20.dp), color = CtrlColors.AccentText, strokeWidth = 2.dp)
                 else Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     repeat(maxOf(pin.length, LockVault.PIN_MIN)) { i ->
                         val cell = RoundedCornerShape(5.dp)
@@ -780,11 +780,11 @@ private fun PinPadScreen(
                                 .weight(1f)
                                 .height(68.dp)
                                 .clip(keyShape)
-                                .border(1.dp, CtrlColors.Accent, keyShape)
+                                .border(1.dp, CtrlColors.AccentText, keyShape)
                                 .clickable(role = Role.Button, onClickLabel = stringResource(R.string.lock_use_fingerprint), onClick = onBiometric),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(Icons.Outlined.Fingerprint, stringResource(R.string.lock_use_fingerprint), Modifier.size(26.dp), tint = CtrlColors.Accent)
+                            Icon(Icons.Outlined.Fingerprint, stringResource(R.string.lock_use_fingerprint), Modifier.size(26.dp), tint = CtrlColors.AccentText)
                         }
                         else -> Spacer(Modifier.weight(1f))
                     }

@@ -112,11 +112,11 @@ fun LibrariesScreen() {
                             )
                         )
                         Column(Modifier.align(Alignment.BottomStart).padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            v.collectionType?.let { CtrlSectionLabel(it, color = Color.White.copy(alpha = 0.75f)) }
+                            v.collectionType?.let { CtrlSectionLabel(it, color = CtrlColors.Muted) }
                             Text(
                                 v.name.orEmpty(),
                                 style = MaterialTheme.typography.headlineSmall,
-                                color = Color.White,
+                                color = CtrlColors.Text,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )

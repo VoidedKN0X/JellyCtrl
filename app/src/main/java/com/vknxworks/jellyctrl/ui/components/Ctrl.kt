@@ -113,7 +113,7 @@ fun CtrlWordmark(modifier: Modifier = Modifier, name: String = "JELLY") {
     Text(
         buildAnnotatedString {
             append(name)
-            withStyle(SpanStyle(color = CtrlColors.Accent)) { append("/") }
+            withStyle(SpanStyle(color = CtrlColors.AccentText)) { append("/") }
             append("CTRL")
         },
         style = CtrlType.Wordmark,
@@ -142,11 +142,13 @@ fun CtrlStatusDot(color: Color, modifier: Modifier = Modifier, size: Dp = 8.dp) 
 }
 
 /** A 1dp list divider along the top edge. */
+@Composable
 fun Modifier.ctrlTopDivider(color: Color = CtrlColors.Divider): Modifier = drawBehind {
     drawRect(color, size = Size(size.width, 1.dp.toPx()))
 }
 
 /** Surface fill with the 1dp card border. */
+@Composable
 fun Modifier.ctrlSurface(shape: Shape = CtrlShapes.Card, color: Color = CtrlColors.Surface, border: Color = CtrlColors.Outline): Modifier =
     clip(shape).background(color).border(1.dp, border, shape)
 
@@ -415,7 +417,7 @@ fun CtrlSwitch(
     enabled: Boolean = true,
 ) {
     val track by animateColorAsState(if (checked) CtrlColors.Accent else CtrlColors.SwitchTrackOff, label = "switch-track")
-    val knob by animateColorAsState(if (checked) CtrlColors.OnAccent else CtrlColors.Inactive, label = "switch-knob")
+    val knob by animateColorAsState(if (checked) CtrlColors.OnAccent else CtrlColors.SwitchKnobOff, label = "switch-knob")
     val x by animateDpAsState(if (checked) 20.dp else 0.dp, label = "switch-x")
     val toggle = if (onCheckedChange != null) {
         Modifier.toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
@@ -449,7 +451,7 @@ fun CtrlSwitch(
 fun CtrlProgressBar(
     progress: () -> Float,
     modifier: Modifier = Modifier,
-    color: Color = CtrlColors.Text,
+    color: Color = CtrlColors.ProgressFill,
     trackColor: Color = CtrlColors.ProgressTrack,
     @Suppress("UNUSED_PARAMETER") drawStopIndicator: (DrawScope.() -> Unit)? = null,
 ) {
@@ -474,11 +476,11 @@ fun ctrlTextFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
     unfocusedContainerColor = CtrlColors.Surface,
     disabledContainerColor = CtrlColors.Surface,
     errorContainerColor = CtrlColors.Surface,
-    focusedBorderColor = CtrlColors.Accent,
+    focusedBorderColor = CtrlColors.AccentText,
     unfocusedBorderColor = CtrlColors.ControlOutline,
     disabledBorderColor = CtrlColors.Outline,
-    cursorColor = CtrlColors.Accent,
-    focusedLabelColor = CtrlColors.Accent,
+    cursorColor = CtrlColors.AccentText,
+    focusedLabelColor = CtrlColors.AccentText,
     unfocusedLabelColor = CtrlColors.Muted,
     focusedTextColor = CtrlColors.Text,
     unfocusedTextColor = CtrlColors.Text,
@@ -566,7 +568,7 @@ fun CtrlAlertDialog(
             Column(Modifier.padding(24.dp)) {
                 if (icon != null) {
                     Box(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 16.dp)) {
-                        CompositionLocalProvider(LocalContentColor provides CtrlColors.Accent) { icon() }
+                        CompositionLocalProvider(LocalContentColor provides CtrlColors.AccentText) { icon() }
                     }
                 }
                 if (title != null) {

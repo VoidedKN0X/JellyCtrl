@@ -41,8 +41,14 @@ import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 
+/** Photos are always shown on black, in the dark palette, whatever theme the phone uses. */
 @Composable
 fun PhotoViewerScreen(parentId: String, startId: String) {
+    com.vknxworks.jellyctrl.ui.theme.ForceDarkSignal { PhotoViewerContent(parentId, startId) }
+}
+
+@Composable
+private fun PhotoViewerContent(parentId: String, startId: String) {
     val c = LocalContext.current.container
     val client = c.api
     val nav = LocalNavigator.current

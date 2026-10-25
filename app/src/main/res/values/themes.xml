@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.JellyCtrl" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.JellyCtrl" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/window_bg</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightNavigationBar">false</item>
-        <item name="android:colorAccent">#FFB48CFF</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:colorAccent">#FF6A3BDB</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
-    <style name="Theme.JellyCtrl.Player" parent="Theme.JellyCtrl">
+    <!-- The video player is dark in both themes. -->
+    <style name="Theme.JellyCtrl.Player" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:windowLayoutInDisplayCutoutMode">always</item>
     </style>

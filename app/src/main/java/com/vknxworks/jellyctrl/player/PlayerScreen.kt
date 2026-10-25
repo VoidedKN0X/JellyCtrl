@@ -121,8 +121,9 @@ import com.vknxworks.jellyctrl.ui.components.CtrlSheet
 import com.vknxworks.jellyctrl.ui.components.CtrlSwitch
 
 
-private val Scrim = CtrlColors.Background.copy(alpha = 0.72f)
-private val PlayerControl = CtrlColors.Surface.copy(alpha = 0.85f)
+// The player is always dark (content first), so these use the dark palette whatever the phone uses.
+private val Scrim = CtrlColors.Dark.background.copy(alpha = 0.72f)
+private val PlayerControl = CtrlColors.Dark.surface.copy(alpha = 0.85f)
 
 @Composable
 fun PlayerScreen(
