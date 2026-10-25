@@ -43,6 +43,8 @@ class MusicService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
+            // No playback metrics handed to Android's media metrics service: JellyCtrl is telemetry-free.
+            .setUsePlatformDiagnostics(false)
             .setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSource.Factory(this, OkHttpDataSource.Factory(container.http))))
             .build()
 
@@ -138,21 +140,35 @@ class MusicService : MediaSessionService() {
         ai.flags and (android.content.pm.ApplicationInfo.FLAG_SYSTEM or android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
     }.getOrDefault(false)
 
+    /**
+     * JellyCtrl swiped away from Recents: music that's playing carries on; otherwise the service stops, and its
+     * notification goes with it. Since Media3 1.6 a paused service stays in the foreground for a while and the
+     * app's own connection keeps it bound, so it has to be stopped and its session released here, or it lingers
+     * and Android can end it with a crash.
+     */
     override fun onTaskRemoved(rootIntent: Intent?) {
         val player = session?.player
-        if (player == null || !player.playWhenReady || player.mediaItemCount == 0) {
-            stopSelf()
-        }
+        val keep = player != null && player.playWhenReady && player.mediaItemCount > 0 &&
+            player.playbackState != Player.STATE_IDLE && player.playbackState != Player.STATE_ENDED &&
+            // Only while the service is in the foreground: one that isn't must stop.
+            isPlaybackOngoing()
+        if (keep) return
+        runCatching { pauseAllPlayersAndStopSelf() }.onFailure { stopSelf() }
+        releaseSession()
+    }
+
+    private fun releaseSession() {
+        val s = session ?: return
+        session = null
+        // The progress timer stops first, so nothing touches the player once it's released.
+        scope.cancel()
+        runCatching { stopReport(s.player) }
+        runCatching { s.player.release() }
+        runCatching { s.release() }
     }
 
     override fun onDestroy() {
-        session?.run {
-            stopReport(player)
-            player.release()
-            release()
-        }
-        session = null
-        scope.cancel()
+        releaseSession()
         if (running) {
             running = false
             // With the app locked, the sign-in was only kept in memory for playback.
