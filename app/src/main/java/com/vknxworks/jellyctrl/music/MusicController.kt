@@ -26,7 +26,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -61,15 +64,28 @@ class MusicController(private val context: Context, private val c: AppContainer)
     private val _state = MutableStateFlow(MusicState())
     val state: StateFlow<MusicState> = _state.asStateFlow()
 
-    private suspend fun controller(): MediaController {
-        controller?.let { return it }
+    private val connecting = Mutex()
+
+    private suspend fun controller(): MediaController = connecting.withLock {
+        controller?.let { existing ->
+            if (existing.isConnected) return@withLock existing
+            // The music service stopped (closed from Recents, or ended by Android) while the app stayed in
+            // memory: this connection is dead, so make a new one, which starts the service again.
+            controller = null
+            runCatching { existing.release() }
+        }
         val token = SessionToken(context, ComponentName(context, MusicService::class.java))
-        val future = MediaController.Builder(context, token).buildAsync()
+        val future = MediaController.Builder(context, token)
+            .setListener(object : MediaController.Listener {
+                override fun onDisconnected(controller: MediaController) = onServiceGone(controller)
+            })
+            .buildAsync()
         val mc = suspendCancellableCoroutine<MediaController> { cont ->
+            cont.invokeOnCancellation { MediaController.releaseFuture(future) }
             future.addListener({
                 runCatching { future.get() }
-                    .onSuccess { cont.resume(it) }
-                    .onFailure { cont.resumeWithException(it) }
+                    .onSuccess { if (cont.isActive) cont.resume(it) else it.release() }
+                    .onFailure { if (cont.isActive) cont.resumeWithException(it) }
             }, ContextCompat.getMainExecutor(context))
         }
         controller = mc
@@ -77,7 +93,15 @@ class MusicController(private val context: Context, private val c: AppContainer)
             override fun onEvents(player: Player, events: Player.Events) = refresh()
         })
         startPolling()
-        return mc
+        mc
+    }
+
+    /** The music service went away: forget the connection and the mini player; the next action connects again. */
+    private fun onServiceGone(gone: MediaController) {
+        if (controller !== gone) return
+        controller = null
+        runCatching { gone.release() }
+        _state.value = MusicState()
     }
 
     private var polling = false
@@ -86,7 +110,13 @@ class MusicController(private val context: Context, private val c: AppContainer)
         polling = true
         scope.launch {
             while (true) {
-                if (controller?.isPlaying == true) refresh()
+                if (controller?.isPlaying != true) {
+                    // Nothing playing: sleep until something does, instead of waking up twice a second in the background.
+                    _state.first { it.isPlaying }
+                    delay(500)
+                    continue
+                }
+                refresh()
                 delay(500)
             }
         }
@@ -239,5 +269,7 @@ class MusicController(private val context: Context, private val c: AppContainer)
     }
 
     /** Reconnect to a still-running service after the app process was restarted. */
-    fun connectIfRunning() = launch { controller(); refresh() }
+    fun connectIfRunning() {
+        if (MusicService.running) launch { controller(); refresh() }
+    }
 }

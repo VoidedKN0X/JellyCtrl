@@ -4,6 +4,20 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.2 (2026-10-25)
+
+Music stops properly when you close JellyCtrl.
+
+### Fixed
+
+- **Closing JellyCtrl now stops paused music and removes its notification.** When you swiped JellyCtrl away from the recent apps with music paused (or nothing in the queue), the music service could stay in the background with its paused notification for several minutes, and Android could then end it with a crash. Now it stops at once and its notification goes away. Music that is actually playing still carries on when you close the app, as before.
+- **Music controls work again after the music service stopped.** If the music service was closed (from Recents, or ended by Android) while JellyCtrl stayed in memory, the mini player and play buttons could stop responding until the app was restarted. JellyCtrl now notices, clears the mini player, and connects again the next time you play something.
+- **Less background work.** The music controls no longer check the player twice a second while nothing is playing, and opening the app no longer starts the music service when no music is loaded.
+
+### Security
+
+- **No playback metrics for Android.** The music player no longer reports playback statistics to Android's media metrics service.
+
 ## v0.5.1 (2026-10-25)
 
 Fixes for crashes when leaving the app, and a few security and privacy tightenings.
@@ -114,7 +128,7 @@ A new look: JellyCtrl now uses **Ctrl / Signal**, the design shared by every Ctr
 - **Your Jellyfin sign-in no longer follows a redirect to another website when a video plays with mpv.** mpv sent your sign-in to wherever the server redirected the video (for example a video file that lives on another website), so that website could see it. JellyCtrl now follows the server's redirects itself before starting mpv, and mpv only gets your sign-in while the address is still your Jellyfin server. If the server redirects too often, playback stops with a message instead.
 - **Sign-ins are always sealed with your app PIN when the app lock is on.** If JellyCtrl was closed at exactly the wrong moment while you turned the app lock on, your saved sign-ins could stay protected by the phone's keystore only, without the extra encryption from your PIN. JellyCtrl now checks this every time you unlock (and at start-up when it's unlocked) and seals any sign-in that isn't sealed yet.
 
-### Privacy
+### Security
 
 - **No hidden dependency list in the app file any more**: the build tools used to tuck an encrypted list of the libraries JellyCtrl is built with into the APK's signature block. Only Google can read it, so nobody checking the app could see what it holds. It's now left out, the same as in the other Ctrl apps. Nothing changes in how the app works.
 
@@ -211,13 +225,13 @@ JellyCtrl is now Google-free and de-Googled.
 - **Media controls trust the apps built into your phone.** JellyCtrl's music player used to accept controls only from a fixed list of named apps (system UI, Bluetooth, car mode, a car assistant and voice controls), some of them Google's. It now accepts the apps that are part of your phone's system, plus apps Android itself marks as trusted for media control, so the notification, lock screen, Bluetooth and car controls keep working as before, also on de-Googled phones whose built-in apps have different names. JellyCtrl checks which app is really asking before it trusts it, and apps you installed yourself still can't control playback.
 - **README**: the Google-free line now reads "Google-free and de-Googled": no Google Play services, Firebase or other Google services, the app never contacts Google, and it works the same on de-Googled phones (GrapheneOS, CalyxOS, /e/OS, LineageOS without Google apps). It's the only place Google is mentioned in the README.
 
-### Privacy
+### Security
 
 - **No mention of Google left in the app's own code.** JellyCtrl has no Google Play services, Firebase or other Google services and never contacts Google: it only talks to your Jellyfin server. The list of named Google apps in the music player and a technical note in its setup file are gone. It works the same on de-Googled phones such as GrapheneOS, CalyxOS, /e/OS and LineageOS without Google apps.
 
 ## v0.1.24 (2026-10-20)
 
-### Privacy
+### Security
 
 - **No more usage stats: JellyCtrl is now telemetry-free.** The optional anonymous usage stats are gone completely, along with the Usage stats setting and the one-time question. The app no longer contacts VKNXWorks' stats server at all, and the settings it used are deleted from your phone when you update. JellyCtrl now only talks to your own Jellyfin server.
 
@@ -265,7 +279,7 @@ JellyCtrl is now Google-free and de-Googled.
 
 JellyCtrl is now completely Google-free. Nothing changes in how you use it.
 
-### Privacy
+### Security
 
 - **Emoji no longer make JellyCtrl ask Google for a font.** A standard Android library inside the app asked Google Play services for a downloadable emoji font every time JellyCtrl started, which could make Google Play services fetch that font from Google. This lookup is now switched off: emoji are drawn with your phone's own emoji font. On phones without Google Play services nothing changes; on other phones, emoji can look slightly different if the phone's built-in emoji font is older.
 - **Checked: JellyCtrl is Google-free.** It contains no Google Play services, Firebase, ML Kit, Google Cast or Play Core, and it doesn't load fonts or anything else from Google's servers. It also never switches server addresses by itself: it always uses the address you set up, and only you can change it.
