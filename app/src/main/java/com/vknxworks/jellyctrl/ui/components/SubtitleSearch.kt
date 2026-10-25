@@ -121,7 +121,8 @@ fun SubtitleSearchSheet(
             val found = client.searchRemoteSubtitles(itemId, lang)
             if (found.isEmpty() && client.subtitleProviderCount() == 0) SubSearchState.NoProvider
             else SubSearchState.Results(
-                found.filter { !it.id.isNullOrBlank() }
+                // Several providers can return the same subtitle; the list needs every id once.
+                found.filter { !it.id.isNullOrBlank() }.distinctBy { it.id }
                     .sortedWith(compareByDescending<RemoteSubtitleInfo> { it.isHashMatch == true }.thenByDescending { it.downloadCount ?: 0 }),
             )
         } catch (e: CancellationException) {

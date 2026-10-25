@@ -83,7 +83,7 @@ The sign-in screen, the Change password dialog, the server dashboard screens tha
 
 ## Privacy
 
-**Telemetry-free.** JellyCtrl has no analytics, crash reporting, usage stats or tracking of any kind. It only talks to your own Jellyfin server. Finding servers sends a short "where are you?" message on your own Wi-Fi network only, which Jellyfin servers there answer. Artwork comes through your server, never straight from sites like TMDB; trailers and links to sites like IMDb only open in your browser when you tap them. Your password is never stored: JellyCtrl keeps only the access token your server gives it, encrypted on the phone (and with your app PIN while the app lock is on), and only sends it to that server.
+**Telemetry-free.** JellyCtrl has no analytics, crash reporting, usage stats or tracking of any kind. It only talks to your own Jellyfin server. Finding servers sends a short "where are you?" message on your own Wi-Fi network only, which Jellyfin servers there answer. Artwork comes through your server, never straight from sites like TMDB; trailers and links to sites like IMDb only open in your browser when you tap them. Subtitle search goes through your server too: its subtitle plugins (such as OpenSubtitles) do the searching, never JellyCtrl. **Open in ArrCtrl** only passes the title's TMDB or TVDB id, and only to ArrCtrl. Your password is never stored: JellyCtrl keeps only the access token your server gives it, encrypted on the phone (and with your app PIN while the app lock is on), and only sends it to that server.
 
 ## Build from source
 

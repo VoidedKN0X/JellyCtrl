@@ -52,6 +52,8 @@ class PlayerActivity : ComponentActivity() {
     }
 
     private var inPip by mutableStateOf(false)
+    /** Started (on screen or in picture-in-picture). The lock screen's own window is only opened then. */
+    private var started by mutableStateOf(false)
     private var playingForPip = false
 
     private val pipReceiver = object : BroadcastReceiver() {
@@ -110,7 +112,10 @@ class PlayerActivity : ComponentActivity() {
                     // stay above it and a hardware keyboard can't reach the controls underneath. The video itself
                     // stays where it is, so it carries on after unlocking.
                     val locked = lockLocked(lockSetting, c.vault)
-                    if (!inPip) {
+                    // Closing the picture-in-picture window (or the player) locks the app while this activity is
+                    // already finishing: a new lock window on it then crashes. The app is locked either way, and
+                    // the lock screen shows the next time JellyCtrl opens.
+                    if (!inPip && started && !isFinishing && !isDestroyed) {
                         if (locked) LockWindow { AppLockOverlay(lockSetting) } else AppLockOverlay(lockSetting)
                     }
                 }
@@ -211,11 +216,13 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        started = true
         visible++
     }
 
     override fun onStop() {
         super.onStop()
+        started = false
         // Leaving the app without PiP pauses playback (the progress gets reported on pause).
         if (!isInPictureInPictureMode) vm.engine.value?.pause()
         visible = (visible - 1).coerceAtLeast(0)
