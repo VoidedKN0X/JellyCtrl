@@ -5,6 +5,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -17,33 +23,112 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.vknxworks.jellyctrl.R
 
+/** One set of Ctrl / Signal colours. [CtrlColors.Dark] and [CtrlColors.Light] are the two the app uses. */
+@Immutable
+data class CtrlPalette(
+    val isDark: Boolean,
+    val background: Color,
+    val surface: Color,
+    val raised: Color,
+    /** Card borders. */
+    val outline: Color,
+    /** Borders on buttons, fields and the floating bar. */
+    val controlOutline: Color,
+    val divider: Color,
+    val text: Color,
+    val muted: Color,
+    /** Disabled and stopped states. */
+    val inactive: Color,
+    /** Accent for text, icons, thin lines and focus borders (the fill colour is too pale for text on white). */
+    val accentText: Color,
+    val progressTrack: Color,
+    val progressFill: Color,
+    val switchTrackOff: Color,
+    val switchKnobOff: Color,
+    val pinEmpty: Color,
+    val error: Color,
+    val onError: Color,
+    val warning: Color,
+)
+
+/** The palette for the current theme. Set by [JellyCtrlTheme]; read it through [CtrlColors]. */
+val LocalCtrlColors = staticCompositionLocalOf { CtrlColors.Dark }
+
 /**
- * Ctrl / Signal colours, shared by every Ctrl series app. Dark only.
- * [Accent] is the one place the accent is set; everything else reads it from here or from the colour scheme.
+ * Ctrl / Signal colours, shared by every Ctrl series app, in a dark and a light version that follow the
+ * phone's dark theme setting. [Accent] is the one place the accent is set. The other tokens read the
+ * current palette, so they can only be used while composing.
  */
 object CtrlColors {
+    /** Accent fill: hero cards, primary buttons, the selected tab, switch tracks, PIN dots. Same in both themes. */
     val Accent = Color(0xFFB48CFF)
+    /** Content on an accent fill. */
     val OnAccent = Color(0xFF08080A)
 
-    val Background = Color(0xFF08080A)
-    val Surface = Color(0xFF141417)
-    val Raised = Color(0xFF1C1C21)
-    /** Card borders. */
-    val Outline = Color(0xFF232328)
-    /** Borders on buttons, fields and the floating bar. */
-    val ControlOutline = Color(0xFF2A2A2F)
-    val Divider = Color(0xFF1E1E23)
+    val Dark = CtrlPalette(
+        isDark = true,
+        background = Color(0xFF08080A),
+        surface = Color(0xFF141417),
+        raised = Color(0xFF1C1C21),
+        outline = Color(0xFF232328),
+        controlOutline = Color(0xFF2A2A2F),
+        divider = Color(0xFF1E1E23),
+        text = Color(0xFFF4F4F2),
+        muted = Color(0xFFA3A3AB),
+        inactive = Color(0xFF8C8C94),
+        accentText = Accent,
+        progressTrack = Color(0xFF26262C),
+        progressFill = Color(0xFFF4F4F2),
+        switchTrackOff = Color(0xFF2A2A30),
+        switchKnobOff = Color(0xFF8C8C94),
+        pinEmpty = Color(0xFF3A3A41),
+        error = Color(0xFFFF6B6B),
+        onError = Color(0xFF08080A),
+        warning = Color(0xFFF2C38B),
+    )
 
-    val Text = Color(0xFFF4F4F2)
-    val Muted = Color(0xFFA3A3AB)
-    /** Disabled and stopped states. */
-    val Inactive = Color(0xFF8C8C94)
+    val Light = CtrlPalette(
+        isDark = false,
+        background = Color(0xFFF5F5F1),
+        surface = Color(0xFFFFFFFF),
+        raised = Color(0xFFECECE7),
+        outline = Color(0xFFDEDED7),
+        controlOutline = Color(0xFFD2D2CA),
+        divider = Color(0xFFE6E6E0),
+        text = Color(0xFF0B0B0D),
+        muted = Color(0xFF5C5C64),
+        inactive = Color(0xFF74747C),
+        accentText = Color(0xFF6A3BDB),
+        progressTrack = Color(0xFFE2E2DC),
+        progressFill = Color(0xFF0B0B0D),
+        switchTrackOff = Color(0xFFDCDCD5),
+        switchKnobOff = Color(0xFF74747C),
+        pinEmpty = Color(0xFFC9C9C1),
+        error = Color(0xFFD93636),
+        onError = Color(0xFFFFFFFF),
+        warning = Color(0xFF9A5B00),
+    )
 
-    val ProgressTrack = Color(0xFF26262C)
-    val SwitchTrackOff = Color(0xFF2A2A30)
-    val PinEmpty = Color(0xFF3A3A41)
-    val Error = Color(0xFFFF6B6B)
-    val Warning = Color(0xFFF2C38B)
+    val current: CtrlPalette @Composable @ReadOnlyComposable get() = LocalCtrlColors.current
+    val isDark: Boolean @Composable @ReadOnlyComposable get() = current.isDark
+
+    val Background: Color @Composable @ReadOnlyComposable get() = current.background
+    val Surface: Color @Composable @ReadOnlyComposable get() = current.surface
+    val Raised: Color @Composable @ReadOnlyComposable get() = current.raised
+    val Outline: Color @Composable @ReadOnlyComposable get() = current.outline
+    val ControlOutline: Color @Composable @ReadOnlyComposable get() = current.controlOutline
+    val Divider: Color @Composable @ReadOnlyComposable get() = current.divider
+    val Text: Color @Composable @ReadOnlyComposable get() = current.text
+    val Muted: Color @Composable @ReadOnlyComposable get() = current.muted
+    val Inactive: Color @Composable @ReadOnlyComposable get() = current.inactive
+    val AccentText: Color @Composable @ReadOnlyComposable get() = current.accentText
+    val ProgressTrack: Color @Composable @ReadOnlyComposable get() = current.progressTrack
+    val ProgressFill: Color @Composable @ReadOnlyComposable get() = current.progressFill
+    val SwitchTrackOff: Color @Composable @ReadOnlyComposable get() = current.switchTrackOff
+    val SwitchKnobOff: Color @Composable @ReadOnlyComposable get() = current.switchKnobOff
+    val PinEmpty: Color @Composable @ReadOnlyComposable get() = current.pinEmpty
+    val Error: Color @Composable @ReadOnlyComposable get() = current.error
+    val Warning: Color @Composable @ReadOnlyComposable get() = current.warning
 }
 
 /** Corner sizes of the Signal look. */
@@ -62,44 +147,49 @@ object CtrlShapes {
     val SheetTop = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
 }
 
-private val SignalDark = darkColorScheme(
-    primary = CtrlColors.Accent,
-    onPrimary = CtrlColors.OnAccent,
+private fun signalScheme(p: CtrlPalette) = (if (p.isDark) darkColorScheme() else lightColorScheme()).copy(
+    // Material's "primary" is used for accent text and icons (text buttons, selected rows, links); fills use
+    // the container colours or [CtrlColors.Accent] directly.
+    primary = p.accentText,
+    onPrimary = if (p.isDark) CtrlColors.OnAccent else Color.White,
     primaryContainer = CtrlColors.Accent,
     onPrimaryContainer = CtrlColors.OnAccent,
-    inversePrimary = CtrlColors.Accent,
-    secondary = CtrlColors.Text,
-    onSecondary = CtrlColors.OnAccent,
+    inversePrimary = p.accentText,
+    secondary = p.text,
+    onSecondary = p.background,
     secondaryContainer = CtrlColors.Accent,
     onSecondaryContainer = CtrlColors.OnAccent,
-    tertiary = CtrlColors.Warning,
-    onTertiary = CtrlColors.OnAccent,
-    tertiaryContainer = CtrlColors.Raised,
-    onTertiaryContainer = CtrlColors.Warning,
-    background = CtrlColors.Background,
-    onBackground = CtrlColors.Text,
-    surface = CtrlColors.Surface,
-    onSurface = CtrlColors.Text,
-    surfaceVariant = CtrlColors.Raised,
-    onSurfaceVariant = CtrlColors.Muted,
+    tertiary = p.warning,
+    onTertiary = p.background,
+    tertiaryContainer = p.raised,
+    onTertiaryContainer = p.warning,
+    background = p.background,
+    onBackground = p.text,
+    surface = p.surface,
+    onSurface = p.text,
+    surfaceVariant = p.raised,
+    onSurfaceVariant = p.muted,
     surfaceTint = Color.Transparent,
-    surfaceBright = CtrlColors.Raised,
-    surfaceDim = CtrlColors.Background,
-    surfaceContainerLowest = CtrlColors.Background,
-    surfaceContainerLow = CtrlColors.Surface,
-    surfaceContainer = CtrlColors.Surface,
-    surfaceContainerHigh = CtrlColors.Surface,
-    surfaceContainerHighest = CtrlColors.Raised,
-    inverseSurface = CtrlColors.Text,
-    inverseOnSurface = CtrlColors.OnAccent,
-    outline = CtrlColors.ControlOutline,
-    outlineVariant = CtrlColors.Outline,
-    error = CtrlColors.Error,
-    onError = CtrlColors.OnAccent,
-    errorContainer = CtrlColors.Raised,
-    onErrorContainer = CtrlColors.Error,
+    surfaceBright = p.raised,
+    surfaceDim = p.background,
+    surfaceContainerLowest = p.background,
+    surfaceContainerLow = p.surface,
+    surfaceContainer = p.surface,
+    surfaceContainerHigh = p.surface,
+    surfaceContainerHighest = p.raised,
+    inverseSurface = p.text,
+    inverseOnSurface = p.background,
+    outline = p.controlOutline,
+    outlineVariant = p.outline,
+    error = p.error,
+    onError = p.onError,
+    errorContainer = p.raised,
+    onErrorContainer = p.error,
     scrim = Color.Black,
 )
+
+private val SignalDark = signalScheme(CtrlColors.Dark)
+private val SignalLight = signalScheme(CtrlColors.Light)
 
 private fun grotesk(weight: Int) = Font(
     R.font.space_grotesk,
@@ -171,10 +261,22 @@ private val SignalShapes = Shapes(
 /** Horizontal page margin used everywhere. */
 val Gutter = 20.dp
 
-/** The Ctrl / Signal theme. Always dark; no wallpaper (Material You) colours. */
+/**
+ * The Ctrl / Signal theme. Follows the phone's dark theme setting unless [dark] is given (the video player
+ * always passes true). No wallpaper (Material You) colours.
+ */
 @Composable
-fun JellyCtrlTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = SignalDark, typography = SignalTypography, shapes = SignalShapes, content = content)
+fun JellyCtrlTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+    val palette = if (dark) CtrlColors.Dark else CtrlColors.Light
+    CompositionLocalProvider(LocalCtrlColors provides palette) {
+        MaterialTheme(colorScheme = if (dark) SignalDark else SignalLight, typography = SignalTypography, shapes = SignalShapes, content = content)
+    }
+}
+
+/** Always the dark Signal palette, whatever the phone uses: for content-first screens like the photo viewer. */
+@Composable
+fun ForceDarkSignal(content: @Composable () -> Unit) {
+    JellyCtrlTheme(dark = true, content = content)
 }
 
 /**

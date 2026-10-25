@@ -394,11 +394,11 @@ private fun Hero(item: BaseItemDto, client: JellyfinClient, wide: Boolean, width
             if (item.type == "Episode" || item.type == "Season") {
                 CtrlSectionLabel(
                     item.seriesName.orEmpty(),
-                    color = CtrlColors.Accent,
+                    color = CtrlColors.AccentText,
                     modifier = Modifier.clickable { item.seriesId?.let { nav.navigate(ItemRoute(it)) } }.padding(vertical = 4.dp),
                 )
             } else {
-                item.type?.let { CtrlSectionLabel(typeLabel(it), color = CtrlColors.Accent) }
+                item.type?.let { CtrlSectionLabel(typeLabel(it), color = CtrlColors.AccentText) }
             }
             val logo = if (item.type == "Episode") null else client.logoImage(item, 800)
             if (logo != null) {
@@ -447,7 +447,7 @@ private fun SquareHeader(item: BaseItemDto, client: JellyfinClient) {
             Text(
                 (artist?.name ?: item.albumArtist.orEmpty()).uppercase(),
                 style = CtrlType.LabelStrong.copy(fontSize = 12.sp),
-                color = CtrlColors.Accent,
+                color = CtrlColors.AccentText,
                 modifier = Modifier.clickable { artist?.id?.let { nav.navigate(ItemRoute(it)) } },
             )
         }
@@ -847,7 +847,7 @@ fun EpisodeRow(ep: BaseItemDto, client: JellyfinClient, onClick: () -> Unit, onP
         Box(Modifier.width(148.dp).aspectRatio(16f / 9f).clip(CtrlShapes.Poster).border(1.dp, CtrlColors.Outline, CtrlShapes.Poster).clickable(onClick = onPlay)) {
             ArtImage(client.landscapeImage(ep, 400), Modifier.fillMaxSize(), placeholderText = ep.name)
             Box(
-                Modifier.align(Alignment.Center).size(36.dp).clip(CtrlShapes.Badge).background(CtrlColors.Background.copy(alpha = 0.65f)),
+                Modifier.align(Alignment.Center).size(36.dp).clip(CtrlShapes.Badge).background(CtrlColors.Dark.background.copy(alpha = 0.65f)),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.PlayArrow, stringResource(R.string.play), tint = Color.White, modifier = Modifier.size(22.dp)) }
             ep.resumeProgress()?.let { ArtProgress(it, Modifier.align(Alignment.BottomCenter)) }
@@ -868,7 +868,7 @@ fun EpisodeRow(ep: BaseItemDto, client: JellyfinClient, onClick: () -> Unit, onP
                 )
                 if (ep.userData?.played == true) {
                     Spacer(Modifier.width(6.dp))
-                    CtrlStatusDot(CtrlColors.Accent, Modifier.semantics { contentDescription = str(R.string.watched) })
+                    CtrlStatusDot(CtrlColors.AccentText, Modifier.semantics { contentDescription = str(R.string.watched) })
                 }
             }
             Text(
@@ -951,10 +951,10 @@ private fun TrackRow(d: Detail, index: Int, track: BaseItemDto, client: Jellyfin
             }
         }
         if (playing) {
-            CtrlStatusDot(CtrlColors.Accent)
+            CtrlStatusDot(CtrlColors.AccentText)
             Spacer(Modifier.width(8.dp))
         }
-        Text(formatClock((track.runTimeTicks ?: 0).ticksToMs()), style = CtrlType.Mono, color = if (playing) CtrlColors.Accent else MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(formatClock((track.runTimeTicks ?: 0).ticksToMs()), style = CtrlType.Mono, color = if (playing) CtrlColors.AccentText else MaterialTheme.colorScheme.onSurfaceVariant)
         if (isPlaylist && track.playlistItemId != null) {
             IconButton(onClick = {
                 scope.launch {

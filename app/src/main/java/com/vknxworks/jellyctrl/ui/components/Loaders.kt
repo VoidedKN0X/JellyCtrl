@@ -183,7 +183,7 @@ fun <T> LoadContent(
 
 @Composable
 fun LoadingView(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = CtrlColors.Accent, trackColor = CtrlColors.ProgressTrack, strokeWidth = 3.dp) }
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = CtrlColors.AccentText, trackColor = CtrlColors.ProgressTrack, strokeWidth = 3.dp) }
 }
 
 @Composable

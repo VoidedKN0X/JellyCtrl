@@ -293,7 +293,7 @@ private fun Hero(items: List<BaseItemDto>, client: JellyfinClient) {
                         Modifier.align(Alignment.BottomStart).padding(18.dp).widthIn(max = 560.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        CtrlSectionLabel(stringResource(R.string.home_label_featured, page + 1, items.size), color = CtrlColors.Accent)
+                        CtrlSectionLabel(stringResource(R.string.home_label_featured, page + 1, items.size), color = CtrlColors.AccentText)
                         val logo = client.logoImage(item, 800)
                         if (logo != null) {
                             ArtImage(

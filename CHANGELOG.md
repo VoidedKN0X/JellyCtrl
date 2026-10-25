@@ -4,6 +4,22 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.4.0 (2026-10-25)
+
+Light mode that follows the device theme.
+
+### New
+
+- **Light mode that follows the device theme.** JellyCtrl now switches between a dark and a light version of the Ctrl / Signal look by itself, following your phone's dark theme setting (including a schedule, if you've set one). It changes straight away while the app is open. There is no setting for it in the app, and it still doesn't use wallpaper (Material You) colours.
+- **Signal Light colours.** In light mode the background is a warm off-white (#F5F5F1) with white cards, light grey borders and lines, near-black text (#0B0B0D) and grey secondary text. The lavender accent (#B48CFF) is unchanged for filled things: the "Continue watching" card, main buttons, the selected tab, switches that are on, selected chips and the PIN dots. Accent-coloured text and icons, such as the slash in the JELLY/CTRL wordmark, labels like "NEW · 1 OF 6" and the type above a title, the playing song and watched dots, links, a text field you're typing in, dialog icons and the fingerprint key, use a darker violet (#6A3BDB) so they stay easy to read on white. Dark mode keeps the lavender everywhere.
+- **Status and navigation bars follow the theme.** They take the background colour, with dark icons in light mode and light icons in dark mode. The screen shown while the app starts also matches the theme.
+- **Everything follows the theme:** Home, Search, Library, title pages, the music player and mini player, the You page, Settings, the server dashboard, sign-in, the app lock screen, dialogs, sheets, switches (grey track with a grey knob when off in light mode), progress bars (dark fill on a light grey track in light mode) and the floating tab bar (white at 92% with a light border). Error text uses a darker red (#D93636) in light mode.
+- **Download notifications** use the accent colour of the current theme.
+
+### Unchanged
+
+- **The video player and the photo viewer stay dark** in both themes, so nothing bright sits next to the picture. This includes the player's audio, subtitle and options sheets and its status bar.
+
 ## v0.3.0 (2026-10-25)
 
 A new look: JellyCtrl now uses **Ctrl / Signal**, the design shared by every Ctrl series app. Everything works as before; only how it looks has changed.

@@ -277,8 +277,8 @@ fun PillButton(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     enabled: Boolean = true,
-    container: Color = MaterialTheme.colorScheme.primary,
-    content: Color = MaterialTheme.colorScheme.onPrimary,
+    container: Color = CtrlColors.Accent,
+    content: Color = CtrlColors.OnAccent,
 ) {
     CtrlButton(text, onClick, modifier, icon = icon, enabled = enabled, container = container, content = content)
 }
@@ -344,7 +344,7 @@ fun SeekBar(
     bufferedMs: Long = 0,
     activeColor: Color = MaterialTheme.colorScheme.primary,
     trackColor: Color = CtrlColors.ProgressTrack,
-    bufferColor: Color = Color.White.copy(alpha = 0.22f),
+    bufferColor: Color = CtrlColors.Muted.copy(alpha = 0.35f),
     height: Dp = 6.dp,
 ) {
     var dragging by remember { mutableStateOf(false) }
