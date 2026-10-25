@@ -275,7 +275,7 @@ class PlayerViewModel(
         return "X-Emby-Token: $token"
     }
 
-        private fun PlayerEngine.kind() = if (this is MpvEngine) EngineKind.MPV else EngineKind.MEDIA3
+    private fun PlayerEngine.kind() = if (this is MpvEngine) EngineKind.MPV else EngineKind.MEDIA3
 
     private suspend fun loadExtras(it: BaseItemDto, resolved: ResolvedPlayback) {
         val cl = client ?: return

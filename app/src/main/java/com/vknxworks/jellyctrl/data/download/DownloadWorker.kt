@@ -13,6 +13,7 @@ import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.await
 import com.vknxworks.jellyctrl.data.api.downloadUrl
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.isActive
@@ -99,6 +100,11 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             if (!part.renameTo(target)) return@withContext fail(itemId, str(R.string.could_not_save_file))
             repo.modify(itemId) { it.copy(status = DownloadStatus.DONE, downloadedBytes = target.length(), totalBytes = target.length()) }
             Result.success()
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+            // Stopped by WorkManager (cancelled, or the network went away): not a failure. It shows as waiting,
+            // so a stopped download doesn't keep counting as running (and keep the sign-in while locked).
+            withContext(NonCancellable) { runCatching { repo.modify(itemId) { it.copy(status = DownloadStatus.QUEUED) } } }
+            throw e
         } catch (e: Exception) {
             if (runAttemptCount < 3) {
                 repo.modify(itemId) { it.copy(status = DownloadStatus.QUEUED, error = e.message) }

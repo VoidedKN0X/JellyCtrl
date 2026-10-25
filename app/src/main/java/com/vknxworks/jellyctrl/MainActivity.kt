@@ -89,7 +89,9 @@ class MainActivity : ComponentActivity() {
                             savedRoot.SaveableStateProvider("root") { AppRoot() }
                         }
                     }
-                    AppLockOverlay(lockSetting)
+                    // Leaving the app (Back, swiped away) can lock it while this activity is already finishing:
+                    // no lock screen, dialog or fingerprint prompt then. It opens locked next time.
+                    if (!isFinishing && !isDestroyed) AppLockOverlay(lockSetting)
                 }
             }
         }

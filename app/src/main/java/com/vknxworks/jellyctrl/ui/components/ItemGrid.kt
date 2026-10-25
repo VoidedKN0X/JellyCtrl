@@ -80,7 +80,8 @@ fun PagedItemGrid(
         if (header != null) {
             item(span = { GridItemSpan(maxLineSpan) }, key = "header") { header() }
         }
-        items(loader.items, key = { it.id + (it.playlistItemId ?: "") }) { item ->
+        // Pages can overlap (random order, or items added while you scroll); a key twice would crash the grid.
+        items(loader.items.distinctBy { it.id + (it.playlistItemId ?: "") }, key = { it.id + (it.playlistItemId ?: "") }) { item ->
             PosterCard(
                 item, client, null,
                 onClick = { onItem(item) },
@@ -137,7 +138,7 @@ fun ItemGrid(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        items(items, key = { it.id + (it.playlistItemId ?: "") }) { item ->
+        items(items.distinctBy { it.id + (it.playlistItemId ?: "") }, key = { it.id + (it.playlistItemId ?: "") }) { item ->
             PosterCard(item, client, null, onClick = { onItem(item) }, onLongClick = onLongItem?.let { { it(item) } })
         }
     }

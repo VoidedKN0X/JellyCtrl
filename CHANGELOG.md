@@ -4,6 +4,28 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.1 (2026-10-25)
+
+Fixes for crashes when leaving the app, and a few security and privacy tightenings.
+
+### Fixed
+
+- **No more crash when closing JellyCtrl with the app lock on.** With the lock set to lock as soon as you leave, pressing Back on the first screen or swiping JellyCtrl away from the recent apps could crash it, because the lock screen tried to open on a screen that was already closing. JellyCtrl still locks, and the lock screen shows the next time you open it.
+- **No more crash when closing a video in picture-in-picture with the app lock on.** Closing the small window locks the app; the player's lock screen no longer tries to appear on the closing player.
+- **mpv no longer crashes the app when a video is closed.** Late taps, track changes or events that arrived just after the mpv player was shut down could reach it after it was gone; they're now ignored.
+- **Library lists no longer crash on duplicates.** When the server returned the same title on two pages (for example with **Random** order, or while items were being added), scrolling the library could crash it. Each title now shows once.
+- **Subtitle search no longer crashes** when two of your server's subtitle plugins return the same result; it's listed once.
+- **A stopped download no longer stays "downloading".** When Android or the Wi-Fi-only setting paused a download, it could keep showing as running (and, with the app lock on, keep the sign-in in memory). It now shows as waiting and carries on by itself later.
+
+### Security
+
+- **Fewer ways in for other apps.** Two receivers that Android libraries add for app-store and debugging tools (the profile installer and WorkManager diagnostics) are removed, so the music service and the "Play in JellyCtrl" link are the only parts other apps can reach.
+
+### Changed
+
+- **README:** the Privacy section says that subtitle search goes through your server's subtitle plugins, and that Open in ArrCtrl only passes the title's ids to ArrCtrl.
+- Internal cleanup: tidied code formatting.
+
 ## v0.5.0 (2026-10-25)
 
 Download subtitles while you watch, and jump from a movie or series to ArrCtrl.

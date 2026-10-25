@@ -72,7 +72,7 @@ class MpvEngine(
             when (eventId) {
                 MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED -> {
                     _state.update { it.copy(buffering = false, error = null) }
-                    pending?.let { onFileLoaded(it) }
+                    if (!released) pending?.let { onFileLoaded(it) }
                 }
                 MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART -> _state.update { it.copy(buffering = false) }
                 MPVLib.MpvEvent.MPV_EVENT_END_FILE -> {
@@ -140,6 +140,7 @@ class MpvEngine(
     }
 
     override fun load(request: LoadRequest) {
+        if (released) return
         if (!isAllowedSource(request.url)) {
             _state.value = EngineState(error = str(R.string.this_stream_address_isn_t_supported))
             return
@@ -200,22 +201,26 @@ class MpvEngine(
         }
     }
 
-    override fun play() = mpv.setPropertyBoolean("pause", false)
-    override fun pause() = mpv.setPropertyBoolean("pause", true)
+    // libmpv is native: after release() every call would touch freed memory, so they all stop there.
+    override fun play() { if (!released) mpv.setPropertyBoolean("pause", false) }
+    override fun pause() { if (!released) mpv.setPropertyBoolean("pause", true) }
 
     override fun seekTo(ms: Long) {
+        if (released) return
         _state.update { it.copy(positionMs = ms) }
         mpv.command(arrayOf("seek", "%.3f".format(java.util.Locale.US, ms.coerceAtLeast(0) / 1000.0), "absolute"))
     }
 
-    override fun setSpeed(speed: Float) = mpv.setPropertyDouble("speed", speed.toDouble())
+    override fun setSpeed(speed: Float) { if (!released) mpv.setPropertyDouble("speed", speed.toDouble()) }
 
     override fun selectAudio(ordinal: Int) {
+        if (released) return
         val audio = tracks().filter { it.type == "audio" }
         audio.getOrNull(ordinal)?.let { mpv.setPropertyInt("aid", it.id) }
     }
 
     override fun selectSubtitle(selection: SubSelection) {
+        if (released) return
         val subs = tracks().filter { it.type == "sub" }
         when (selection) {
             SubSelection.Off -> mpv.setPropertyString("sid", "no")
