@@ -229,6 +229,17 @@ class MpvEngine(
         }
     }
 
+    override fun addExternalSubtitle(sub: ExternalSub) {
+        if (released || !isWebUrl(sub.url)) return
+        val req = pending ?: return
+        pending = req.copy(externalSubs = req.externalSubs.filter { it.jellyfinIndex != sub.jellyfinIndex } + sub)
+        val title = sub.title ?: sub.language ?: "External"
+        // mpv adds and selects it straight away, without reopening the video.
+        setAuthFor(sub.url)
+        mpv.command(arrayOf("sub-add", sub.url, "select", title, sub.language ?: ""))
+        setAuthFor(req.url)
+    }
+
     override fun release() {
         if (released) return
         released = true

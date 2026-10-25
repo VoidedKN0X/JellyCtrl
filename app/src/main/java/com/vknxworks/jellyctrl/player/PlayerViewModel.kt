@@ -12,6 +12,7 @@ import okhttp3.Request
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.ItemQuery
 import com.vknxworks.jellyctrl.data.api.MediaSegment
+import com.vknxworks.jellyctrl.data.api.MediaStream
 import com.vknxworks.jellyctrl.data.api.ProgressReport
 import com.vknxworks.jellyctrl.data.api.TrickplayInfo
 import com.vknxworks.jellyctrl.data.api.closeLiveStream
@@ -401,6 +402,73 @@ class PlayerViewModel(
         }
         // External file not yet delivered, or a transcode that needs the server to add it.
         reload(audioIndex = pb.audioIndex, subtitleIndex = index)
+    }
+
+    /** Subtitle search needs the server: not for downloads played offline or live TV. */
+    val canSearchSubtitles: Boolean
+        get() {
+            val pb = playback ?: return false
+            val it = item ?: return false
+            return !pb.offline && client != null && !pb.source.isInfiniteStream && it.type !in setOf("TvChannel", "Program")
+        }
+
+    /**
+     * A subtitle was just downloaded to the server for the current item ([stream] is its new MediaStream, or null
+     * when the server hasn't listed it yet). Refreshes the item's streams and switches to the new subtitle: side-loaded
+     * into the running engine when it's a direct stream and nothing else moved, otherwise by reloading at the same spot.
+     */
+    fun onSubtitleDownloaded(stream: MediaStream?) {
+        val pb = playback ?: return
+        val id = item?.id ?: return
+        val cl = client ?: return
+        viewModelScope.launch {
+            try {
+                val fresh = cl.item(id)
+                item = fresh
+                val freshSource = fresh.mediaSources.firstOrNull { it.id == pb.source.id } ?: fresh.mediaSources.firstOrNull()
+                val target = stream?.let { s -> freshSource?.mediaStreams?.firstOrNull { it.type == "Subtitle" && it.index == s.index } }
+                if (target == null) {
+                    notice = str(R.string.subs_downloaded_not_ready)
+                    return@launch
+                }
+                val oldStreams = pb.source.mediaStreams
+                val freshStreams = freshSource!!.mediaStreams
+                // Jellyfin may renumber streams when a file is added; then only a reload gets every index right.
+                val unchanged = oldStreams.all { o -> freshStreams.any { f -> f.index == o.index && f.type == o.type && f.codec == o.codec && f.language == o.language && f.isExternal == o.isExternal } }
+                val engine = _engine.value
+                if (pb.isTranscoding || !unchanged || engine == null) {
+                    notice = str(R.string.subs_downloaded_x, target.displayTitle ?: target.language ?: "")
+                    reload(audioIndex = pb.audioIndex, subtitleIndex = target.index)
+                    return@launch
+                }
+                val format = when (target.codec?.lowercase()) {
+                    "vtt", "webvtt" -> "vtt"
+                    "ass" -> "ass"
+                    "ssa" -> "ssa"
+                    else -> "srt"
+                }
+                val sub = ExternalSub(
+                    jellyfinIndex = target.index,
+                    url = cl.url("Videos/$id/${pb.source.id ?: id}/Subtitles/${target.index}/0/Stream.$format").toString(),
+                    codec = format,
+                    language = target.language,
+                    title = target.displayTitle ?: target.title,
+                )
+                engine.addExternalSubtitle(sub)
+                playback = pb.copy(
+                    source = pb.source.copy(mediaStreams = freshStreams),
+                    externalSubs = pb.externalSubs.filter { it.jellyfinIndex != sub.jellyfinIndex } + sub,
+                    subtitleIndex = target.index,
+                    subtitle = SubSelection.External(target.index),
+                )
+                notice = str(R.string.subs_downloaded_x, sub.title ?: sub.language ?: "")
+                sendProgress()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                notice = e.friendlyMessage()
+            }
+        }
     }
 
     fun setMaxBitrate(bps: Long?) {

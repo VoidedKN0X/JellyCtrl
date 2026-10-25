@@ -15,6 +15,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Plays almost anything directly**: Media3 player with an automatic mpv fallback for difficult formats and subtitles
 - **Home screen** with Continue watching, Next up and the latest from each library
 - **Skip intro, recap and credits**, next-episode autoplay and scrubbing previews
+- **Search and download subtitles** from the player or the title page with your server's subtitle plugins (such as OpenSubtitles); they load straight into what you're watching
 - **Music** with background playback, queue, shuffle and synced lyrics
 - **Live TV** with channels, a guide, recordings and scheduled recordings
 - **Downloads** for watching offline, with a Wi-Fi-only option
@@ -24,6 +25,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **App lock** with its own PIN and optional fingerprint unlock; your sign-ins stay encrypted while the app is locked, and music and downloads that are already running carry on
 - **Hide in screenshots** and **Hide in recent apps**, two separate switches, both off by default
 - **Finds servers on your network**; Quick Connect sign-in, and approve Quick Connect codes for other devices; several accounts
+- **Open in ArrCtrl** from movie and series pages, to manage them in Radarr and Sonarr
 - Picture-in-picture, swipe gestures, audio and subtitle language preferences, a separate quality limit for mobile data
 
 ## Screenshots

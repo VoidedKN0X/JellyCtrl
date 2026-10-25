@@ -117,15 +117,7 @@ class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
         pendingAudio = request.audioOrdinal
         pendingSub = request.subtitle
         tracksApplied = false
-        val subs = request.externalSubs.map { s ->
-            MediaItem.SubtitleConfiguration.Builder(Uri.parse(s.url))
-                .setId(EXT_PREFIX + s.jellyfinIndex)
-                .setMimeType(subtitleMime(s.codec))
-                .setLanguage(s.language)
-                .setLabel(s.title ?: s.language)
-                .setSelectionFlags(0)
-                .build()
-        }
+        val subs = request.externalSubs.map { subtitleConfig(it) }
         val item = MediaItem.Builder()
             .setUri(request.url)
             .setMimeType(if (request.isHls) MimeTypes.APPLICATION_M3U8 else null)
@@ -153,6 +145,30 @@ class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
         pendingSub = selection
         applySub(selection)
     }
+
+    override fun addExternalSubtitle(sub: ExternalSub) {
+        val current = player.currentMediaItem ?: return
+        val existing = current.localConfiguration?.subtitleConfigurations.orEmpty()
+            .filter { it.id != EXT_PREFIX + sub.jellyfinIndex }
+        val item = current.buildUpon()
+            .setSubtitleConfigurations(existing + subtitleConfig(sub))
+            .build()
+        // Media3 only picks up new side-loaded files when the item is set again: same stream, same position.
+        val position = player.currentPosition.coerceAtLeast(0)
+        pendingSub = SubSelection.External(sub.jellyfinIndex)
+        tracksApplied = false
+        player.setMediaItem(item, position)
+        player.prepare()
+    }
+
+    private fun subtitleConfig(s: ExternalSub): MediaItem.SubtitleConfiguration =
+        MediaItem.SubtitleConfiguration.Builder(Uri.parse(s.url))
+            .setId(EXT_PREFIX + s.jellyfinIndex)
+            .setMimeType(subtitleMime(s.codec))
+            .setLanguage(s.language)
+            .setLabel(s.title ?: s.language)
+            .setSelectionFlags(0)
+            .build()
 
     private fun applyAudio(ordinal: Int) {
         val groups = player.currentTracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }

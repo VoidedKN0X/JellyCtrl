@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Subtitles
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Search
+import com.vknxworks.jellyctrl.ui.components.SubtitleSearchSheet
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
@@ -258,7 +260,23 @@ fun PlayerScreen(
     }
 
     when (sheet) {
-        "tracks" -> TracksSheet(vm, onDismiss = { sheet = null })
+        "tracks" -> TracksSheet(vm, onDismiss = { sheet = null }, onSearchSubtitles = { sheet = "subsearch" })
+        "subsearch" -> {
+            val cl = c.sessions.active.value?.client
+            val cur = vm.item
+            if (cl != null && cur != null) {
+                SubtitleSearchSheet(
+                    client = cl,
+                    itemId = cur.id,
+                    sourceId = vm.playback?.source?.id,
+                    title = if (cur.type == "Episode") listOfNotNull(cur.seriesName, cur.name).joinToString(" · ") else cur.name,
+                    onDismiss = { sheet = null },
+                    onDownloaded = { stream -> sheet = null; vm.onSubtitleDownloaded(stream) },
+                )
+            } else {
+                LaunchedEffect(Unit) { sheet = null }
+            }
+        }
         "settings" -> SettingsSheet(
             vm, st,
             rotationLocked = rotationLocked,
@@ -397,7 +415,7 @@ private fun Controls(
                     )
                 }
             }
-            if (pb != null && (pb.audioStreams.size > 1 || pb.subtitleStreams.isNotEmpty())) {
+            if (pb != null && (pb.audioStreams.size > 1 || pb.subtitleStreams.isNotEmpty() || vm.canSearchSubtitles)) {
                 CtrlIconSquare(Icons.Outlined.Subtitles, stringResource(R.string.audio_and_subtitles), onClick = { onSheet("tracks") }, container = PlayerControl)
             }
             CtrlIconSquare(Icons.Outlined.Tune, stringResource(R.string.playback_options), onClick = { onSheet("settings") }, container = PlayerControl)
@@ -580,7 +598,7 @@ private fun ErrorOverlay(message: String, onRetry: () -> Unit, onSwitch: () -> U
 }
 
 @Composable
-private fun TracksSheet(vm: PlayerViewModel, onDismiss: () -> Unit) {
+private fun TracksSheet(vm: PlayerViewModel, onDismiss: () -> Unit, onSearchSubtitles: () -> Unit) {
     val pb = vm.playback ?: return
     CtrlSheet(onDismissRequest = onDismiss) {
         LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
@@ -602,6 +620,17 @@ private fun TracksSheet(vm: PlayerViewModel, onDismiss: () -> Unit) {
                     listOfNotNull(s.codec?.uppercase(), if (s.isExternal) stringResource(R.string.external_file) else null, if (s.isForced) "forced" else null).joinToString(", "),
                     pb.subtitleIndex == s.index,
                 ) { vm.selectSubtitle(s.index); onDismiss() }
+            }
+            if (vm.canSearchSubtitles) {
+                item {
+                    GroupRow(
+                        stringResource(R.string.subs_search_action),
+                        stringResource(R.string.subs_search_hint),
+                        icon = Icons.Outlined.Search,
+                        iconTint = CtrlColors.AccentText,
+                        onClick = onSearchSubtitles,
+                    )
+                }
             }
         }
     }

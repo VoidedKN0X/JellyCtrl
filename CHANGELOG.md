@@ -4,6 +4,19 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.0 (2026-10-25)
+
+Download subtitles while you watch, and jump from a movie or series to ArrCtrl.
+
+### New
+
+- **Search for subtitles from the player.** Open **Audio and subtitles** in the video player and tap **Search for subtitles** at the bottom of the list. JellyCtrl asks the subtitle plugins on your Jellyfin server (such as OpenSubtitles) for subtitles for what you're watching and lists what they find, with the provider, the name of the release, the format, the rating and the number of downloads. Labels show exact matches for your file (listed first), hearing-impaired subtitles (for the deaf and hard of hearing), forced subtitles and machine-translated ones.
+- **Pick the language.** The search starts in your subtitle language from **Settings** (your Jellyfin subtitle language preference), or your phone's language when you haven't set one. Tap **Language** to search in any language your server knows.
+- **The download plays straight away.** Tap a result and the server downloads it and keeps it with the video. JellyCtrl then refreshes the list of subtitles and switches to the new one where you are, with both players: Media3 reopens the same stream at the same spot with the new subtitles added, and mpv adds them without stopping the video. When the server is converting the video, or the new file changes the order of the tracks, JellyCtrl reloads the video at the same position with the new subtitles chosen. The downloaded subtitles stay on the server for every device and every later playback.
+- **Search for subtitles from the title page too.** Movies, episodes and other videos have **Search for subtitles** in the **More** menu and at the bottom of the audio and subtitles picker. A downloaded subtitle is chosen for when you press Play.
+- **Clear messages when it can't work.** If your server has no subtitle plugin installed, JellyCtrl says so and explains that a server admin can install one (for example OpenSubtitles) under **Plugins** in the Jellyfin dashboard. If your account isn't allowed to manage subtitles, it says that the admin can turn on **Allow subtitle management** for you. When nothing is found it suggests trying another language. Subtitle search isn't offered for downloads played offline or for Live TV.
+- **Open in ArrCtrl.** Movie and series pages have **Open in ArrCtrl** in the **More** menu when ArrCtrl is installed. It opens the movie in Radarr or the series in Sonarr inside ArrCtrl, using the TMDB id for movies and the TVDB and TMDB ids for series (whichever Jellyfin has). It only shows when Jellyfin has one of those ids for the title. Only the ids are passed on, and only to ArrCtrl. An older ArrCtrl that doesn't know these links yet just opens.
+
 ## v0.4.0 (2026-10-25)
 
 Light mode that follows the device theme.

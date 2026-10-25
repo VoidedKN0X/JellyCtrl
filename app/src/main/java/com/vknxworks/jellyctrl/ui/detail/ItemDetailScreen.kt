@@ -63,6 +63,10 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.outlined.Subtitles
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import com.vknxworks.jellyctrl.ui.components.SubtitleSearchSheet
+import com.vknxworks.jellyctrl.ui.nav.ArrCtrlLink
 import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Movie
@@ -485,10 +489,12 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
     val dl = downloads.firstOrNull { it.itemId == item.id }
     var more by remember { mutableStateOf(false) }
     var tracksOpen by remember { mutableStateOf(false) }
+    var subSearch by remember { mutableStateOf(false) }
 
     val sources = item.mediaSources
     var source by remember(item.id) { mutableStateOf(sources.firstOrNull()) }
-    val streams = source?.mediaStreams ?: item.mediaStreams
+    // After a reload (a subtitle was just downloaded) the chosen version's streams come from the fresh item.
+    val streams = (sources.firstOrNull { it.id == source?.id } ?: source)?.mediaStreams ?: item.mediaStreams
     val audioStreams = streams.filter { it.type == "Audio" }
     val subStreams = streams.filter { it.type == "Subtitle" }
     var audio by remember(item.id, source?.id) {
@@ -503,6 +509,9 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
     val resumeMs = item.userData?.playbackPositionTicks?.ticksToMs() ?: 0L
     val isVideo = item.mediaType == "Video" || item.type in VIDEO_TYPES
     val isAudioSet = item.type in setOf("MusicAlbum", "Playlist") && d.children.firstOrNull()?.mediaType == "Audio"
+    // Subtitle providers on the server work on movies, episodes and other videos that have a file.
+    val canSearchSubs = isVideo && item.type !in setOf("TvChannel", "Program", "Recording") && item.locationType != "Virtual" && sources.isNotEmpty()
+    val arrLink = remember(item.id, item.providerIds) { ArrCtrlLink.linkFor(item)?.takeIf { ArrCtrlLink.installed(context) } }
 
     fun toggle(block: suspend () -> Unit) {
         scope.launch {
@@ -596,7 +605,7 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
             RoundAction(Icons.Outlined.MoreHoriz, stringResource(R.string.more), { more = true })
         }
 
-        if (isVideo && source != null && (audioStreams.size > 1 || subStreams.isNotEmpty() || sources.size > 1)) {
+        if (isVideo && source != null && (audioStreams.size > 1 || subStreams.isNotEmpty() || sources.size > 1 || canSearchSubs)) {
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -648,13 +657,39 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
             onSource = { source = it },
             onAudio = { audio = it },
             onSub = { sub = it },
+            onSearchSubtitles = if (canSearchSubs) ({ tracksOpen = false; subSearch = true }) else null,
             onDismiss = { tracksOpen = false },
+        )
+    }
+    if (subSearch) {
+        SubtitleSearchSheet(
+            client = c.api,
+            itemId = item.id,
+            sourceId = source?.id,
+            title = if (item.type == "Episode") listOfNotNull(item.seriesName, item.name).joinToString(" · ") else item.name,
+            onDismiss = { subSearch = false },
+            onDownloaded = { stream ->
+                subSearch = false
+                // Played with the new subtitle unless you pick another; the page reloads to list it.
+                if (stream != null) sub = stream
+                Toast.makeText(
+                    context,
+                    if (stream != null) str(R.string.subs_downloaded_x, stream.displayTitle ?: stream.language ?: "") else str(R.string.subs_downloaded_not_ready),
+                    Toast.LENGTH_SHORT,
+                ).show()
+                reload()
+            },
         )
     }
     if (more) {
         MoreSheet(
             d, resumeMs = resumeMs, isVideo = isVideo,
             onPlayFromStart = { playVideo(true) },
+            onSearchSubtitles = if (canSearchSubs) ({ subSearch = true }) else null,
+            onOpenInArr = if (arrLink == null) null else ({
+                if (!ArrCtrlLink.open(context, arrLink)) Toast.makeText(context, str(R.string.arrctrl_open_failed), Toast.LENGTH_SHORT).show()
+                Unit
+            }),
             onChanged = reload,
             onDismiss = { more = false },
         )
@@ -672,6 +707,7 @@ private fun TracksSheet(
     onSource: (MediaSourceInfo) -> Unit,
     onAudio: (MediaStream) -> Unit,
     onSub: (MediaStream?) -> Unit,
+    onSearchSubtitles: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     CtrlSheet(onDismissRequest = onDismiss) {
@@ -690,6 +726,10 @@ private fun TracksSheet(
                 SheetTitle(stringResource(R.string.subtitles))
                 CheckLine(stringResource(R.string.off), sub == null) { onSub(null) }
                 subStreams.forEach { s -> CheckLine(s.label(), s.index == sub?.index) { onSub(s) } }
+            }
+            if (onSearchSubtitles != null) {
+                if (subStreams.isEmpty()) SheetTitle(stringResource(R.string.subtitles))
+                SheetAction(Icons.Outlined.Search, stringResource(R.string.subs_search_action), onClick = onSearchSubtitles)
             }
         }
     }
@@ -725,6 +765,8 @@ private fun MoreSheet(
     resumeMs: Long,
     isVideo: Boolean,
     onPlayFromStart: () -> Unit,
+    onSearchSubtitles: (() -> Unit)?,
+    onOpenInArr: (() -> Unit)?,
     onChanged: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -758,6 +800,8 @@ private fun MoreSheet(
             if (item.type in setOf("MusicArtist", "MusicAlbum", "Audio")) SheetAction(Icons.Outlined.AutoAwesome, stringResource(R.string.instant_mix)) { act { c.music.instantMix(item) } }
             if (item.type != "Playlist" && item.type != "Person") SheetAction(Icons.AutoMirrored.Outlined.PlaylistAdd, stringResource(R.string.add_to_playlist)) { playlist = true }
             if (item.type == "Episode" && item.seriesId != null) SheetAction(Icons.Outlined.Tv, stringResource(R.string.go_to_show)) { act { nav.navigate(ItemRoute(item.seriesId)) } }
+            if (onSearchSubtitles != null) SheetAction(Icons.Outlined.Search, stringResource(R.string.subs_search_action)) { act(onSearchSubtitles) }
+            if (onOpenInArr != null) SheetAction(Icons.AutoMirrored.Outlined.OpenInNew, stringResource(R.string.open_in_arrctrl)) { act(onOpenInArr) }
             if (isAdmin) {
                 SheetAction(Icons.Outlined.Edit, stringResource(R.string.edit_details)) { act { nav.navigate(EditMetadataRoute(item.id)) } }
                 SheetAction(Icons.Outlined.Refresh, stringResource(R.string.refresh_metadata)) {
