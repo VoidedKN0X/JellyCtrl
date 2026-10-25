@@ -1,5 +1,23 @@
 package com.vknxworks.jellyctrl.player
 
+import com.vknxworks.jellyctrl.ui.components.CtrlIconSquare
+import com.vknxworks.jellyctrl.ui.components.CtrlButton
+import com.vknxworks.jellyctrl.ui.components.CtrlSecondaryButton
+import com.vknxworks.jellyctrl.ui.components.CtrlStatusDot
+import com.vknxworks.jellyctrl.ui.components.CtrlSectionLabel
+import com.vknxworks.jellyctrl.ui.components.ctrlTopDivider
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import com.vknxworks.jellyctrl.ui.theme.CtrlType
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Subtitles
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.sp
 import android.app.Activity
 import android.content.Context
 import android.media.AudioManager
@@ -37,21 +55,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.filled.Forward10
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PictureInPictureAlt
+import androidx.compose.material.icons.outlined.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Replay10
-import androidx.compose.material.icons.filled.ScreenLockRotation
+import androidx.compose.material.icons.outlined.ScreenLockRotation
 import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.Subtitles
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.outlined.HighQuality
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -102,8 +117,12 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
+import com.vknxworks.jellyctrl.ui.components.CtrlSheet
+import com.vknxworks.jellyctrl.ui.components.CtrlSwitch
 
-private val Scrim = Color.Black.copy(alpha = 0.6f)
+
+private val Scrim = CtrlColors.Background.copy(alpha = 0.72f)
+private val PlayerControl = CtrlColors.Surface.copy(alpha = 0.85f)
 
 @Composable
 fun PlayerScreen(
@@ -163,12 +182,12 @@ fun PlayerScreen(
         }
 
         if (vm.loading || (st.buffering && vm.error == null && !st.ended)) {
-            CircularProgressIndicator(Modifier.align(Alignment.Center).size(48.dp), color = Color.White, strokeWidth = 3.dp)
+            CircularProgressIndicator(Modifier.align(Alignment.Center).size(48.dp), color = CtrlColors.Accent, strokeWidth = 3.dp)
         }
 
         gestureHint?.let {
-            Surface(Modifier.align(Alignment.Center), shape = CircleShape, color = Scrim) {
-                Text(it, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
+            Surface(Modifier.align(Alignment.Center), shape = CtrlShapes.Button, color = Scrim, border = BorderStroke(1.dp, CtrlColors.ControlOutline)) {
+                Text(it, color = Color.White, style = CtrlType.MonoMedium.copy(fontSize = 15.sp), modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
             }
         }
 
@@ -196,8 +215,8 @@ fun PlayerScreen(
                 when {
                     seg != null -> Button(
                         onClick = { vm.skipSegment() },
-                        shape = CircleShape,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                        shape = CtrlShapes.Button,
+                        colors = ButtonDefaults.buttonColors(containerColor = CtrlColors.Accent, contentColor = CtrlColors.OnAccent),
                         contentPadding = PaddingValues(horizontal = 22.dp, vertical = 12.dp),
                     ) {
                         Text(
@@ -225,9 +244,10 @@ fun PlayerScreen(
             vm.notice?.let {
                 Surface(
                     Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(top = 72.dp),
-                    shape = CircleShape,
+                    shape = CtrlShapes.Control,
                     color = Scrim,
-                ) { Text(it, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp)) }
+                    border = BorderStroke(1.dp, CtrlColors.ControlOutline),
+                ) { Text(it, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) }
             }
 
             vm.error?.let { err ->
@@ -358,41 +378,48 @@ private fun Controls(
     ) {
         // Top: back, title, and two buttons.
         Row(
-            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 8.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = Color.White) }
+            CtrlIconSquare(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back), onClick = onBack, container = PlayerControl)
             Column(Modifier.weight(1f).padding(start = 4.dp)) {
                 val title = if (item?.type == "Episode") item.seriesName ?: item.name.orEmpty() else item?.name.orEmpty()
                 Text(title, color = Color.White, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (item?.type == "Episode") {
                     Text(
                         "S${item.parentIndexNumber ?: "?"} E${item.indexNumber ?: "?"}  ${item.name.orEmpty()}",
-                        color = Color.White.copy(alpha = 0.75f),
-                        style = MaterialTheme.typography.bodySmall,
+                        color = CtrlColors.Muted,
+                        style = CtrlType.Mono,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
             if (pb != null && (pb.audioStreams.size > 1 || pb.subtitleStreams.isNotEmpty())) {
-                IconButton(onClick = { onSheet("tracks") }) { Icon(Icons.Filled.Subtitles, stringResource(R.string.audio_and_subtitles), tint = Color.White) }
+                CtrlIconSquare(Icons.Outlined.Subtitles, stringResource(R.string.audio_and_subtitles), onClick = { onSheet("tracks") }, container = PlayerControl)
             }
-            IconButton(onClick = { onSheet("settings") }) { Icon(Icons.Filled.Tune, stringResource(R.string.playback_options), tint = Color.White) }
+            CtrlIconSquare(Icons.Outlined.Tune, stringResource(R.string.playback_options), onClick = { onSheet("settings") }, container = PlayerControl)
         }
 
         // Centre: back, play/pause, forward.
         Row(
             Modifier.align(Alignment.Center),
-            horizontalArrangement = Arrangement.spacedBy(40.dp),
+            horizontalArrangement = Arrangement.spacedBy(28.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = { vm.seekBy(-seekStepMs); onPoke() }, modifier = Modifier.size(56.dp)) {
-                Icon(Icons.Filled.Replay10, stringResource(R.string.back_x_seconds, seekStepMs / 1000), tint = Color.White, modifier = Modifier.size(36.dp))
-            }
+            CtrlIconSquare(
+                Icons.Filled.Replay10,
+                stringResource(R.string.back_x_seconds, seekStepMs / 1000),
+                onClick = { vm.seekBy(-seekStepMs); onPoke() },
+                size = 56.dp,
+                iconSize = 28.dp,
+                shape = CtrlShapes.MainButton,
+                container = PlayerControl,
+            )
             IconButton(
                 onClick = { vm.togglePlay(); onPoke() },
-                modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.16f)),
+                modifier = Modifier.size(88.dp).clip(RoundedCornerShape(30.dp)).background(CtrlColors.Accent),
             ) {
                 Icon(
                     when {
@@ -401,13 +428,19 @@ private fun Controls(
                         else -> Icons.Filled.PlayArrow
                     },
                     if (st.playWhenReady) stringResource(R.string.pause) else stringResource(R.string.play),
-                    tint = Color.White,
-                    modifier = Modifier.size(48.dp),
+                    tint = CtrlColors.OnAccent,
+                    modifier = Modifier.size(40.dp),
                 )
             }
-            IconButton(onClick = { vm.seekBy(seekStepMs); onPoke() }, modifier = Modifier.size(56.dp)) {
-                Icon(Icons.Filled.Forward10, stringResource(R.string.forward_x_seconds, seekStepMs / 1000), tint = Color.White, modifier = Modifier.size(36.dp))
-            }
+            CtrlIconSquare(
+                Icons.Filled.Forward10,
+                stringResource(R.string.forward_x_seconds, seekStepMs / 1000),
+                onClick = { vm.seekBy(seekStepMs); onPoke() },
+                size = 56.dp,
+                iconSize = 28.dp,
+                shape = CtrlShapes.MainButton,
+                container = PlayerControl,
+            )
         }
 
         // Bottom: time, seek bar, next.
@@ -431,20 +464,20 @@ private fun Controls(
             }
             if (live) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFFF5252)))
+                    CtrlStatusDot(CtrlColors.Accent)
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.live), color = Color.White, style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.live).uppercase(), color = CtrlColors.Accent, style = CtrlType.LabelStrong)
                 }
             } else {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(formatClock(shown), color = Color.White, style = MaterialTheme.typography.labelLarge)
+                    Text(formatClock(shown), color = Color.White, style = CtrlType.MonoMedium)
                     Spacer(Modifier.weight(1f))
                     val chapter = item?.chapters?.lastOrNull { it.startPositionTicks.ticksToMs() <= shown }?.name
                     if (chapter != null && (item?.chapters?.size ?: 0) > 1) {
-                        Text(chapter, color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(chapter, color = CtrlColors.Muted, style = CtrlType.Mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.weight(1f))
                     }
-                    Text("−" + formatClock((duration - shown).coerceAtLeast(0)), color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelLarge)
+                    Text("−" + formatClock((duration - shown).coerceAtLeast(0)), color = CtrlColors.Muted, style = CtrlType.MonoMedium)
                     if (vm.nextItem != null) {
                         Spacer(Modifier.width(12.dp))
                         TextButton(onClick = { vm.playNext(); onPoke() }) {
@@ -460,7 +493,7 @@ private fun Controls(
                     bufferedMs = st.bufferedMs,
                     onScrub = onScrub,
                     onSeek = onSeek,
-                    activeColor = Color.White,
+                    activeColor = CtrlColors.Accent,
                 )
             }
         }
@@ -482,7 +515,7 @@ private fun TrickplayPreview(info: TrickplayInfo, itemId: String, sourceId: Stri
     // Authenticated by the app-wide OkHttp interceptor (Coil shares that client), so no token in the URL.
     val url = client.url("Videos/$itemId/Trickplay/${info.width}/$imageIndex.jpg", mapOf("mediaSourceId" to sourceId)).toString()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.width(width).height(height).clip(RoundedCornerShape(10.dp)).clipToBounds().background(Color.Black)) {
+        Box(Modifier.width(width).height(height).clip(CtrlShapes.Control).border(1.dp, CtrlColors.ControlOutline, CtrlShapes.Control).clipToBounds().background(Color.Black)) {
             AsyncImage(
                 model = url,
                 contentDescription = null,
@@ -494,7 +527,7 @@ private fun TrickplayPreview(info: TrickplayInfo, itemId: String, sourceId: Stri
             )
         }
         Spacer(Modifier.height(4.dp))
-        Text(formatClock(positionMs), color = Color.White, style = MaterialTheme.typography.labelLarge)
+        Text(formatClock(positionMs), color = Color.White, style = CtrlType.MonoMedium)
     }
 }
 
@@ -507,19 +540,19 @@ private fun UpNextCard(
     onPlay: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Surface(Modifier.width(320.dp), shape = RoundedCornerShape(20.dp), color = Color(0xF01A1C20)) {
+    Surface(Modifier.width(320.dp), shape = CtrlShapes.Card, color = CtrlColors.Surface.copy(alpha = 0.96f), border = BorderStroke(1.dp, CtrlColors.Outline)) {
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(112.dp).height(64.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onPlay)) {
+            Box(Modifier.width(112.dp).height(64.dp).clip(CtrlShapes.Control).clickable(onClick = onPlay)) {
                 ArtImage(imageUrl, Modifier.fillMaxSize())
                 Icon(Icons.Filled.PlayArrow, null, tint = Color.White, modifier = Modifier.align(Alignment.Center))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.up_next_in_x_s, remainingMs / 1000), color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.up_next_in_x_s, remainingMs / 1000).uppercase(), color = CtrlColors.Accent, style = CtrlType.Label)
                 Text(title, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 subtitle?.let { Text(it, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.bodySmall, maxLines = 1) }
                 Row {
-                    TextButton(onClick = onPlay, contentPadding = PaddingValues(horizontal = 0.dp)) { Text(stringResource(R.string.play_now), color = Color.White) }
+                    TextButton(onClick = onPlay, contentPadding = PaddingValues(horizontal = 0.dp)) { Text(stringResource(R.string.play_now), color = CtrlColors.Accent) }
                     Spacer(Modifier.width(8.dp))
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.hide), color = Color.White.copy(alpha = 0.7f)) }
                 }
@@ -530,14 +563,14 @@ private fun UpNextCard(
 
 @Composable
 private fun ErrorOverlay(message: String, onRetry: () -> Unit, onSwitch: () -> Unit, onBack: () -> Unit, engineName: String?) {
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.88f)), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(CtrlColors.Background.copy(alpha = 0.92f)), contentAlignment = Alignment.Center) {
         Column(Modifier.padding(32.dp).width(420.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(stringResource(R.string.this_won_t_play_right_now), color = Color.White, style = MaterialTheme.typography.titleLarge)
             Text(message, color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.bodyMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onRetry, shape = CircleShape) { Text(stringResource(R.string.try_again)) }
+                CtrlButton(stringResource(R.string.try_again), onClick = onRetry, minHeight = 52.dp)
                 if (engineName != null) {
-                    OutlinedButton(onClick = onSwitch, shape = CircleShape) { Text(if (engineName == "mpv") stringResource(R.string.use_media3) else stringResource(R.string.use_mpv), color = Color.White) }
+                    CtrlSecondaryButton(if (engineName == "mpv") stringResource(R.string.use_media3) else stringResource(R.string.use_mpv), onClick = onSwitch, minHeight = 52.dp)
                 }
             }
             TextButton(onClick = onBack) { Text(stringResource(R.string.close), color = Color.White.copy(alpha = 0.7f)) }
@@ -548,7 +581,7 @@ private fun ErrorOverlay(message: String, onRetry: () -> Unit, onSwitch: () -> U
 @Composable
 private fun TracksSheet(vm: PlayerViewModel, onDismiss: () -> Unit) {
     val pb = vm.playback ?: return
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+    CtrlSheet(onDismissRequest = onDismiss) {
         LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
             if (pb.audioStreams.isNotEmpty()) {
                 item { SheetHeader(stringResource(R.string.audio)) }
@@ -591,7 +624,7 @@ private fun SettingsSheet(
 ) {
     val pb = vm.playback
     var quality by remember { mutableStateOf(false) }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+    CtrlSheet(onDismissRequest = onDismiss) {
         LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
                 SheetHeader(stringResource(R.string.speed))
@@ -607,25 +640,25 @@ private fun SettingsSheet(
                     GroupRow(
                         stringResource(R.string.quality),
                         QUALITY.firstOrNull { it.first == vm.maxBitrateOverride }?.second ?: stringResource(R.string.best_available),
-                        icon = Icons.Filled.HighQuality,
+                        icon = Icons.Outlined.HighQuality,
                         showChevron = true,
                         onClick = { quality = true },
                     )
                 }
             }
             item {
-                GroupRow(stringResource(R.string.picture_in_picture), icon = Icons.Filled.PictureInPictureAlt, onClick = onPip)
+                GroupRow(stringResource(R.string.picture_in_picture), icon = Icons.Outlined.PictureInPictureAlt, onClick = onPip)
             }
             item {
-                GroupRow(stringResource(R.string.lock_rotation), icon = Icons.Filled.ScreenLockRotation, onClick = onToggleRotationLock) {
-                    Switch(rotationLocked, onCheckedChange = { onToggleRotationLock() })
+                GroupRow(stringResource(R.string.lock_rotation), icon = Icons.Outlined.ScreenLockRotation, onClick = onToggleRotationLock) {
+                    CtrlSwitch(rotationLocked, onCheckedChange = { onToggleRotationLock() })
                 }
             }
             item {
                 GroupRow(
                     stringResource(if (pb?.engine == EngineKind.MPV) R.string.player_mpv else R.string.player_media3),
                     stringResource(if (pb?.engine == EngineKind.MPV) R.string.switch_to_media3_hint else R.string.switch_to_mpv_hint),
-                    icon = Icons.Filled.Memory,
+                    icon = Icons.Outlined.Memory,
                     onClick = { vm.switchEngine(); onDismiss() },
                 )
             }
@@ -646,7 +679,7 @@ private fun SettingsSheet(
                             pb.source.bitrate?.let { stringResource(R.string.x_mbps, it / 1_000_000) },
                             if (pb.offline) "downloaded" else null,
                         ).joinToString(", "),
-                        icon = Icons.Filled.Info,
+                        icon = Icons.Outlined.Info,
                         iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -670,10 +703,11 @@ private fun ChipLine(labels: List<String>, selected: Int, onSelect: (Int) -> Uni
             Text(
                 labels[i],
                 style = MaterialTheme.typography.labelLarge,
-                color = if (isSel) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                color = if (isSel) CtrlColors.OnAccent else CtrlColors.Text,
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .background(if (isSel) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .clip(CtrlShapes.Chip)
+                    .background(if (isSel) CtrlColors.Accent else CtrlColors.Raised)
+                    .border(1.dp, if (isSel) CtrlColors.Accent else CtrlColors.ControlOutline, CtrlShapes.Chip)
                     .clickable { onSelect(i) }
                     .padding(horizontal = 16.dp, vertical = 9.dp),
             )
@@ -683,17 +717,13 @@ private fun ChipLine(labels: List<String>, selected: Int, onSelect: (Int) -> Uni
 
 @Composable
 private fun SheetHeader(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 10.dp),
-    )
+    CtrlSectionLabel(text, Modifier.padding(start = 24.dp, top = 16.dp, bottom = 10.dp))
 }
 
 @Composable
 private fun CheckRow(title: String, subtitle: String?, selected: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 24.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 8.dp).ctrlTopDivider().heightIn(min = 52.dp).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -702,6 +732,6 @@ private fun CheckRow(title: String, subtitle: String?, selected: Boolean, onClic
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        if (selected) Icon(Icons.Filled.Check, stringResource(R.string.selected), tint = MaterialTheme.colorScheme.primary)
+        if (selected) CtrlStatusDot(CtrlColors.Accent, Modifier.semantics { contentDescription = str(R.string.selected) })
     }
 }

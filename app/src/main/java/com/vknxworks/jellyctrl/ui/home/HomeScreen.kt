@@ -1,5 +1,22 @@
 package com.vknxworks.jellyctrl.ui.home
 
+import com.vknxworks.jellyctrl.ui.components.CtrlTopBar
+import com.vknxworks.jellyctrl.ui.components.CtrlIconSquare
+import com.vknxworks.jellyctrl.ui.components.CtrlHeroCard
+import com.vknxworks.jellyctrl.ui.components.CtrlSectionLabel
+import com.vknxworks.jellyctrl.ui.components.CtrlProgressBar
+import com.vknxworks.jellyctrl.ui.components.CtrlButton
+import com.vknxworks.jellyctrl.ui.components.CtrlSecondaryButton
+import com.vknxworks.jellyctrl.ui.components.episodeCode
+import com.vknxworks.jellyctrl.ui.components.timeLeft
+import com.vknxworks.jellyctrl.ui.components.resumeProgress
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import com.vknxworks.jellyctrl.ui.theme.CtrlType
+import androidx.compose.material.icons.outlined.Cast
+import androidx.compose.foundation.border
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +41,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.VideoLibrary
@@ -143,10 +159,12 @@ fun HomeScreen() {
             }
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp + LocalBottomClearance.current)) {
+                    item("topbar") { TopActions(Modifier.statusBarsPadding()) }
+                    data.resume.firstOrNull()?.let { first ->
+                        item("resume-hero") { ResumeHeroCard(first, client) }
+                    }
                     if (data.featured.isNotEmpty()) {
                         item("hero") { Hero(data.featured, client) }
-                    } else {
-                        item("spacer") { Spacer(Modifier.statusBarsPadding().height(64.dp)) }
                     }
                     item("resume") {
                         ItemRow(
@@ -176,7 +194,6 @@ fun HomeScreen() {
                         )
                     }
                 }
-                TopActions(client, Modifier.align(Alignment.TopEnd))
             }
         }
     }
@@ -184,25 +201,56 @@ fun HomeScreen() {
     menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }, onChanged = { loader.reload(silent = true) }) }
 }
 
+/** JELLY/CTRL wordmark, the remote-control button and your profile picture. */
 @Composable
-private fun TopActions(client: JellyfinClient, modifier: Modifier) {
-    val c = LocalContext.current.container
+private fun TopActions(modifier: Modifier) {
     val nav = LocalNavigator.current
-    val session by c.sessions.active.collectAsStateWithLifecycle()
-    val acc = session?.account
-    Row(modifier.statusBarsPadding().padding(end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { nav.navigate(RemoteRoute) }) {
-            Icon(Icons.Filled.Cast, stringResource(R.string.control_another_device), tint = Color.White)
+    CtrlTopBar(modifier) {
+        CtrlIconSquare(Icons.Outlined.Cast, stringResource(R.string.control_another_device), onClick = { nav.navigate(RemoteRoute) })
+    }
+}
+
+/** The one thing you're most likely to want: the title you were last watching, on an accent card. */
+@Composable
+private fun ResumeHeroCard(item: BaseItemDto, client: JellyfinClient) {
+    val nav = LocalNavigator.current
+    val progress = item.resumeProgress() ?: 0f
+    val left = item.timeLeft()
+    CtrlHeroCard(
+        Modifier.fillMaxWidth().padding(horizontal = Gutter).padding(top = 10.dp, bottom = 4.dp),
+        onClick = { nav.openItem(item) },
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            CtrlSectionLabel(stringResource(R.string.home_label_continue), Modifier.weight(1f), color = CtrlColors.OnAccent, strong = true)
+            item.episodeCode()?.let { CtrlSectionLabel(it, color = CtrlColors.OnAccent, strong = true) }
         }
-        IconButton(onClick = { nav.navigate(ProfileRoute) }) {
-            Box(Modifier.size(32.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                if (acc?.userImageTag != null) {
-                    ArtImage(client.userImageUrl(acc.userId, acc.userImageTag), Modifier.fillMaxSize())
-                } else {
-                    Text(acc?.userName?.take(1)?.uppercase().orEmpty(), style = MaterialTheme.typography.labelLarge, color = Color.White)
-                }
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                "${(progress * 100).toInt()}",
+                style = CtrlType.BigNumber,
+                color = CtrlColors.OnAccent,
+            )
+            Text("%", style = CtrlType.BigNumber.copy(fontSize = 28.sp, lineHeight = 32.sp), color = CtrlColors.OnAccent, modifier = Modifier.padding(bottom = 4.dp))
+            Spacer(Modifier.weight(1f))
+            Box(
+                Modifier.size(56.dp).clip(CtrlShapes.MainButton).background(CtrlColors.OnAccent).clickable(role = Role.Button) { nav.play(item) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.PlayArrow, stringResource(R.string.play), tint = CtrlColors.Accent, modifier = Modifier.size(28.dp))
             }
         }
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                if (item.type == "Episode") item.seriesName ?: item.name.orEmpty() else item.name.orEmpty(),
+                style = MaterialTheme.typography.titleMedium,
+                color = CtrlColors.OnAccent,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val sub = listOfNotNull(if (item.type == "Episode") item.name else null, left?.let { stringResource(R.string.home_x_left, it) }).joinToString(" · ")
+            if (sub.isNotBlank()) Text(sub, style = CtrlType.Mono, color = CtrlColors.OnAccent.copy(alpha = 0.75f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        CtrlProgressBar({ progress }, color = CtrlColors.OnAccent, trackColor = CtrlColors.OnAccent.copy(alpha = 0.18f))
     }
 }
 
@@ -214,26 +262,38 @@ private fun Hero(items: List<BaseItemDto>, client: JellyfinClient) {
     val bg = MaterialTheme.colorScheme.background
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 720.dp
-        val heroHeight = if (wide) (maxWidth * 0.42f).coerceIn(380.dp, 560.dp) else (maxWidth * 1.25f).coerceIn(440.dp, 600.dp)
-        Column {
-            HorizontalPager(pager, Modifier.fillMaxWidth().height(heroHeight), key = { items[it].id }) { page ->
+        val heroHeight = if (wide) (maxWidth * 0.40f).coerceIn(360.dp, 520.dp) else (maxWidth * 1.15f).coerceIn(400.dp, 540.dp)
+        Column(Modifier.padding(top = 14.dp)) {
+            HorizontalPager(
+                pager,
+                Modifier.fillMaxWidth().height(heroHeight),
+                key = { items[it].id },
+                contentPadding = PaddingValues(horizontal = Gutter),
+                pageSpacing = 10.dp,
+            ) { page ->
                 val item = items[page]
-                Box(Modifier.fillMaxSize().clickable { nav.openItem(item) }) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .clip(CtrlShapes.Hero)
+                        .border(1.dp, CtrlColors.Outline, CtrlShapes.Hero)
+                        .clickable { nav.openItem(item) },
+                ) {
                     ArtImage(client.backdropImage(item, if (wide) 1920 else 1280), Modifier.fillMaxSize())
                     Box(
                         Modifier.fillMaxSize().background(
                             Brush.verticalGradient(
-                                0f to Color.Black.copy(alpha = 0.45f),
-                                0.25f to Color.Transparent,
-                                0.55f to bg.copy(alpha = 0.35f),
-                                1f to bg,
+                                0f to Color.Transparent,
+                                0.45f to bg.copy(alpha = 0.25f),
+                                1f to bg.copy(alpha = 0.96f),
                             )
                         )
                     )
                     Column(
-                        Modifier.align(Alignment.BottomStart).padding(horizontal = Gutter).padding(bottom = 8.dp).widthIn(max = 560.dp),
+                        Modifier.align(Alignment.BottomStart).padding(18.dp).widthIn(max = 560.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
+                        CtrlSectionLabel(stringResource(R.string.home_label_featured, page + 1, items.size), color = CtrlColors.Accent)
                         val logo = client.logoImage(item, 800)
                         if (logo != null) {
                             ArtImage(
@@ -244,7 +304,7 @@ private fun Hero(items: List<BaseItemDto>, client: JellyfinClient) {
                         } else {
                             Text(
                                 item.name.orEmpty(),
-                                style = if (wide) MaterialTheme.typography.displayMedium else MaterialTheme.typography.displaySmall,
+                                style = if (wide) MaterialTheme.typography.displayLarge else MaterialTheme.typography.displaySmall,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -257,23 +317,18 @@ private fun Hero(items: List<BaseItemDto>, client: JellyfinClient) {
                             ),
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            PillButton(
+                            CtrlButton(
                                 stringResource(R.string.play),
                                 onClick = { nav.play(item) },
                                 icon = Icons.Filled.PlayArrow,
-                                container = Color.White,
-                                content = Color.Black,
+                                minHeight = 52.dp,
                             )
-                            FilledTonalButton(
+                            CtrlSecondaryButton(
+                                stringResource(R.string.details),
                                 onClick = { nav.openItem(item) },
-                                shape = CircleShape,
-                                modifier = Modifier.heightIn(min = 52.dp),
-                                contentPadding = PaddingValues(horizontal = 20.dp),
-                            ) {
-                                Icon(Icons.Outlined.Info, null, Modifier.size(20.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.details), style = MaterialTheme.typography.titleMedium)
-                            }
+                                icon = Icons.Outlined.Info,
+                                minHeight = 52.dp,
+                            )
                         }
                     }
                 }
@@ -290,8 +345,8 @@ private fun Hero(items: List<BaseItemDto>, client: JellyfinClient) {
                                 .padding(horizontal = 3.dp)
                                 .height(6.dp)
                                 .width(if (active) 18.dp else 6.dp)
-                                .clip(CircleShape)
-                                .background(if (active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant),
+                                .clip(CtrlShapes.Dot)
+                                .background(if (active) CtrlColors.Accent else CtrlColors.ControlOutline),
                         )
                     }
                 }

@@ -1,6 +1,14 @@
 package com.vknxworks.jellyctrl.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import com.vknxworks.jellyctrl.ui.theme.CtrlType
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +27,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,14 +59,14 @@ fun ArtImage(
 ) {
     val fallback: @Composable () -> Unit = {
         Box(
-            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            Modifier.fillMaxSize().background(CtrlColors.Raised),
             contentAlignment = Alignment.Center,
         ) {
             if (placeholderText != null) {
                 Text(
                     placeholderText,
                     modifier = Modifier.padding(10.dp),
-                    style = MaterialTheme.typography.labelLarge,
+                    style = CtrlType.MonoMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
@@ -77,7 +85,7 @@ fun ArtImage(
             modifier = modifier,
             contentScale = contentScale,
             error = { fallback() },
-            loading = { Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainer)) },
+            loading = { Box(Modifier.fillMaxSize().background(CtrlColors.Surface)) },
         )
     }
 }
@@ -85,25 +93,25 @@ fun ArtImage(
 /** Thin progress line drawn along the bottom edge of artwork. */
 @Composable
 fun ArtProgress(progress: Float, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(3.dp).background(Color.Black.copy(alpha = 0.45f))) {
-        Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(3.dp).background(MaterialTheme.colorScheme.primary))
+    Box(modifier.fillMaxWidth().height(4.dp).background(Color.Black.copy(alpha = 0.55f))) {
+        Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(4.dp).background(CtrlColors.Accent))
     }
 }
 
 @Composable
 private fun PlayedMark(modifier: Modifier) {
     Box(
-        modifier.size(22.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.55f)),
+        modifier.size(24.dp).clip(CtrlShapes.Chip).background(CtrlColors.Accent),
         contentAlignment = Alignment.Center,
-    ) { Icon(Icons.Filled.Check, stringResource(R.string.watched), Modifier.size(14.dp), tint = Color.White) }
+    ) { Icon(Icons.Outlined.Check, stringResource(R.string.watched), Modifier.size(15.dp), tint = CtrlColors.OnAccent) }
 }
 
 @Composable
 private fun UnplayedCount(count: Int, modifier: Modifier) {
     Box(
-        modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primary).padding(horizontal = 7.dp, vertical = 2.dp),
+        modifier.heightIn(min = 24.dp).clip(CtrlShapes.Chip).background(CtrlColors.Accent).padding(horizontal = 7.dp, vertical = 3.dp),
         contentAlignment = Alignment.Center,
-    ) { Text("$count", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary) }
+    ) { Text("$count", style = CtrlType.LabelStrong.copy(letterSpacing = 0.sp), color = CtrlColors.OnAccent) }
 }
 
 /** Minutes left on a partly watched item, e.g. "23m left". */
@@ -129,9 +137,9 @@ fun PosterCard(
     val aspect = if (landscape) 16f / 9f else item.posterAspect()
     val url = if (landscape) client.landscapeImage(item) else client.primaryImage(item)
     val base = if (width != null) modifier.width(width) else modifier.fillMaxWidth()
-    val shape = MaterialTheme.shapes.small
+    val shape = CtrlShapes.Poster
     Column(base.clip(shape).combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(aspect).clip(shape)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(aspect).clip(shape).border(1.dp, CtrlColors.Outline, shape)) {
             ArtImage(url, Modifier.fillMaxSize(), placeholderText = item.name)
             val ud = item.userData
             val unplayed = ud?.unplayedItemCount
@@ -143,8 +151,8 @@ fun PosterCard(
         }
         Text(
             if (landscape && item.type == "Episode") item.seriesName ?: item.name.orEmpty() else item.cardTitle(),
-            modifier = Modifier.padding(top = 8.dp, start = 2.dp, end = 2.dp),
-            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(top = 10.dp, start = 2.dp, end = 2.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -154,8 +162,8 @@ fun PosterCard(
             if (!sub.isNullOrBlank()) {
                 Text(
                     sub,
-                    modifier = Modifier.padding(horizontal = 2.dp),
-                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 2.dp, start = 2.dp, end = 2.dp),
+                    style = CtrlType.Mono.copy(fontSize = 11.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -184,12 +192,13 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier, onMore: (() -> U
         modifier
             .fillMaxWidth()
             .then(if (onMore != null) Modifier.clickable(onClick = onMore) else Modifier)
-            .padding(start = Gutter, end = Gutter, top = 20.dp, bottom = 10.dp),
+            .padding(start = Gutter, end = Gutter, top = 24.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (onMore != null) {
-            Text(stringResource(R.string.see_all), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(12.dp))
+            CtrlSectionLabel(stringResource(R.string.see_all))
         }
     }
 }

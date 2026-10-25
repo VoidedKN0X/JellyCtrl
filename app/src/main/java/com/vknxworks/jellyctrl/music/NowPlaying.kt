@@ -1,5 +1,16 @@
 package com.vknxworks.jellyctrl.music
 
+import com.vknxworks.jellyctrl.ui.components.CtrlIconSquare
+import com.vknxworks.jellyctrl.ui.components.CtrlSectionLabel
+import com.vknxworks.jellyctrl.ui.components.ctrlTopDivider
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import com.vknxworks.jellyctrl.ui.theme.CtrlType
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,10 +34,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.automirrored.filled.Subject
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.automirrored.outlined.QueueMusic
+import androidx.compose.material.icons.automirrored.outlined.Subject
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
@@ -34,7 +44,6 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,9 +82,10 @@ import com.vknxworks.jellyctrl.ui.components.rememberLoader
 import com.vknxworks.jellyctrl.ui.nav.ItemRoute
 import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import com.vknxworks.jellyctrl.ui.theme.ArtworkTint
-import com.vknxworks.jellyctrl.ui.theme.rememberArtworkColor
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.ui.components.CtrlSheet
+
 
 /** Floating card above the navigation bar while music plays. */
 @Composable
@@ -86,33 +96,39 @@ fun MiniPlayer(onOpen: () -> Unit) {
     LaunchedEffect(Unit) { music.connectIfRunning() }
     LaunchedEffect(s.hasMedia) { if (s.hasMedia) (context as? MainActivity)?.ensureNotificationPermission() }
     if (!s.hasMedia) return
-    val seed = rememberArtworkColor(s.artworkUri)
+    val seed: androidx.compose.ui.graphics.Color? = null
     ArtworkTint(seed) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 2.dp)
-                .glass(MaterialTheme.shapes.large, elevation = 12.dp, tint = MaterialTheme.colorScheme.surfaceContainerHighest),
+                .widthIn(max = 480.dp)
+                .padding(horizontal = 20.dp)
+                .glass(CtrlShapes.Card),
         ) {
             Box {
                 Row(
                     Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(start = 8.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.size(44.dp).clip(MaterialTheme.shapes.small)) { ArtImage(s.artworkUri, Modifier.fillMaxSize()) }
+                    Box(Modifier.size(44.dp).clip(CtrlShapes.Control)) { ArtImage(s.artworkUri, Modifier.fillMaxSize()) }
                     Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                         Text(s.title.orEmpty(), style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(s.artist.orEmpty(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(s.artist.orEmpty(), style = CtrlType.Mono, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    IconButton(onClick = { music.togglePlay() }) {
-                        Icon(if (s.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, if (s.isPlaying) stringResource(R.string.pause) else stringResource(R.string.play))
-                    }
-                    IconButton(onClick = { music.next() }) { Icon(Icons.Filled.SkipNext, stringResource(R.string.next_track)) }
+                    CtrlIconSquare(
+                        if (s.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        if (s.isPlaying) stringResource(R.string.pause) else stringResource(R.string.play),
+                        onClick = { music.togglePlay() },
+                        container = CtrlColors.Accent,
+                        content = CtrlColors.OnAccent,
+                        border = null,
+                    )
+                    IconButton(onClick = { music.next() }) { Icon(Icons.Filled.SkipNext, stringResource(R.string.next_track), tint = CtrlColors.Muted) }
                 }
                 val p = if (s.durationMs > 0) (s.positionMs.toFloat() / s.durationMs).coerceIn(0f, 1f) else 0f
                 Box(
-                    Modifier.align(Alignment.BottomStart).padding(horizontal = 16.dp).fillMaxWidth(p).height(2.dp)
-                        .clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+                    Modifier.align(Alignment.BottomStart).padding(horizontal = 18.dp).fillMaxWidth(p).height(2.dp)
+                        .clip(CtrlShapes.Dot).background(CtrlColors.Accent),
                 )
             }
         }
@@ -128,7 +144,7 @@ fun NowPlayingScreen() {
     val s by music.state.collectAsStateWithLifecycle()
     var panel by rememberSaveable { mutableStateOf<String?>(null) }
     var scrub by remember { mutableStateOf<Long?>(null) }
-    val seed = rememberArtworkColor(s.artworkUri)
+    val seed: androidx.compose.ui.graphics.Color? = null
 
     if (!s.hasMedia) {
         MessageView(Icons.Outlined.MusicNote, stringResource(R.string.nothing_playing), stringResource(R.string.play_an_album_a_playlist_or))
@@ -136,35 +152,36 @@ fun NowPlayingScreen() {
     }
 
     ArtworkTint(seed) {
-        val top = MaterialTheme.colorScheme.primaryContainer
-        val bg = MaterialTheme.colorScheme.background
         BoxWithConstraints(
-            Modifier.fillMaxSize().background(Brush.verticalGradient(0f to top, 0.75f to bg)),
+            Modifier.fillMaxSize().background(CtrlColors.Background),
         ) {
             val wide = maxWidth > maxHeight && maxWidth >= 600.dp
             val player: @Composable (Modifier) -> Unit = { mod ->
-                Column(mod.statusBarsPadding().padding(horizontal = 28.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = nav::back) { Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.close)) }
-                        Text(
-                            s.album.orEmpty(),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(onClick = { music.stop(); nav.back() }) { Icon(Icons.Filled.Stop, stringResource(R.string.stop_playback)) }
+                Column(mod.statusBarsPadding().padding(horizontal = 20.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        CtrlIconSquare(Icons.Outlined.KeyboardArrowDown, stringResource(R.string.close), onClick = nav::back)
+                        Column(Modifier.weight(1f).padding(horizontal = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            CtrlSectionLabel(stringResource(R.string.np_playing_from))
+                            Text(
+                                s.album.orEmpty().uppercase(),
+                                style = CtrlType.Label,
+                                color = CtrlColors.Text,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        CtrlIconSquare(Icons.Outlined.Stop, stringResource(R.string.stop_playback), onClick = { music.stop(); nav.back() })
                     }
                     Spacer(Modifier.height(20.dp))
                     Box(
-                        Modifier.widthIn(max = 440.dp).fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.large)
+                        Modifier.widthIn(max = 440.dp).fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(28.dp))
+                            .border(1.dp, CtrlColors.Outline, RoundedCornerShape(28.dp))
                             .clickable { s.itemId?.let { nav.navigate(ItemRoute(it)) } },
                     ) { ArtImage(s.artworkUri, Modifier.fillMaxSize()) }
                     Spacer(Modifier.height(28.dp))
                     Column(Modifier.widthIn(max = 440.dp).fillMaxWidth()) {
-                        Text(s.title.orEmpty(), style = MaterialTheme.typography.headlineSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(s.title.orEmpty(), style = MaterialTheme.typography.headlineMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Text(s.artist.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.height(16.dp))
                         SeekBar(
@@ -172,13 +189,13 @@ fun NowPlayingScreen() {
                             durationMs = s.durationMs,
                             onScrub = { scrub = it },
                             onSeek = { music.seekTo(it); scrub = null },
-                            trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
-                            bufferColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
+                            trackColor = CtrlColors.ProgressTrack,
+                            bufferColor = CtrlColors.ProgressTrack,
                         )
                         Row(Modifier.fillMaxWidth()) {
-                            Text(formatClock(scrub ?: s.positionMs), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(formatClock(scrub ?: s.positionMs), style = CtrlType.Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.weight(1f))
-                            Text(formatClock(s.durationMs), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(formatClock(s.durationMs), style = CtrlType.Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -190,19 +207,19 @@ fun NowPlayingScreen() {
                         IconButton(onClick = { music.toggleShuffle() }) {
                             Icon(Icons.Filled.Shuffle, stringResource(R.string.shuffle), tint = if (s.shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        IconButton(onClick = { music.previous() }, modifier = Modifier.size(56.dp)) { Icon(Icons.Filled.SkipPrevious, stringResource(R.string.previous), Modifier.size(36.dp)) }
+                        CtrlIconSquare(Icons.Filled.SkipPrevious, stringResource(R.string.previous), onClick = { music.previous() }, size = 56.dp, iconSize = 22.dp, shape = CtrlShapes.MainButton)
                         IconButton(
                             onClick = { music.togglePlay() },
-                            modifier = Modifier.size(76.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.size(88.dp).clip(RoundedCornerShape(30.dp)).background(CtrlColors.Accent),
                         ) {
                             Icon(
                                 if (s.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                 if (s.isPlaying) stringResource(R.string.pause) else stringResource(R.string.play),
-                                Modifier.size(40.dp),
-                                tint = MaterialTheme.colorScheme.onPrimary,
+                                Modifier.size(34.dp),
+                                tint = CtrlColors.OnAccent,
                             )
                         }
-                        IconButton(onClick = { music.next() }, modifier = Modifier.size(56.dp)) { Icon(Icons.Filled.SkipNext, stringResource(R.string.next), Modifier.size(36.dp)) }
+                        CtrlIconSquare(Icons.Filled.SkipNext, stringResource(R.string.next), onClick = { music.next() }, size = 56.dp, iconSize = 22.dp, shape = CtrlShapes.MainButton)
                         IconButton(onClick = { music.cycleRepeat() }) {
                             Icon(
                                 if (s.repeatMode == Player.REPEAT_MODE_ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
@@ -214,8 +231,8 @@ fun NowPlayingScreen() {
                     if (!wide) {
                         Spacer(Modifier.weight(1f))
                         Row(Modifier.fillMaxWidth().navigationBarsPadding(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            PanelButton(Icons.AutoMirrored.Filled.Subject, stringResource(R.string.lyrics)) { panel = "lyrics" }
-                            PanelButton(Icons.AutoMirrored.Filled.QueueMusic, stringResource(R.string.up_next)) { panel = "queue" }
+                            PanelButton(Icons.AutoMirrored.Outlined.Subject, stringResource(R.string.lyrics)) { panel = "lyrics" }
+                            PanelButton(Icons.AutoMirrored.Outlined.QueueMusic, stringResource(R.string.up_next)) { panel = "queue" }
                         }
                     }
                 }
@@ -225,8 +242,8 @@ fun NowPlayingScreen() {
                     player(Modifier.weight(1f).fillMaxSize())
                     Column(Modifier.weight(1f).fillMaxSize().statusBarsPadding()) {
                         Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            PanelButton(Icons.AutoMirrored.Filled.QueueMusic, stringResource(R.string.up_next), selected = panel != "lyrics") { panel = "queue" }
-                            PanelButton(Icons.AutoMirrored.Filled.Subject, stringResource(R.string.lyrics), selected = panel == "lyrics") { panel = "lyrics" }
+                            PanelButton(Icons.AutoMirrored.Outlined.QueueMusic, stringResource(R.string.up_next), selected = panel != "lyrics") { panel = "queue" }
+                            PanelButton(Icons.AutoMirrored.Outlined.Subject, stringResource(R.string.lyrics), selected = panel == "lyrics") { panel = "lyrics" }
                         }
                         if (panel == "lyrics") LyricsView(s) else QueueList(s)
                     }
@@ -237,7 +254,7 @@ fun NowPlayingScreen() {
         }
 
         if (!isWideScreen(context) && panel != null) {
-            ModalBottomSheet(onDismissRequest = { panel = null }, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+            CtrlSheet(onDismissRequest = { panel = null }) {
                 Box(Modifier.fillMaxWidth().height(520.dp)) {
                     if (panel == "lyrics") LyricsView(s) else QueueList(s)
                 }
@@ -256,15 +273,18 @@ private fun isWideScreen(context: android.content.Context): Boolean {
 private fun PanelButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, selected: Boolean = false, onClick: () -> Unit) {
     Row(
         Modifier
-            .clip(CircleShape)
-            .background(if (selected) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f))
+            .clip(CtrlShapes.Button)
+            .background(if (selected) CtrlColors.Accent else CtrlColors.Surface)
+            .border(1.dp, if (selected) CtrlColors.Accent else CtrlColors.ControlOutline, CtrlShapes.Button)
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 10.dp),
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 18.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, Modifier.size(18.dp))
+        val tint = if (selected) CtrlColors.OnAccent else CtrlColors.Text
+        Icon(icon, null, Modifier.size(18.dp), tint = tint)
         Spacer(Modifier.width(8.dp))
-        Text(label, style = MaterialTheme.typography.labelLarge)
+        Text(label, style = MaterialTheme.typography.labelLarge, color = tint)
     }
 }
 
@@ -278,12 +298,20 @@ private fun QueueList(s: MusicState) {
             Row(
                 Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .ctrlTopDivider()
                     .clickable { music.skipTo(i) }
-                    .background(if (current) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent)
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                    .heightIn(min = 60.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(Modifier.size(44.dp).clip(MaterialTheme.shapes.extraSmall)) { ArtImage(e.artworkUri, Modifier.fillMaxSize()) }
+                Text(
+                    "%02d".format(i + 1),
+                    style = CtrlType.Mono,
+                    color = if (current) CtrlColors.Accent else CtrlColors.Muted,
+                    modifier = Modifier.width(30.dp),
+                )
+                Box(Modifier.size(44.dp).clip(CtrlShapes.Badge)) { ArtImage(e.artworkUri, Modifier.fillMaxSize()) }
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                     Text(
                         e.title,
@@ -295,7 +323,7 @@ private fun QueueList(s: MusicState) {
                     e.artist?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
                 if (!current) {
-                    IconButton(onClick = { music.removeAt(i) }) { Icon(Icons.Filled.Close, stringResource(R.string.remove_from_queue), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    IconButton(onClick = { music.removeAt(i) }) { Icon(Icons.Outlined.Close, stringResource(R.string.remove_from_queue), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
         }

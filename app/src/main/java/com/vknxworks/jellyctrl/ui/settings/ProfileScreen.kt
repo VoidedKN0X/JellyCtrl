@@ -1,5 +1,12 @@
 package com.vknxworks.jellyctrl.ui.settings
 
+import com.vknxworks.jellyctrl.ui.components.CtrlButton
+import com.vknxworks.jellyctrl.ui.components.initials
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import com.vknxworks.jellyctrl.ui.theme.CtrlType
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.ui.unit.em
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -22,22 +29,22 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AdminPanelSettings
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Cast
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Cast
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Gavel
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.LiveTv
-import androidx.compose.material.icons.filled.Password
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.outlined.Gavel
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.LiveTv
+import androidx.compose.material.icons.outlined.Password
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
@@ -94,6 +101,9 @@ import com.vknxworks.jellyctrl.ui.theme.Gutter
 import kotlinx.coroutines.launch
 import com.vknxworks.jellyctrl.str
 import androidx.compose.ui.res.pluralStringResource
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+import com.vknxworks.jellyctrl.ui.components.CtrlTextField
+
 
 private const val SPONSOR_URL = "https://github.com/sponsors/VoidedKN0X"
 private const val REPO_URL = "https://github.com/VoidedKN0X/JellyCtrl"
@@ -120,59 +130,70 @@ fun ProfileScreen() {
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar(stringResource(R.string.you))
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp + LocalBottomClearance.current)) {
-            Column(
-                Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 8.dp, bottom = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Row(
+                Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 8.dp, bottom = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(Modifier.size(96.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier.size(68.dp).clip(CtrlShapes.Card).background(CtrlColors.Accent),
+                    contentAlignment = Alignment.Center,
+                ) {
                     if (acc?.userImageTag != null && client != null) {
                         ArtImage(client.userImageUrl(acc.userId, acc.userImageTag), Modifier.fillMaxSize())
                     } else {
-                        Text(acc?.userName?.take(1)?.uppercase().orEmpty(), style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            initials(acc?.userName.orEmpty()),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = CtrlColors.OnAccent,
+                        )
                     }
                 }
-                Spacer(Modifier.height(14.dp))
-                Text(acc?.userName.orEmpty(), style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    acc?.serverName.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (acc?.serverUrl?.startsWith("http://", true) == true) {
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(acc?.userName.orEmpty(), style = MaterialTheme.typography.headlineSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        stringResource(R.string.not_encrypted_http),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.error,
+                        acc?.serverUrl?.removePrefix("https://")?.removePrefix("http://")?.trimEnd('/') ?: acc?.serverName.orEmpty(),
+                        style = CtrlType.Mono,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
+                    if (acc?.serverUrl?.startsWith("http://", true) == true) {
+                        Text(
+                            stringResource(R.string.not_encrypted_http),
+                            style = CtrlType.Mono,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             }
 
-            Group {
+            Group(stringResource(R.string.group_library_label)) {
                 GroupRow(stringResource(R.string.favourites), icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
                 GroupRow(
                     stringResource(R.string.downloads),
                     if (ready == 0) null else pluralStringResource(R.plurals.ready_offline, ready, ready),
-                    icon = Icons.Filled.Download,
+                    icon = Icons.Outlined.Download,
                     showChevron = true,
                     onClick = { nav.navigate(DownloadsRoute) },
                 )
-                if (hasLiveTv) GroupRow(stringResource(R.string.live_tv), icon = Icons.Filled.LiveTv, showChevron = true, onClick = { nav.navigate(LiveTvRoute) })
+                if (hasLiveTv) GroupRow(stringResource(R.string.live_tv), icon = Icons.Outlined.LiveTv, showChevron = true, onClick = { nav.navigate(LiveTvRoute) })
             }
-            Group {
-                GroupRow(stringResource(R.string.control_another_device), stringResource(R.string.play_and_pause_jellyfin_on_your), icon = Icons.Filled.Cast, showChevron = true, onClick = { nav.navigate(RemoteRoute) })
-                GroupRow(stringResource(R.string.sign_in_another_device), stringResource(R.string.approve_a_quick_connect_code), icon = Icons.Filled.Key, showChevron = true, onClick = { nav.navigate(QuickConnectApproveRoute) })
+            Group(stringResource(R.string.group_devices_label)) {
+                GroupRow(stringResource(R.string.control_another_device), stringResource(R.string.play_and_pause_jellyfin_on_your), icon = Icons.Outlined.Cast, showChevron = true, onClick = { nav.navigate(RemoteRoute) })
+                GroupRow(stringResource(R.string.sign_in_another_device), stringResource(R.string.approve_a_quick_connect_code), icon = Icons.Outlined.Key, showChevron = true, onClick = { nav.navigate(QuickConnectApproveRoute) })
             }
-            Group {
-                GroupRow(stringResource(R.string.settings), icon = Icons.Filled.Settings, showChevron = true, onClick = { nav.navigate(SettingsRoute) })
-                GroupRow(stringResource(R.string.switch_account_or_server), icon = Icons.Filled.SwapHoriz, showChevron = true, onClick = { nav.navigate(AccountsRoute) })
-                GroupRow(stringResource(R.string.change_password), icon = Icons.Filled.Password, showChevron = true, onClick = { changePassword = true })
+            Group(stringResource(R.string.group_app_label)) {
+                GroupRow(stringResource(R.string.settings), icon = Icons.Outlined.Tune, showChevron = true, onClick = { nav.navigate(SettingsRoute) })
+                GroupRow(stringResource(R.string.switch_account_or_server), icon = Icons.Outlined.SwapHoriz, showChevron = true, onClick = { nav.navigate(AccountsRoute) })
+                GroupRow(stringResource(R.string.change_password), icon = Icons.Outlined.Password, showChevron = true, onClick = { changePassword = true })
             }
             if (acc?.isAdmin == true) {
-                Group {
+                Group(stringResource(R.string.group_server_label)) {
                     GroupRow(
                         stringResource(R.string.server_dashboard),
                         stringResource(R.string.users_libraries_plugins_tasks_and_logs),
-                        icon = Icons.Filled.AdminPanelSettings,
+                        icon = Icons.Outlined.AdminPanelSettings,
                         showChevron = true,
                         onClick = { nav.navigate(AdminRoute) },
                     )
@@ -180,40 +201,56 @@ fun ProfileScreen() {
             }
             Group(stringResource(R.string.group_about)) {
                 GroupRow(
-                    stringResource(R.string.support_title),
-                    stringResource(R.string.support_subtitle),
-                    icon = Icons.Filled.Favorite,
-                    showChevron = true,
-                    onClick = { openLink(context, SPONSOR_URL) },
-                )
-                GroupRow(
                     stringResource(R.string.bugs_title),
                     stringResource(R.string.bugs_subtitle),
-                    icon = Icons.Filled.BugReport,
+                    icon = Icons.Outlined.BugReport,
                     showChevron = true,
                     onClick = { openLink(context, ISSUES_URL) },
                 )
                 GroupRow(
                     stringResource(R.string.source_title),
                     stringResource(R.string.source_subtitle),
-                    icon = Icons.Filled.Code,
+                    icon = Icons.Outlined.Code,
                     showChevron = true,
                     onClick = { openLink(context, REPO_URL) },
                 )
                 GroupRow(
                     stringResource(R.string.licence_title),
                     stringResource(R.string.licence_subtitle),
-                    icon = Icons.Filled.Gavel,
+                    icon = Icons.Outlined.Gavel,
                     showChevron = true,
                     onClick = { openLink(context, LICENCE_URL) },
                 )
             }
+            // Donations: the one accent button on the page.
+            Column(Modifier.fillMaxWidth().padding(horizontal = Gutter).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                CtrlButton(
+                    stringResource(R.string.support_title),
+                    onClick = { openLink(context, SPONSOR_URL) },
+                    icon = Icons.Outlined.FavoriteBorder,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    stringResource(R.string.support_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Text(
-                stringResource(R.string.about_footer, BuildConfig.VERSION_NAME),
-                style = MaterialTheme.typography.bodySmall,
+                stringResource(R.string.about_footer, BuildConfig.VERSION_NAME).uppercase(),
+                style = CtrlType.Label,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+            )
+            Text(
+                stringResource(R.string.ctrl_footer),
+                style = CtrlType.Label.copy(letterSpacing = 0.12.em),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
             )
         }
     }
@@ -237,17 +274,17 @@ private fun ChangePasswordDialog(onDismiss: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     // Passwords stay out of screenshots and screen recordings.
     com.vknxworks.jellyctrl.ui.lock.SecureScreen()
-    AlertDialog(
+    CtrlAlertDialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn),
         title = { Text(stringResource(R.string.change_password)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(current, { current = it }, label = { Text(stringResource(R.string.current_password)) }, singleLine = true,
+                CtrlTextField(current, { current = it }, label = { Text(stringResource(R.string.current_password)) }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
-                OutlinedTextField(new, { new = it }, label = { Text(stringResource(R.string.new_password)) }, singleLine = true,
+                CtrlTextField(new, { new = it }, label = { Text(stringResource(R.string.new_password)) }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
-                OutlinedTextField(confirm, { confirm = it }, label = { Text(stringResource(R.string.new_password_again)) }, singleLine = true,
+                CtrlTextField(confirm, { confirm = it }, label = { Text(stringResource(R.string.new_password_again)) }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
@@ -294,26 +331,26 @@ fun AccountsScreen() {
                                 a.isAdmin -> stringResource(R.string.administrator)
                                 else -> stringResource(R.string.tap_to_switch)
                             },
-                            icon = if (isActive) Icons.Filled.CheckCircle else Icons.Filled.Person,
+                            icon = if (isActive) Icons.Filled.CheckCircle else Icons.Outlined.Person,
                             iconTint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             onClick = if (isActive) null else ({ scope.launch { c.sessions.switchTo(a.key) }; Unit }),
                         ) {
                             IconButton(onClick = { signOut = a.key }) {
-                                Icon(Icons.AutoMirrored.Filled.Logout, stringResource(R.string.sign_out_x_2, a.userName), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(Icons.AutoMirrored.Outlined.Logout, stringResource(R.string.sign_out_x_2, a.userName), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
                 }
             }
             Group {
-                GroupRow(stringResource(R.string.add_an_account_or_server), icon = Icons.Filled.Add, onClick = { nav.navigate(AddAccountRoute) })
+                GroupRow(stringResource(R.string.add_an_account_or_server), icon = Icons.Outlined.Add, onClick = { nav.navigate(AddAccountRoute) })
             }
         }
     }
 
     signOut?.let { key ->
         val acc = accounts.firstOrNull { it.key == key }
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { signOut = null },
             title = { Text(stringResource(R.string.sign_out_x, acc?.userName.orEmpty())) },
             text = { Text(stringResource(R.string.this_signs_the_account_out_on)) },
@@ -367,13 +404,12 @@ fun QuickConnectApproveScreen() {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
-            OutlinedTextField(
+            CtrlTextField(
                 code, { code = it.filter(Char::isDigit).take(6) },
                 singleLine = true,
-                placeholder = { Text("000000", style = MaterialTheme.typography.displaySmall.copy(letterSpacing = 8.sp)) },
-                textStyle = MaterialTheme.typography.displaySmall.copy(letterSpacing = 8.sp, textAlign = TextAlign.Center),
+                placeholder = { Text("000000", style = CtrlType.Key.copy(fontSize = 36.sp, letterSpacing = 8.sp, textAlign = TextAlign.Center), modifier = Modifier.fillMaxWidth()) },
+                textStyle = CtrlType.Key.copy(fontSize = 36.sp, letterSpacing = 8.sp, textAlign = TextAlign.Center),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth(),
             )
             Row {
@@ -388,7 +424,7 @@ fun QuickConnectApproveScreen() {
     }
 
     if (confirming) {
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { confirming = false },
             title = { Text(account?.userName?.let { stringResource(R.string.quick_connect_title_x, it) } ?: stringResource(R.string.quick_connect_title)) },
             text = {

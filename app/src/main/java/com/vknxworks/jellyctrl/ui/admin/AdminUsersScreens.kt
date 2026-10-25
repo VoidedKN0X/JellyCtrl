@@ -16,10 +16,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AdminPanelSettings
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -70,6 +70,10 @@ import kotlinx.serialization.json.jsonPrimitive
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+import com.vknxworks.jellyctrl.ui.components.CtrlTextField
+import com.vknxworks.jellyctrl.ui.components.CtrlListItem
+
 
 /** Password keyboards don't learn or suggest what's typed. */
 private val PasswordKeyboard = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false)
@@ -85,12 +89,12 @@ fun AdminUsersScreen() {
 
     AdminScaffold(
         stringResource(R.string.users), actions, loader.refreshing, { loader.reload(silent = true) },
-        floating = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(stringResource(R.string.add_user)) }) },
+        floating = { ExtendedFloatingActionButton(shape = com.vknxworks.jellyctrl.ui.theme.CtrlShapes.MainButton, containerColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.Accent, contentColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.OnAccent, elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp), onClick = { creating = true }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text(stringResource(R.string.add_user)) }) },
     ) {
         LoadContent(loader) { users ->
             LazyColumn(Modifier.fillMaxSize()) {
                 items(users, key = { it.id }) { u ->
-                    ListItem(
+                    CtrlListItem(
                         headlineContent = { Text(u.name.orEmpty()) },
                         supportingContent = {
                             Text(
@@ -103,13 +107,13 @@ fun AdminUsersScreen() {
                             )
                         },
                         leadingContent = {
-                            Box(Modifier.size(40.dp).clip(CircleShape)) {
+                            Box(Modifier.size(40.dp).clip(com.vknxworks.jellyctrl.ui.theme.CtrlShapes.Control)) {
                                 if (u.primaryImageTag != null) ArtImage(client.userImageUrl(u.id, u.primaryImageTag), Modifier.fillMaxSize())
                                 else Icon(
                                     when {
-                                        u.policy?.isDisabled == true -> Icons.Filled.Block
-                                        u.policy?.isAdministrator == true -> Icons.Filled.AdminPanelSettings
-                                        else -> Icons.Filled.Person
+                                        u.policy?.isDisabled == true -> Icons.Outlined.Block
+                                        u.policy?.isAdministrator == true -> Icons.Outlined.AdminPanelSettings
+                                        else -> Icons.Outlined.Person
                                     },
                                     null,
                                     Modifier.align(Alignment.Center),
@@ -126,13 +130,13 @@ fun AdminUsersScreen() {
     if (creating) {
         var name by remember { mutableStateOf("") }
         var pw by remember { mutableStateOf("") }
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { creating = false },
             title = { Text(stringResource(R.string.new_user)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.name)) }, singleLine = true)
-                    OutlinedTextField(pw, { pw = it }, label = { Text(stringResource(R.string.password_optional)) }, singleLine = true, visualTransformation = PasswordVisualTransformation(),
+                    CtrlTextField(name, { name = it }, label = { Text(stringResource(R.string.name)) }, singleLine = true)
+                    CtrlTextField(pw, { pw = it }, label = { Text(stringResource(R.string.password_optional)) }, singleLine = true, visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = PasswordKeyboard)
                 }
             },
@@ -171,7 +175,7 @@ fun AdminUserScreen(id: String) {
             val currentName = name ?: user.str("Name").orEmpty().also { name = it }
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
                 SectionTitle(stringResource(R.string.profile))
-                OutlinedTextField(
+                CtrlTextField(
                     currentName, { name = it },
                     label = { Text(stringResource(R.string.name)) },
                     singleLine = true,
@@ -190,7 +194,7 @@ fun AdminUserScreen(id: String) {
 
                 SectionTitle(stringResource(R.string.library_access))
                 val allFolders = p["EnableAllFolders"]?.jsonPrimitive?.booleanOrNull ?: true
-                ListItem(
+                CtrlListItem(
                     headlineContent = { Text(stringResource(R.string.access_to_all_libraries)) },
                     trailingContent = { Checkbox(allFolders, onCheckedChange = { policy = p.with("EnableAllFolders", JsonPrimitive(it)) }) },
                 )
@@ -199,7 +203,7 @@ fun AdminUserScreen(id: String) {
                     libs.forEach { lib ->
                         val libId = lib.itemId ?: return@forEach
                         val on = libId in enabled
-                        ListItem(
+                        CtrlListItem(
                             headlineContent = { Text(lib.name.orEmpty()) },
                             leadingContent = {
                                 Checkbox(on, onCheckedChange = { checked ->
@@ -231,12 +235,12 @@ fun AdminUserScreen(id: String) {
     }
 
     newPassword?.let { pw ->
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { newPassword = null },
             title = { Text(stringResource(R.string.set_password)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(pw, { newPassword = it }, label = { Text(stringResource(R.string.new_password_blank_removes_it)) }, singleLine = true,
+                    CtrlTextField(pw, { newPassword = it }, label = { Text(stringResource(R.string.new_password_blank_removes_it)) }, singleLine = true,
                         visualTransformation = PasswordVisualTransformation(), keyboardOptions = PasswordKeyboard)
                     if (pw.isEmpty()) {
                         Text(
@@ -260,7 +264,7 @@ fun AdminUserScreen(id: String) {
     }
 
     if (confirmDelete) {
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(name?.let { stringResource(R.string.delete_x_q, it) } ?: stringResource(R.string.delete_user_q)) },
             text = { Text(stringResource(R.string.their_watch_history_favorites_and_settings)) },

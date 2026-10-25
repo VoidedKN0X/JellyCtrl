@@ -21,22 +21,22 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Subject
-import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.Extension
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.LiveTv
-import androidx.compose.material.icons.filled.Lan
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.automirrored.outlined.Subject
+import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.LiveTv
+import androidx.compose.material.icons.outlined.Lan
+import androidx.compose.material.icons.outlined.Movie
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.PowerSettingsNew
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilledTonalButton
@@ -86,25 +86,28 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+import com.vknxworks.jellyctrl.ui.components.CtrlProgressBar
+
 
 private data class AdminLink(val icon: ImageVector, val label: String, val route: Any)
 
 private val LINKS: List<AdminLink>
     get() = listOf(
-        AdminLink(Icons.Filled.People, str(R.string.admin_users), AdminUsersRoute),
-        AdminLink(Icons.Filled.Storage, str(R.string.admin_libraries), AdminLibrariesRoute),
-        AdminLink(Icons.Filled.Schedule, str(R.string.admin_scheduled_tasks), AdminTasksRoute),
-        AdminLink(Icons.Filled.Extension, str(R.string.admin_plugins), AdminPluginsRoute),
-        AdminLink(Icons.Filled.History, str(R.string.admin_activity_log), AdminActivityRoute),
-        AdminLink(Icons.AutoMirrored.Filled.Subject, str(R.string.admin_logs), AdminLogsRoute),
-        AdminLink(Icons.Filled.Devices, str(R.string.admin_devices), AdminDevicesRoute),
-        AdminLink(Icons.Filled.Key, str(R.string.admin_api_keys), AdminKeysRoute),
-        configLink(Icons.Filled.Settings, R.string.admin_general, ""),
-        configLink(Icons.Filled.Movie, R.string.admin_playback, "encoding"),
-        configLink(Icons.Filled.Lan, R.string.admin_networking, "network"),
-        configLink(Icons.Filled.Search, R.string.admin_metadata, "metadata"),
-        configLink(Icons.Filled.LiveTv, R.string.admin_live_tv, "livetv"),
-        configLink(Icons.Filled.Palette, R.string.admin_branding, "branding"),
+        AdminLink(Icons.Outlined.People, str(R.string.admin_users), AdminUsersRoute),
+        AdminLink(Icons.Outlined.Storage, str(R.string.admin_libraries), AdminLibrariesRoute),
+        AdminLink(Icons.Outlined.Schedule, str(R.string.admin_scheduled_tasks), AdminTasksRoute),
+        AdminLink(Icons.Outlined.Extension, str(R.string.admin_plugins), AdminPluginsRoute),
+        AdminLink(Icons.Outlined.History, str(R.string.admin_activity_log), AdminActivityRoute),
+        AdminLink(Icons.AutoMirrored.Outlined.Subject, str(R.string.admin_logs), AdminLogsRoute),
+        AdminLink(Icons.Outlined.Devices, str(R.string.admin_devices), AdminDevicesRoute),
+        AdminLink(Icons.Outlined.Key, str(R.string.admin_api_keys), AdminKeysRoute),
+        configLink(Icons.Outlined.Tune, R.string.admin_general, ""),
+        configLink(Icons.Outlined.Movie, R.string.admin_playback, "encoding"),
+        configLink(Icons.Outlined.Lan, R.string.admin_networking, "network"),
+        configLink(Icons.Outlined.Search, R.string.admin_metadata, "metadata"),
+        configLink(Icons.Outlined.LiveTv, R.string.admin_live_tv, "livetv"),
+        configLink(Icons.Outlined.Palette, R.string.admin_branding, "branding"),
     )
 
 private fun configLink(icon: ImageVector, label: Int, section: String): AdminLink =
@@ -149,9 +152,9 @@ fun AdminDashboardScreen() {
                         if (d.info.hasPendingRestart) Text(stringResource(R.string.restart_the_server_to_finish_applying), color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.bodyMedium)
                         if (d.info.hasUpdateAvailable) Text(stringResource(R.string.a_jellyfin_update_is_available), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
                         Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                            RoundAction(Icons.Filled.Search, stringResource(R.string.scan_libraries), { actions.run(str(R.string.scanning_libraries)) { client.scanAllLibraries() } })
-                            if (d.info.canSelfRestart) RoundAction(Icons.Filled.RestartAlt, stringResource(R.string.restart), { confirm = "restart" })
-                            RoundAction(Icons.Filled.PowerSettingsNew, stringResource(R.string.shut_down), { confirm = "shutdown" })
+                            RoundAction(Icons.Outlined.Search, stringResource(R.string.scan_libraries), { actions.run(str(R.string.scanning_libraries)) { client.scanAllLibraries() } })
+                            if (d.info.canSelfRestart) RoundAction(Icons.Outlined.RestartAlt, stringResource(R.string.restart), { confirm = "restart" })
+                            RoundAction(Icons.Outlined.PowerSettingsNew, stringResource(R.string.shut_down), { confirm = "shutdown" })
                         }
                     }
                 }
@@ -164,7 +167,7 @@ fun AdminDashboardScreen() {
                                         Text(t.name.orEmpty(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                                         Text(t.currentProgressPercentage?.let { "%.0f%%".format(it) }.orEmpty(), style = MaterialTheme.typography.labelLarge)
                                     }
-                                    LinearProgressIndicator(
+                                    CtrlProgressBar(
                                         progress = { ((t.currentProgressPercentage ?: 0.0) / 100).toFloat() },
                                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                                         drawStopIndicator = {},
@@ -208,7 +211,7 @@ fun AdminDashboardScreen() {
     }
 
     confirm?.let { what ->
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { confirm = null },
             title = { Text(if (what == "restart") stringResource(R.string.restart_the_server) else stringResource(R.string.shut_down_the_server)) },
             text = {

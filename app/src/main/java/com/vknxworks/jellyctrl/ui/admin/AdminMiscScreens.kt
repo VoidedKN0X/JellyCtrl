@@ -21,16 +21,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Error
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Store
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -101,6 +101,12 @@ import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
 import kotlin.math.roundToInt
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+import com.vknxworks.jellyctrl.ui.components.CtrlTextField
+import com.vknxworks.jellyctrl.ui.components.CtrlListItem
+import com.vknxworks.jellyctrl.ui.components.CtrlProgressBar
+import com.vknxworks.jellyctrl.ui.components.CtrlSwitch
+
 
 // ---------- Scheduled tasks ----------
 
@@ -120,7 +126,7 @@ fun AdminTasksScreen() {
                     item(key = "h-$cat") { SectionTitle(cat) }
                     items(list, key = { it.id }) { t ->
                         val running = t.state == "Running"
-                        ListItem(
+                        CtrlListItem(
                             headlineContent = { Text(t.name.orEmpty()) },
                             supportingContent = {
                                 Column {
@@ -130,7 +136,7 @@ fun AdminTasksScreen() {
                                         style = MaterialTheme.typography.bodySmall,
                                     )
                                     if (running) {
-                                        LinearProgressIndicator(
+                                        CtrlProgressBar(
                                             progress = { ((t.currentProgressPercentage ?: 0.0) / 100).toFloat() },
                                             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                                             drawStopIndicator = {},
@@ -164,13 +170,13 @@ fun AdminPluginsScreen() {
 
     AdminScaffold(
         stringResource(R.string.plugins), actions, loader.refreshing, { loader.reload(silent = true) },
-        floating = { ExtendedFloatingActionButton(onClick = { nav.navigate(AdminCatalogRoute) }, icon = { Icon(Icons.Filled.Store, null) }, text = { Text(stringResource(R.string.get_plugins)) }) },
+        floating = { ExtendedFloatingActionButton(shape = com.vknxworks.jellyctrl.ui.theme.CtrlShapes.MainButton, containerColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.Accent, contentColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.OnAccent, elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp), onClick = { nav.navigate(AdminCatalogRoute) }, icon = { Icon(Icons.Outlined.Store, null) }, text = { Text(stringResource(R.string.get_plugins)) }) },
     ) {
         LoadContent(loader) { plugins ->
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
                 items(plugins, key = { it.id + it.version }) { p ->
                     val active = p.status == "Active"
-                    ListItem(
+                    CtrlListItem(
                         headlineContent = { Text("${p.name}  ${p.version}") },
                         supportingContent = {
                             Column {
@@ -182,12 +188,12 @@ fun AdminPluginsScreen() {
                         },
                         trailingContent = {
                             Row {
-                                Switch(active, onCheckedChange = { on ->
+                                CtrlSwitch(active, onCheckedChange = { on ->
                                     actions.run(if (on) str(R.string.enabled_restart_the_server_to_apply) else str(R.string.disabled_restart_the_server_to_apply), after = { loader.reload(silent = true) }) {
                                         if (on) client.enablePlugin(p) else client.disablePlugin(p)
                                     }
                                 })
-                                if (p.canUninstall) IconButton(onClick = { confirmRemove = p }) { Icon(Icons.Filled.Delete, stringResource(R.string.uninstall)) }
+                                if (p.canUninstall) IconButton(onClick = { confirmRemove = p }) { Icon(Icons.Outlined.Delete, stringResource(R.string.uninstall)) }
                             }
                         },
                     )
@@ -197,7 +203,7 @@ fun AdminPluginsScreen() {
     }
 
     confirmRemove?.let { p ->
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { confirmRemove = null },
             title = { Text(stringResource(R.string.uninstall_x, p.name.orEmpty())) },
             text = { Text(stringResource(R.string.the_server_needs_a_restart_afterwards)) },
@@ -227,12 +233,12 @@ fun AdminCatalogScreen() {
     AdminScaffold(stringResource(R.string.plugin_catalog), actions) {
         LoadContent(loader) { (packages, installed) ->
             Column(Modifier.fillMaxSize()) {
-                OutlinedTextField(query, { query = it }, label = { Text(stringResource(R.string.search)) }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(16.dp))
+                CtrlTextField(query, { query = it }, label = { Text(stringResource(R.string.search)) }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(16.dp))
                 val filtered = packages.filter { query.isBlank() || it.name.contains(query, true) || it.category.orEmpty().contains(query, true) }
                 LazyColumn(Modifier.fillMaxSize()) {
                     items(filtered, key = { it.guid + it.name }) { p ->
                         val isInstalled = p.guid.replace("-", "").lowercase() in installed
-                        ListItem(
+                        CtrlListItem(
                             headlineContent = { Text(p.name) },
                             supportingContent = { Text(listOfNotNull(p.category, p.overview ?: p.description).joinToString(" · "), maxLines = 2, overflow = TextOverflow.Ellipsis) },
                             trailingContent = { if (isInstalled) Text(stringResource(R.string.installed), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium) },
@@ -246,7 +252,7 @@ fun AdminCatalogScreen() {
 
     selected?.let { p ->
         val latest = p.versions.firstOrNull()
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { selected = null },
             title = { Text(p.name) },
             text = {
@@ -285,7 +291,7 @@ fun AdminLogsScreen() {
         LoadContent(loader) { logs ->
             LazyColumn(Modifier.fillMaxSize()) {
                 items(logs, key = { it.name }) { l ->
-                    ListItem(
+                    CtrlListItem(
                         headlineContent = { Text(l.name) },
                         supportingContent = { Text("${formatDateTime(l.dateModified).orEmpty()}  ·  ${formatBytes(l.size)}") },
                         modifier = Modifier.clickable { nav.navigate(AdminLogRoute(l.name)) },
@@ -317,12 +323,12 @@ fun AdminLogScreen(name: String) {
                     description.extras = PersistableBundle().apply { putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) }
                 }
                 (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
-            }) { Icon(Icons.Filled.ContentCopy, stringResource(R.string.copy)) }
+            }) { Icon(Icons.Outlined.ContentCopy, stringResource(R.string.copy)) }
         },
     ) {
         LoadContent(loader) { lines ->
             Column(Modifier.fillMaxSize()) {
-                OutlinedTextField(filter, { filter = it }, label = { Text(stringResource(R.string.filter_e_g_err_wrn_a)) }, singleLine = true,
+                CtrlTextField(filter, { filter = it }, label = { Text(stringResource(R.string.filter_e_g_err_wrn_a)) }, singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
                 val shown = if (filter.isBlank()) lines else lines.filter { it.contains(filter, true) }
                 val state = rememberLazyListState(initialFirstVisibleItemIndex = (shown.size - 1).coerceAtLeast(0))
@@ -361,22 +367,22 @@ fun AdminActivityScreen() {
     }
     AdminScaffold(stringResource(R.string.activity), actions, false, { loader.refresh() }) {
         if (loader.items.isEmpty() && !loader.loading) {
-            MessageView(Icons.Filled.Info, stringResource(R.string.no_activity_yet))
+            MessageView(Icons.Outlined.Info, stringResource(R.string.no_activity_yet))
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
                 items(loader.items.size) { i ->
                     if (i >= loader.items.size - 10) LaunchedEffect(i) { loader.loadMore() }
                     val a = loader.items[i]
-                    ListItem(
+                    CtrlListItem(
                         headlineContent = { Text(a.name.orEmpty()) },
                         supportingContent = {
                             Text(listOfNotNull(a.shortOverview ?: a.overview, formatDateTime(a.date)).joinToString("\n"), style = MaterialTheme.typography.bodySmall)
                         },
                         leadingContent = {
                             when (a.severity) {
-                                "Error", "Critical" -> Icon(Icons.Filled.Error, null, tint = MaterialTheme.colorScheme.error)
-                                "Warning", "Warn" -> Icon(Icons.Filled.Warning, null, tint = MaterialTheme.colorScheme.tertiary)
-                                else -> Icon(Icons.Filled.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                "Error", "Critical" -> Icon(Icons.Outlined.Error, null, tint = MaterialTheme.colorScheme.error)
+                                "Warning", "Warn" -> Icon(Icons.Outlined.Warning, null, tint = MaterialTheme.colorScheme.tertiary)
+                                else -> Icon(Icons.Outlined.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         },
                     )
@@ -400,14 +406,14 @@ fun AdminDevicesScreen() {
             LazyColumn(Modifier.fillMaxSize()) {
                 items(devices, key = { it.id ?: it.name.orEmpty() }) { d ->
                     val isThis = d.id == client.deviceId
-                    ListItem(
+                    CtrlListItem(
                         headlineContent = { Text((d.customName ?: d.name).orEmpty() + if (isThis) stringResource(R.string.this_app) else "") },
                         supportingContent = {
                             Text(listOfNotNull("${d.appName} ${d.appVersion.orEmpty()}", d.lastUserName, formatDateTime(d.dateLastActivity)).joinToString("  ·  "))
                         },
                         trailingContent = {
                             if (!isThis && d.id != null) {
-                                IconButton(onClick = { signingOut = d }) { Icon(Icons.Filled.Delete, stringResource(R.string.sign_out_device)) }
+                                IconButton(onClick = { signingOut = d }) { Icon(Icons.Outlined.Delete, stringResource(R.string.sign_out_device)) }
                             }
                         },
                     )
@@ -417,7 +423,7 @@ fun AdminDevicesScreen() {
     }
     signingOut?.let { d ->
         val id = d.id
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { signingOut = null },
             title = { Text(stringResource(R.string.sign_out_x, (d.customName ?: d.name).orEmpty())) },
             text = { Text(d.lastUserName?.let { stringResource(R.string.device_remove_body_x, it) } ?: stringResource(R.string.device_remove_body)) },
@@ -443,16 +449,16 @@ fun AdminKeysScreen() {
     var revoking by remember { mutableStateOf<com.vknxworks.jellyctrl.data.api.AuthenticationInfo?>(null) }
     AdminScaffold(
         stringResource(R.string.api_keys), actions, loader.refreshing, { loader.reload(silent = true) },
-        floating = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(stringResource(R.string.new_key)) }) },
+        floating = { ExtendedFloatingActionButton(shape = com.vknxworks.jellyctrl.ui.theme.CtrlShapes.MainButton, containerColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.Accent, contentColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.OnAccent, elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp), onClick = { creating = true }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text(stringResource(R.string.new_key)) }) },
     ) {
         LoadContent(loader) { keys ->
             if (keys.isEmpty()) {
-                MessageView(Icons.Filled.Info, stringResource(R.string.no_api_keys), stringResource(R.string.keys_let_other_apps_and_scripts))
+                MessageView(Icons.Outlined.Info, stringResource(R.string.no_api_keys), stringResource(R.string.keys_let_other_apps_and_scripts))
                 return@LoadContent
             }
             LazyColumn(Modifier.fillMaxSize()) {
                 items(keys, key = { it.accessToken }) { k ->
-                    ListItem(
+                    CtrlListItem(
                         headlineContent = { Text(k.appName ?: stringResource(R.string.key)) },
                         supportingContent = { Text("${k.accessToken.take(8)}…  ·  ${formatDateTime(k.dateCreated).orEmpty()}") },
                         trailingContent = {
@@ -462,8 +468,8 @@ fun AdminKeysScreen() {
                                         description.extras = PersistableBundle().apply { putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) }
                                     }
                                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
-                                }) { Icon(Icons.Filled.ContentCopy, stringResource(R.string.copy_key)) }
-                                IconButton(onClick = { revoking = k }) { Icon(Icons.Filled.Delete, stringResource(R.string.revoke)) }
+                                }) { Icon(Icons.Outlined.ContentCopy, stringResource(R.string.copy_key)) }
+                                IconButton(onClick = { revoking = k }) { Icon(Icons.Outlined.Delete, stringResource(R.string.revoke)) }
                             }
                         },
                     )
@@ -472,7 +478,7 @@ fun AdminKeysScreen() {
         }
     }
     revoking?.let { k ->
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { revoking = null },
             title = { Text(k.appName?.let { stringResource(R.string.revoke_x, it) } ?: stringResource(R.string.revoke_this_key)) },
             text = { Text(stringResource(R.string.any_app_or_script_using_this)) },
@@ -487,10 +493,10 @@ fun AdminKeysScreen() {
     }
     if (creating) {
         var app by remember { mutableStateOf("") }
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { creating = false },
             title = { Text(stringResource(R.string.new_api_key)) },
-            text = { OutlinedTextField(app, { app = it }, label = { Text(stringResource(R.string.app_name_2)) }, singleLine = true) },
+            text = { CtrlTextField(app, { app = it }, label = { Text(stringResource(R.string.app_name_2)) }, singleLine = true) },
             confirmButton = {
                 TextButton(enabled = app.isNotBlank(), onClick = {
                     creating = false
@@ -521,7 +527,7 @@ fun AdminConfigScreen(section: String, title: String) {
                 actions.run(str(R.string.saved), after = { edited = null; loader.reload(silent = true) }) {
                     if (section.isEmpty()) client.saveServerConfig(cfg) else client.saveNamedConfig(section, cfg)
                 }
-            }) { Icon(Icons.Filled.Save, stringResource(R.string.save)) }
+            }) { Icon(Icons.Outlined.Save, stringResource(R.string.save)) }
         },
     ) {
         LoadContent(loader) { original ->
@@ -569,7 +575,7 @@ fun EditMetadataScreen(id: String) {
             }.also { fields = it }
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 keys.forEach { k ->
-                    OutlinedTextField(
+                    CtrlTextField(
                         value = current[k].orEmpty(),
                         onValueChange = { v -> fields = current + (k to v) },
                         label = { Text(humanize(k) + if (k in setOf("Genres", "Tags", "Studios")) stringResource(R.string.comma_separated) else "") },

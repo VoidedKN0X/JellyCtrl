@@ -1,5 +1,15 @@
 package com.vknxworks.jellyctrl.ui.auth
 
+import com.vknxworks.jellyctrl.ui.components.CtrlTextField
+import com.vknxworks.jellyctrl.ui.components.CtrlSectionLabel
+import com.vknxworks.jellyctrl.ui.components.CtrlWordmark
+import com.vknxworks.jellyctrl.ui.components.ctrlSurface
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlType
+import com.vknxworks.jellyctrl.ui.theme.JetBrainsMono
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,11 +35,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Dns
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material3.AlertDialog
@@ -67,6 +77,8 @@ import com.vknxworks.jellyctrl.ui.components.GroupRow
 import com.vknxworks.jellyctrl.ui.components.PillButton
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+
 
 @Composable
 fun ServerSetupFlow(onDone: () -> Unit, onCancel: (() -> Unit)?) {
@@ -92,11 +104,14 @@ fun ServerSetupFlow(onDone: () -> Unit, onCancel: (() -> Unit)?) {
         ) {
             Box(Modifier.height(48.dp)) {
                 if (server != null || onCancel != null) {
-                    IconButton(onClick = { if (server != null) vm.backToServer() else onCancel?.invoke() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
-                    }
+                    com.vknxworks.jellyctrl.ui.components.CtrlIconSquare(
+                        Icons.AutoMirrored.Outlined.ArrowBack,
+                        stringResource(R.string.back),
+                        onClick = { if (server != null) vm.backToServer() else onCancel?.invoke() },
+                    )
                 }
             }
+            CtrlWordmark()
             Text(
                 if (server == null) "JellyCtrl" else stringResource(R.string.sign_in),
                 style = MaterialTheme.typography.displaySmall,
@@ -125,7 +140,7 @@ private fun Field(
     visual: VisualTransformation = VisualTransformation.None,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    TextField(
+    CtrlTextField(
         value = value,
         onValueChange = onChange,
         label = { Text(label) },
@@ -135,15 +150,6 @@ private fun Field(
         keyboardActions = actions,
         visualTransformation = visual,
         trailingIcon = trailing,
-        shape = MaterialTheme.shapes.medium,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-        ),
         modifier = modifier.fillMaxWidth(),
     )
 }
@@ -164,7 +170,7 @@ private fun ServerStep(vm: ServerSetupViewModel) {
         PillButton(stringResource(R.string.continue_label), onClick = { vm.connect() }, enabled = vm.address.isNotBlank(), modifier = Modifier.fillMaxWidth())
     }
     vm.httpFallbackFor?.let { host ->
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { vm.dismissHttpFallback() },
             icon = { Icon(Icons.Outlined.LockOpen, null, tint = MaterialTheme.colorScheme.error) },
             title = { Text(stringResource(R.string.use_an_unencrypted_connection)) },
@@ -187,7 +193,7 @@ private fun ServerStep(vm: ServerSetupViewModel) {
             modifier = Modifier.weight(1f),
         )
         if (vm.discovering) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-        else IconButton(onClick = { vm.discover() }) { Icon(Icons.Filled.Refresh, stringResource(R.string.look_again), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        else IconButton(onClick = { vm.discover() }) { Icon(Icons.Outlined.Refresh, stringResource(R.string.look_again), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
     if (vm.discovered.isEmpty() && !vm.discovering) {
         Text(
@@ -201,7 +207,7 @@ private fun ServerStep(vm: ServerSetupViewModel) {
                 GroupRow(
                     s.name.ifBlank { "Jellyfin" },
                     s.address,
-                    icon = Icons.Filled.Dns,
+                    icon = Icons.Outlined.Dns,
                     showChevron = true,
                     onClick = { vm.address = s.address; vm.connect(s.address) },
                 )
@@ -220,7 +226,7 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
     com.vknxworks.jellyctrl.ui.lock.SecureScreen()
 
     Row(
-        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainer).padding(14.dp),
+        Modifier.fillMaxWidth().ctrlSurface().padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -252,10 +258,10 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
                     Box(
                         Modifier
                             .size(60.dp)
-                            .clip(CircleShape)
-                            .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh)
-                            .padding(if (selected) 3.dp else 0.dp)
-                            .clip(CircleShape),
+                            .clip(CtrlShapes.Card)
+                            .background(if (selected) MaterialTheme.colorScheme.primary else CtrlColors.ControlOutline)
+                            .padding(if (selected) 3.dp else 1.dp)
+                            .clip(RoundedCornerShape(19.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (u.primaryImageTag != null) {
@@ -286,7 +292,7 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
         actions = KeyboardActions(onDone = { vm.signIn(onDone) }),
         trailing = {
             IconButton(onClick = { showPassword = !showPassword }) {
-                Icon(if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password))
+                Icon(if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password))
             }
         },
     )
@@ -305,14 +311,14 @@ private fun LoginStep(vm: ServerSetupViewModel, onDone: () -> Unit) {
             }
         } else {
             Column(
-                Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.surfaceContainer).padding(20.dp),
+                Modifier.fillMaxWidth().ctrlSurface(CtrlShapes.Hero).padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(stringResource(R.string.your_code), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                CtrlSectionLabel(stringResource(R.string.your_code))
                 Text(
                     code.chunked(3).joinToString(" "),
-                    style = MaterialTheme.typography.displayMedium.copy(letterSpacing = 6.sp),
+                    style = CtrlType.BigNumber.copy(fontFamily = JetBrainsMono, fontWeight = FontWeight.SemiBold, fontSize = 48.sp, letterSpacing = 4.sp),
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(

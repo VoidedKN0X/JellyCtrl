@@ -1,5 +1,12 @@
 package com.vknxworks.jellyctrl.ui.lock
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.theme.CtrlType
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -82,6 +89,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import javax.crypto.Cipher
 import kotlin.math.roundToInt
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+
 
 /**
  * App lock state: whether the app is unlocked, and when it locks again. The secrets live in [LockVault].
@@ -413,7 +422,7 @@ private fun LegacyLockedScreen() {
         unlock()
     }
     BackHandler { activity?.moveTaskToBack(true) }
-    Surface(Modifier.fillMaxSize().blockTouches(), color = MaterialTheme.colorScheme.background) {
+    Surface(Modifier.fillMaxSize().blockTouches(), color = CtrlColors.Background) {
         Box(Modifier.fillMaxSize().systemBarsPadding().padding(32.dp), contentAlignment = Alignment.Center) {
             Column(
                 Modifier.widthIn(max = 360.dp),
@@ -421,7 +430,8 @@ private fun LegacyLockedScreen() {
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 LockBadge()
-                Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                Text(stringResource(R.string.lock_brand), style = CtrlType.Label.copy(letterSpacing = 0.18.em), color = CtrlColors.Muted)
+                Text(stringResource(R.string.lock_locked), style = MaterialTheme.typography.headlineLarge.copy(fontSize = 36.sp, lineHeight = 40.sp), textAlign = TextAlign.Center)
                 Text(
                     stringResource(R.string.lock_legacy_body),
                     style = MaterialTheme.typography.bodyMedium,
@@ -429,7 +439,7 @@ private fun LegacyLockedScreen() {
                     textAlign = TextAlign.Center,
                 )
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center) }
-                Button(onClick = ::unlock, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.lock_unlock)) }
+                com.vknxworks.jellyctrl.ui.components.CtrlButton(stringResource(R.string.lock_unlock), onClick = ::unlock, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -438,9 +448,9 @@ private fun LegacyLockedScreen() {
 @Composable
 private fun LockBadge() {
     Box(
-        Modifier.size(72.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+        Modifier.size(72.dp).clip(RoundedCornerShape(24.dp)).background(CtrlColors.Accent),
         contentAlignment = Alignment.Center,
-    ) { Icon(Icons.Outlined.Lock, null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.primary) }
+    ) { Icon(Icons.Outlined.Lock, null, Modifier.size(30.dp), tint = CtrlColors.OnAccent) }
 }
 
 /** The lock screen: PIN pad, fingerprint, and "Forgot PIN?". */
@@ -517,7 +527,7 @@ private fun PinLockScreen() {
 
     BackHandler { activity?.moveTaskToBack(true) }
     PinPadScreen(
-        title = stringResource(R.string.lock_title),
+        title = stringResource(R.string.lock_locked),
         message = when {
             lockout > 0 -> stringResource(R.string.lock_too_many, ((lockout + 999) / 1000).toInt())
             message != null -> message!!
@@ -540,19 +550,13 @@ private fun PinLockScreen() {
         onConfirm = ::submit,
         showConfirm = pin.length >= LockVault.PIN_MIN && pin.length != vault.pinLength,
         confirmLabel = stringResource(R.string.lock_ok),
+        onBiometric = if (bioAvailable) ({ askFingerprint() }) else null,
         bottom = {
-            if (bioAvailable) {
-                TextButton(onClick = ::askFingerprint) {
-                    Icon(Icons.Outlined.Fingerprint, null)
-                    Spacer(Modifier.size(8.dp))
-                    Text(stringResource(R.string.lock_use_fingerprint))
-                }
-            }
-            TextButton(onClick = { forgetting = true }) { Text(stringResource(R.string.lock_forgot)) }
+            TextButton(onClick = { forgetting = true }) { Text(stringResource(R.string.lock_forgot), color = CtrlColors.Muted) }
         },
     )
     if (forgetting) {
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { forgetting = false },
             title = { Text(stringResource(R.string.lock_forgot_title)) },
             text = { Text(stringResource(R.string.lock_forgot_body)) },
@@ -698,20 +702,27 @@ private fun PinPadScreen(
     onConfirm: () -> Unit,
     showConfirm: Boolean,
     confirmLabel: String,
+    onBiometric: (() -> Unit)? = null,
     bottom: @Composable () -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
-    Surface(Modifier.fillMaxSize().blockTouches(), color = cs.background) {
+    Surface(Modifier.fillMaxSize().blockTouches(), color = CtrlColors.Background) {
         Column(
-            Modifier.fillMaxSize().systemBarsPadding().verticalScroll(rememberScrollState()).padding(24.dp),
+            Modifier.fillMaxSize().systemBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             LockBadge()
-            Spacer(Modifier.height(18.dp))
-            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(28.dp))
+            Text(stringResource(R.string.lock_brand), style = CtrlType.Label.copy(letterSpacing = 0.18.em), color = CtrlColors.Muted)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 36.sp, lineHeight = 40.sp),
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(8.dp))
             Text(
                 message,
                 style = MaterialTheme.typography.bodyMedium,
@@ -719,36 +730,83 @@ private fun PinPadScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.widthIn(max = 340.dp),
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(28.dp))
             Box(Modifier.height(20.dp).offset { IntOffset(shake.roundToInt(), 0) }, contentAlignment = Alignment.Center) {
-                if (checking) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                else Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (checking) CircularProgressIndicator(Modifier.size(20.dp), color = CtrlColors.Accent, strokeWidth = 2.dp)
+                else Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     repeat(maxOf(pin.length, LockVault.PIN_MIN)) { i ->
-                        Box(Modifier.size(12.dp).clip(CircleShape).background(if (i < pin.length) cs.primary else cs.surfaceContainerHighest))
+                        val cell = RoundedCornerShape(5.dp)
+                        if (i < pin.length) Box(Modifier.size(14.dp).clip(cell).background(CtrlColors.Accent))
+                        else Box(Modifier.size(14.dp).border(2.dp, CtrlColors.PinEmpty, cell))
                     }
                 }
             }
-            Spacer(Modifier.height(28.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(Modifier.height(36.dp))
+            Column(
+                Modifier.widthIn(max = 360.dp).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 listOf("123", "456", "789").forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         row.forEach { d ->
-                            DigitKey(d.toString(), enabled) {
+                            DigitKey(d.toString(), enabled, Modifier.weight(1f)) {
                                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 onDigit(d)
                             }
                         }
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBackspace, enabled = enabled && pin.isNotEmpty(), modifier = Modifier.size(72.dp)) {
-                        Icon(Icons.AutoMirrored.Outlined.Backspace, stringResource(R.string.lock_delete_digit))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val keyShape = RoundedCornerShape(22.dp)
+                    // Bottom left: OK / Next / Done once enough digits are in, otherwise the fingerprint key.
+                    when {
+                        showConfirm -> Box(
+                            Modifier
+                                .weight(1f)
+                                .height(68.dp)
+                                .clip(keyShape)
+                                .background(if (enabled) CtrlColors.Accent else CtrlColors.Raised)
+                                .clickable(enabled = enabled, role = Role.Button, onClick = onConfirm),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                confirmLabel.uppercase(),
+                                style = CtrlType.LabelStrong.copy(fontSize = 14.sp),
+                                color = if (enabled) CtrlColors.OnAccent else CtrlColors.Inactive,
+                            )
+                        }
+                        onBiometric != null -> Box(
+                            Modifier
+                                .weight(1f)
+                                .height(68.dp)
+                                .clip(keyShape)
+                                .border(1.dp, CtrlColors.Accent, keyShape)
+                                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.lock_use_fingerprint), onClick = onBiometric),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Outlined.Fingerprint, stringResource(R.string.lock_use_fingerprint), Modifier.size(26.dp), tint = CtrlColors.Accent)
+                        }
+                        else -> Spacer(Modifier.weight(1f))
                     }
-                    DigitKey("0", enabled) {
+                    DigitKey("0", enabled, Modifier.weight(1f)) {
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onDigit('0')
                     }
-                    TextButton(onClick = onConfirm, enabled = enabled && showConfirm, modifier = Modifier.size(72.dp)) { Text(confirmLabel) }
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(68.dp)
+                            .clip(keyShape)
+                            .clickable(enabled = enabled && pin.isNotEmpty(), role = Role.Button, onClick = onBackspace),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Outlined.Backspace,
+                            stringResource(R.string.lock_delete_digit),
+                            Modifier.size(24.dp),
+                            tint = if (enabled && pin.isNotEmpty()) CtrlColors.Muted else CtrlColors.Muted.copy(alpha = 0.4f),
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -758,14 +816,17 @@ private fun PinPadScreen(
 }
 
 @Composable
-private fun DigitKey(label: String, enabled: Boolean, onClick: () -> Unit) {
-    FilledIconButton(
-        onClick = onClick,
-        enabled = enabled,
-        colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ),
-        modifier = Modifier.size(72.dp),
-    ) { Text(label, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Medium) }
+private fun DigitKey(label: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(22.dp)
+    Box(
+        modifier
+            .height(68.dp)
+            .clip(shape)
+            .background(CtrlColors.Surface)
+            .border(1.dp, CtrlColors.Outline, shape)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = CtrlType.Key, color = if (enabled) CtrlColors.Text else CtrlColors.Inactive)
+    }
 }

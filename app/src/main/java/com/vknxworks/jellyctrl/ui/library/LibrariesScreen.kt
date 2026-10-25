@@ -1,5 +1,10 @@
 package com.vknxworks.jellyctrl.ui.library
 
+import com.vknxworks.jellyctrl.ui.theme.CtrlShapes
+import com.vknxworks.jellyctrl.ui.theme.CtrlColors
+import com.vknxworks.jellyctrl.ui.components.CtrlSectionLabel
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +20,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material3.MaterialTheme
@@ -70,14 +75,14 @@ fun LibrariesScreen() {
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                item(span = { GridItemSpan(maxLineSpan) }) { TabTitle(stringResource(R.string.library), padded = false) }
+                item(span = { GridItemSpan(maxLineSpan) }) { TabTitle(stringResource(R.string.library), padded = false, label = pluralStringResource(R.plurals.count_libraries_label, views.size, views.size).uppercase()) }
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Group(padded = false) {
                             GroupRow(stringResource(R.string.favourites), icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
                             GroupRow(
                                 stringResource(R.string.downloads),
                                 if (ready == 0) stringResource(R.string.nothing_saved_for_offline_yet) else pluralStringResource(R.plurals.ready_to_watch_offline, ready, ready),
-                                icon = Icons.Filled.Download,
+                                icon = Icons.Outlined.Download,
                                 showChevron = true,
                                 onClick = { nav.navigate(DownloadsRoute) },
                             )
@@ -93,7 +98,8 @@ fun LibrariesScreen() {
                         Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
-                            .clip(MaterialTheme.shapes.medium)
+                            .clip(CtrlShapes.Card)
+                            .border(1.dp, CtrlColors.Outline, CtrlShapes.Card)
                             .clickable { nav.openItem(v) },
                     ) {
                         ArtImage(
@@ -102,17 +108,19 @@ fun LibrariesScreen() {
                         )
                         Box(
                             Modifier.fillMaxSize().background(
-                                Brush.verticalGradient(0.4f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.75f))
+                                Brush.verticalGradient(0.35f to Color.Transparent, 1f to CtrlColors.Background.copy(alpha = 0.88f))
                             )
                         )
-                        Text(
-                            v.name.orEmpty(),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
-                        )
+                        Column(Modifier.align(Alignment.BottomStart).padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            v.collectionType?.let { CtrlSectionLabel(it, color = Color.White.copy(alpha = 0.75f)) }
+                            Text(
+                                v.name.orEmpty(),
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }

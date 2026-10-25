@@ -7,16 +7,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
-import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.outlined.PlaylistAdd
+import androidx.compose.material.icons.automirrored.outlined.QueueMusic
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
@@ -56,6 +56,7 @@ import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
 import com.vknxworks.jellyctrl.plural
 
+
 /** Long-press menu for any item. [onChanged] is called after played/favorite state changes. */
 @Composable
 fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> Unit = {}) {
@@ -79,7 +80,7 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
         return
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+    CtrlSheet(onDismissRequest = onDismiss) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
             Text(
                 item.name.orEmpty(),
@@ -100,7 +101,7 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
                 Action(Icons.Filled.Shuffle, stringResource(R.string.shuffle)) { nav.shuffle(item); onDismiss() }
             }
             if (item.mediaType == "Audio" || item.type == "MusicAlbum") {
-                Action(Icons.AutoMirrored.Filled.QueueMusic, stringResource(R.string.add_to_queue)) {
+                Action(Icons.AutoMirrored.Outlined.QueueMusic, stringResource(R.string.add_to_queue)) {
                     c.music.enqueue(item)
                     onDismiss()
                 }
@@ -109,17 +110,17 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
                 if (played) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
                 if (played) stringResource(R.string.mark_as_unwatched) else stringResource(R.string.mark_as_watched),
             ) { act { c.api.setPlayed(item.id, !played) } }
-            Action(if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, if (fav) stringResource(R.string.remove_from_favourites) else stringResource(R.string.add_to_favourites)) {
+            Action(if (fav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, if (fav) stringResource(R.string.remove_from_favourites) else stringResource(R.string.add_to_favourites)) {
                 act { c.api.setFavorite(item.id, !fav) }
             }
             if (item.type != "Playlist" && (item.isPlayable || item.isFolder)) {
-                Action(Icons.AutoMirrored.Filled.PlaylistAdd, stringResource(R.string.add_to_playlist)) { playlistPicker = true }
+                Action(Icons.AutoMirrored.Outlined.PlaylistAdd, stringResource(R.string.add_to_playlist)) { playlistPicker = true }
             }
             if (item.type == "Episode" && item.seriesId != null) {
-                Action(Icons.Filled.Tv, stringResource(R.string.go_to_show)) { nav.navigate(ItemRoute(item.seriesId)); onDismiss() }
+                Action(Icons.Outlined.Tv, stringResource(R.string.go_to_show)) { nav.navigate(ItemRoute(item.seriesId)); onDismiss() }
             }
             if (item.isPlayable && item.mediaType == "Video" || item.type in DOWNLOADABLE_FOLDERS) {
-                Action(Icons.Filled.Download, stringResource(R.string.download)) {
+                Action(Icons.Outlined.Download, stringResource(R.string.download)) {
                     (context as? MainActivity)?.ensureNotificationPermission()
                     scope.launch {
                         val n = downloadItemWith(c, item)
@@ -176,12 +177,12 @@ fun AddToPlaylistDialog(item: BaseItemDto, onDismiss: () -> Unit) {
         onDismiss()
     }
 
-    AlertDialog(
+    CtrlAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.add_to_playlist)) },
         text = {
             Column {
-                OutlinedTextField(
+                CtrlTextField(
                     value = newName,
                     onValueChange = { newName = it },
                     label = { Text(stringResource(R.string.new_playlist_name)) },
@@ -190,7 +191,7 @@ fun AddToPlaylistDialog(item: BaseItemDto, onDismiss: () -> Unit) {
                 LoadContent(playlists, Modifier.padding(top = 8.dp)) { list ->
                     LazyColumn(Modifier.padding(top = 8.dp)) {
                         items(list, key = { it.id }) { pl ->
-                            ListItem(
+                            CtrlListItem(
                                 headlineContent = { Text(pl.name.orEmpty()) },
                                 modifier = Modifier.clickable {
                                     scope.launch {

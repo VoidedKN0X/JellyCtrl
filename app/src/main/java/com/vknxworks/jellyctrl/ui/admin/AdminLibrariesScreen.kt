@@ -1,5 +1,6 @@
 package com.vknxworks.jellyctrl.ui.admin
 
+import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,14 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -67,6 +68,11 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
+import com.vknxworks.jellyctrl.ui.components.CtrlTextField
+import com.vknxworks.jellyctrl.ui.components.CtrlListItem
+import com.vknxworks.jellyctrl.ui.components.CtrlProgressBar
+
 
 private val COLLECTION_TYPES: List<Pair<String, String>>
     get() = listOf(
@@ -99,19 +105,24 @@ fun AdminLibrariesScreen() {
         stringResource(R.string.libraries), actions, loader.refreshing, { loader.reload(silent = true) },
         topActions = {
             IconButton(onClick = { actions.run(str(R.string.scan_started), after = { loader.reload(silent = true) }) { client.scanAllLibraries() } }) {
-                Icon(Icons.Filled.Refresh, stringResource(R.string.scan_all))
+                Icon(Icons.Outlined.Refresh, stringResource(R.string.scan_all))
             }
         },
-        floating = { ExtendedFloatingActionButton(onClick = { adding = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(stringResource(R.string.add_library)) }) },
+        floating = { ExtendedFloatingActionButton(shape = com.vknxworks.jellyctrl.ui.theme.CtrlShapes.MainButton, containerColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.Accent, contentColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.OnAccent, elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp), onClick = { adding = true }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text(stringResource(R.string.add_library)) }) },
     ) {
         LoadContent(loader) { libs ->
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(libs, key = { it.itemId ?: it.name.orEmpty() }) { lib ->
                     var menu by remember { mutableStateOf(false) }
-                    Card(Modifier.fillMaxWidth()) {
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        shape = com.vknxworks.jellyctrl.ui.theme.CtrlShapes.Card,
+                        colors = CardDefaults.cardColors(containerColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.Surface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, com.vknxworks.jellyctrl.ui.theme.CtrlColors.Outline),
+                    ) {
                         Column(Modifier.padding(start = 16.dp, top = 8.dp, bottom = 12.dp, end = 4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Storage, null, tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Outlined.Storage, null, tint = MaterialTheme.colorScheme.primary)
                                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                                     Text(lib.name.orEmpty(), fontWeight = FontWeight.SemiBold)
                                     Text(
@@ -121,26 +132,26 @@ fun AdminLibrariesScreen() {
                                     )
                                 }
                                 Box {
-                                    IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(R.string.more)) }
+                                    IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.more)) }
                                     DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                                        DropdownMenuItem(text = { Text(stringResource(R.string.scan_this_library)) }, leadingIcon = { Icon(Icons.Filled.Refresh, null) }, onClick = {
+                                        DropdownMenuItem(text = { Text(stringResource(R.string.scan_this_library)) }, leadingIcon = { Icon(Icons.Outlined.Refresh, null) }, onClick = {
                                             menu = false
                                             lib.itemId?.let { id -> actions.run(str(R.string.scan_started), after = { loader.reload(silent = true) }) { client.refreshItem(id, replaceAll = false) } }
                                         })
-                                        DropdownMenuItem(text = { Text(stringResource(R.string.add_folder)) }, leadingIcon = { Icon(Icons.Filled.Add, null) }, onClick = {
+                                        DropdownMenuItem(text = { Text(stringResource(R.string.add_folder)) }, leadingIcon = { Icon(Icons.Outlined.Add, null) }, onClick = {
                                             menu = false; addPathTo = lib.name
                                         })
-                                        DropdownMenuItem(text = { Text(stringResource(R.string.rename)) }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = {
+                                        DropdownMenuItem(text = { Text(stringResource(R.string.rename)) }, leadingIcon = { Icon(Icons.Outlined.Edit, null) }, onClick = {
                                             menu = false; renaming = lib
                                         })
-                                        DropdownMenuItem(text = { Text(stringResource(R.string.remove_library), color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Filled.Delete, null) }, onClick = {
+                                        DropdownMenuItem(text = { Text(stringResource(R.string.remove_library), color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Outlined.Delete, null) }, onClick = {
                                             menu = false; removing = lib
                                         })
                                     }
                                 }
                             }
                             if (lib.refreshStatus == "Active") {
-                                LinearProgressIndicator(
+                                CtrlProgressBar(
                                     progress = { ((lib.refreshProgress ?: 0.0) / 100).toFloat() },
                                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp, end = 12.dp),
                                     drawStopIndicator = {},
@@ -148,10 +159,10 @@ fun AdminLibrariesScreen() {
                             }
                             lib.locations.forEach { path ->
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.Folder, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Icon(Icons.Outlined.Folder, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(path, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f).padding(start = 8.dp))
                                     if (lib.locations.size > 1) {
-                                        IconButton(onClick = { removingPath = lib.name.orEmpty() to path }) { Icon(Icons.Filled.Delete, stringResource(R.string.remove_folder)) }
+                                        IconButton(onClick = { removingPath = lib.name.orEmpty() to path }) { Icon(Icons.Outlined.Delete, stringResource(R.string.remove_folder)) }
                                     }
                                 }
                             }
@@ -176,10 +187,10 @@ fun AdminLibrariesScreen() {
     }
     renaming?.let { lib ->
         var newName by remember(lib.name) { mutableStateOf(lib.name.orEmpty()) }
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { renaming = null },
             title = { Text(stringResource(R.string.rename_library)) },
-            text = { OutlinedTextField(newName, { newName = it }, singleLine = true, label = { Text(stringResource(R.string.name)) }) },
+            text = { CtrlTextField(newName, { newName = it }, singleLine = true, label = { Text(stringResource(R.string.name)) }) },
             confirmButton = {
                 TextButton(enabled = newName.isNotBlank(), onClick = {
                     renaming = null
@@ -190,7 +201,7 @@ fun AdminLibrariesScreen() {
         )
     }
     removingPath?.let { (libName, path) ->
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { removingPath = null },
             title = { Text(stringResource(R.string.remove_folder_2)) },
             text = { Text(stringResource(R.string.x_will_no_longer_be_part, path, libName)) },
@@ -204,7 +215,7 @@ fun AdminLibrariesScreen() {
         )
     }
     removing?.let { lib ->
-        AlertDialog(
+        CtrlAlertDialog(
             onDismissRequest = { removing = null },
             title = { Text(stringResource(R.string.remove_x, lib.name.orEmpty())) },
             text = { Text(stringResource(R.string.the_library_is_removed_from_jellyfin)) },
@@ -236,13 +247,13 @@ private fun AddLibraryDialog(client: JellyfinClient, onDismiss: () -> Unit, onCr
         return
     }
 
-    AlertDialog(
+    CtrlAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.add_library)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box {
-                    OutlinedTextField(
+                    CtrlTextField(
                         value = COLLECTION_TYPES.first { it.first == type }.second,
                         onValueChange = {},
                         readOnly = true,
@@ -256,10 +267,10 @@ private fun AddLibraryDialog(client: JellyfinClient, onDismiss: () -> Unit, onCr
                         }
                     }
                 }
-                OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.display_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                ListItem(
+                CtrlTextField(name, { name = it }, label = { Text(stringResource(R.string.display_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                CtrlListItem(
                     headlineContent = { Text(path ?: stringResource(R.string.choose_a_folder_on_the_server)) },
-                    leadingContent = { Icon(Icons.Filled.Folder, null) },
+                    leadingContent = { Icon(Icons.Outlined.Folder, null) },
                     modifier = Modifier.clickable { picking = true },
                 )
             }
@@ -301,35 +312,35 @@ fun FolderPickerDialog(client: JellyfinClient, onDismiss: () -> Unit, onPick: (S
         }
     }
 
-    AlertDialog(
+    CtrlAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.server_folder)) },
         text = {
             Column {
-                OutlinedTextField(
+                CtrlTextField(
                     typed, { typed = it },
                     label = { Text(stringResource(R.string.path)) },
                     singleLine = true,
                     trailingIcon = { TextButton(onClick = { path = typed.ifBlank { null } }) { Text(stringResource(R.string.go)) } },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (loading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp))
+                if (loading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp), color = com.vknxworks.jellyctrl.ui.theme.CtrlColors.Accent, trackColor = com.vknxworks.jellyctrl.ui.theme.CtrlColors.ProgressTrack)
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 LazyColumn(Modifier.heightIn(max = 360.dp)) {
                     if (path != null) {
                         item {
                             var parentLoading by remember { mutableStateOf(false) }
-                            ListItem(
+                            CtrlListItem(
                                 headlineContent = { Text("..") },
-                                leadingContent = { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) },
+                                leadingContent = { Icon(Icons.AutoMirrored.Outlined.ArrowBack, null) },
                                 modifier = Modifier.clickable(enabled = !parentLoading) { parentLoading = true; path = PARENT_MARKER },
                             )
                         }
                     }
                     items(entries, key = { it.path }) { e ->
-                        ListItem(
+                        CtrlListItem(
                             headlineContent = { Text(e.name ?: e.path) },
-                            leadingContent = { Icon(Icons.Filled.Folder, null) },
+                            leadingContent = { Icon(Icons.Outlined.Folder, null) },
                             modifier = Modifier.clickable { path = e.path },
                         )
                     }
