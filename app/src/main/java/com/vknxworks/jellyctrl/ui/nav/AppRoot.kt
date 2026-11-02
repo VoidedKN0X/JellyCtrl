@@ -134,7 +134,7 @@ private fun MainScaffold() {
     val selectedIndex = topDestinations.indexOfFirst { top -> dest?.hierarchy?.any { it.hasRoute(top.route::class) } == true }
     val onNowPlaying = dest?.hasRoute(NowPlayingRoute::class) == true
     val settings by context.container.settings.settings.collectAsStateWithLifecycle()
-    // Dashboard screens where API keys, passwords or credential settings are typed or shown are always kept
+    // Dashboard screens where API keys, passwords, credential settings or server logs are shown are always kept
     // out of screenshots and the recent-apps view; the rest follow "Hide in screenshots" and "Hide in recent apps".
     val onSecretScreen = dest != null && SECRET_ADMIN_ROUTES.any { dest.hasRoute(it) }
     ProtectWindow(onSecretScreen)
@@ -277,8 +277,13 @@ private fun PhoneLayout(
     }
 }
 
-/** Server dashboard screens where API keys, user passwords or credential settings are typed or shown. */
-private val SECRET_ADMIN_ROUTES = listOf(AdminUsersRoute::class, AdminUserRoute::class, AdminKeysRoute::class, AdminConfigRoute::class)
+/**
+ * Server dashboard screens where API keys, user passwords or credential settings are typed or shown, and server
+ * logs (tokens are masked there, but they still hold user names, IP addresses and file paths).
+ */
+private val SECRET_ADMIN_ROUTES = listOf(
+    AdminUsersRoute::class, AdminUserRoute::class, AdminKeysRoute::class, AdminConfigRoute::class, AdminLogRoute::class,
+)
 
 /**
  * While [protect] is on, the window can't be captured (screenshots, screen recording, casting the screen)

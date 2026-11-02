@@ -4,6 +4,21 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.6 (2026-11-02)
+
+Server logs in the dashboard are now always kept out of screenshots, plus a security check of the whole app.
+
+### Security
+
+- **Server logs stay out of screenshots and recordings.** Opening a log under **Server dashboard > Logs** now always keeps the screen out of screenshots, screen recordings and the recent-apps preview, like the API keys, users and server settings screens already did, whatever **Hide in screenshots** says. Tokens and passwords in logs were already masked, but logs still hold user names, IP addresses and file paths.
+- **Checked the rest of the app.** Your access token is only sent to your own Jellyfin server, never in a web address, and never to another site through a redirect: this holds for artwork, video (both Media3 and mpv), subtitles, music and downloads. Sign-in tries https first and only uses plain HTTP after you say yes, and HTTP accounts keep their "Not encrypted (HTTP)" label. Links from ArrCtrl are checked before use and only open a page. Other apps can't browse your music through JellyCtrl's player, and downloads are always saved inside JellyCtrl's own folder. No changes were needed there.
+
+### Project
+
+- New **SECURITY.md**: how to report a security problem privately, and the fingerprint of the key every release is signed with.
+- New bug report and feature request forms for GitHub issues.
+- README: clearer install steps for people new to GitHub (which file to tap on the Releases page), a new **Is it safe to install?** section with the signing fingerprint and every permission explained, a **How JellyCtrl is made** section, the full Ctrl series list, a note that JellyCtrl isn't affiliated with the Jellyfin project, and the empty Screenshots section removed.
+
 ## v0.5.5 (2026-11-02)
 
 Bottom sheets no longer show a stray grey box or outline.
