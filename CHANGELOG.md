@@ -4,6 +4,16 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.5 (2026-11-02)
+
+Bottom sheets no longer show a stray grey box or outline.
+
+### Fixed
+
+- **Bottom sheets no longer show a stray grey box or outline.** The thin border around bottom sheets was drawn in the wrong place: a grey rectangle cut across the sheet (for example across the first row of the menu you get by long-pressing an item in **Continue watching**), and a stray rounded outline showed near the top of the screen. Sheets now have no outline at all: just the card colour with rounded top corners, separated from the page by the dimmed background behind them. Their colours, corners, drag handle and behaviour are unchanged.
+- This applies to every bottom sheet: the long-press menu on movies, episodes, albums and other items, choice lists in **Settings** (such as streaming quality or lock timeout), the audio, subtitle and version picker and the **More** menu on title pages, subtitle search, the queue and lyrics in the music player, and the audio and subtitle and playback options sheets in the video player.
+- Dialogs keep their thin border (it was always drawn in the right place there), and popup menus keep the style from 0.5.4.
+
 ## v0.5.4 (2026-11-02)
 
 Popup menus no longer show a grey box.

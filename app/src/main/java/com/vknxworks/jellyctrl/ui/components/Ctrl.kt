@@ -592,7 +592,7 @@ fun CtrlAlertDialog(
     }
 }
 
-/** Bottom sheet in the Signal style: surface fill, 26dp top corners, 1dp border. */
+/** Bottom sheet in the Signal style: surface fill and 26dp top corners, no outline. */
 @Composable
 fun CtrlSheet(
     onDismissRequest: () -> Unit,
@@ -601,7 +601,9 @@ fun CtrlSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        modifier = modifier.border(1.dp, CtrlColors.Outline, CtrlShapes.SheetTop),
+        // No border here: ModalBottomSheet applies this modifier before its own offset, so a border
+        // would be drawn in the wrong place (a grey box across the sheet). The scrim separates it.
+        modifier = modifier,
         shape = CtrlShapes.SheetTop,
         containerColor = CtrlColors.Surface,
         contentColor = CtrlColors.Text,
