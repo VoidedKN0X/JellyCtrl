@@ -83,5 +83,6 @@ fun FavoritesScreen() {
             }
         }
     }
-    menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }, onChanged = { loader.reload(silent = true) }) }
+    com.vknxworks.jellyctrl.ui.components.OnUserDataChange("favorites") { loader.reload(silent = true) }
+    menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }) }
 }

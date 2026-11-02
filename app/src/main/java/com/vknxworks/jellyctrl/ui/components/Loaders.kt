@@ -114,6 +114,8 @@ class PagedLoader<T>(
     var error by mutableStateOf<String?>(null)
         private set
     private var job: Job? = null
+    // Bumped whenever a load starts or is cancelled, so a cancelled load can't clear the next one's busy flag.
+    private var generation = 0
 
     val endReached: Boolean get() = total >= 0 && items.size >= total
 
@@ -124,6 +126,7 @@ class PagedLoader<T>(
     fun loadMore() {
         if (loading || endReached) return
         loading = true
+        val gen = ++generation
         job = scope.launch {
             try {
                 val (page, count) = fetch(items.size, pageSize)
@@ -135,13 +138,52 @@ class PagedLoader<T>(
             } catch (e: Throwable) {
                 error = e.friendlyMessage()
             } finally {
-                loading = false
+                if (gen == generation) loading = false
             }
+        }
+    }
+
+    /**
+     * Re-fetches everything already loaded and swaps it in at once, so the grid keeps its scroll position.
+     * Used after a watched or favourite change, when a full [refresh] would jump back to the top.
+     */
+    fun reloadInPlace() {
+        if (items.isEmpty()) {
+            refresh()
+            return
+        }
+        job?.cancel()
+        val count = items.size
+        loading = true
+        val gen = ++generation
+        job = scope.launch {
+            try {
+                val (page, total0) = fetch(0, count)
+                items.clear()
+                items.addAll(page)
+                total = if (page.size < count) page.size else total0
+                error = null
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                // Keep what's on screen; the next scroll or pull will try again.
+            } finally {
+                if (gen == generation) loading = false
+            }
+        }
+    }
+
+    /** Changes matching items in place without a network call. */
+    fun patch(transform: (T) -> T) {
+        for (i in items.indices) {
+            val next = transform(items[i])
+            if (next != items[i]) items[i] = next
         }
     }
 
     fun refresh() {
         job?.cancel()
+        generation++
         loading = false
         items.clear()
         total = -1
@@ -224,6 +266,28 @@ fun MessageView(
             if (actionLabel != null && onAction != null) {
                 CtrlSecondaryButton(actionLabel, onClick = onAction, minHeight = 48.dp)
             }
+        }
+    }
+}
+
+/**
+ * Calls [onChange] for watched or favourite changes this screen hasn't seen yet, including ones made on
+ * another screen while this one was waiting in the back stack. [onChange] gets the change, or null when
+ * several happened at once and the screen should simply reload.
+ */
+@Composable
+fun OnUserDataChange(key: String, onChange: (com.vknxworks.jellyctrl.data.api.UserDataChange?) -> Unit) {
+    val store: LoaderStore = viewModel()
+    val latest by androidx.compose.runtime.rememberUpdatedState(onChange)
+    val slot = "U:$key"
+    remember(key) { store.map.getOrPut(slot) { com.vknxworks.jellyctrl.data.api.UserDataEvents.seq } }
+    androidx.compose.runtime.LaunchedEffect(key) {
+        com.vknxworks.jellyctrl.data.api.UserDataEvents.changes.collect { ch ->
+            if (ch == null) return@collect
+            val seen = store.map[slot] as? Long ?: 0L
+            if (ch.seq <= seen) return@collect
+            store.map[slot] = ch.seq
+            latest(if (ch.seq == seen + 1) ch else null)
         }
     }
 }

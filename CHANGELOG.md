@@ -4,6 +4,18 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.3 (2026-11-02)
+
+Mark as watched and Favourite now show their result straight away, everywhere.
+
+### Fixed
+
+- **Mark as watched shows up right away.** Marking something watched (or unwatched) from the long-press menu in a library, a genre or studio list, or Search did change it on your server, but the card didn't update until you left and came back, so it looked like nothing happened. The watched tick now appears on the card at once.
+- **Episode lists update on a show's page.** On a show's page, marking an episode watched from its long-press menu, or marking the whole show watched, didn't update the episode list below. The watched dots now refresh straight away.
+- **The Watched and Favourite buttons on a details page react at once.** The button changes as soon as you tap it instead of after the page reloads. If your server refuses the change, the button switches back and you see the reason.
+- **Other screens catch up too.** After marking something on a details page and going back, Home (Continue Watching and Next Up), Favourites, your libraries and Search now show the new state instead of the old one. Libraries keep your scroll position while they update, and items drop out of an Unplayed or Favourites filter once they no longer match.
+- **The long-press menu closes as soon as you pick Mark as watched or Favourite**, instead of staying open until your server answers.
+
 ## v0.5.2 (2026-10-25)
 
 Music stops properly when you close JellyCtrl.

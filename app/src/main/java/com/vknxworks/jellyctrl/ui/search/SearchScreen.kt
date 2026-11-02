@@ -144,5 +144,8 @@ fun SearchScreen() {
             }
         }
     }
+    com.vknxworks.jellyctrl.ui.components.OnUserDataChange("search") { ch ->
+        if (ch != null) results = results?.map { (label, items) -> label to items.map(ch::applyTo) }
+    }
     menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }) }
 }

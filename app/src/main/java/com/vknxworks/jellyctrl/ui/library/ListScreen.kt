@@ -73,5 +73,9 @@ fun ListScreen(route: ListRoute) {
             modifier = Modifier.padding(padding).fillMaxSize(),
         )
     }
-    menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }, onChanged = { loader.refresh() }) }
+    com.vknxworks.jellyctrl.ui.components.OnUserDataChange("list-${route.title}-${route.kind}-${route.param}") { ch ->
+        if (ch != null) loader.patch(ch::applyTo)
+        loader.reloadInPlace()
+    }
+    menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }) }
 }

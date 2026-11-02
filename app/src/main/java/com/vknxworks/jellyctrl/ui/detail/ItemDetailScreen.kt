@@ -245,6 +245,8 @@ fun ItemDetailScreen(id: String) {
     val client = c.api
     val nav = LocalNavigator.current
     val loader = rememberLoader("detail-$id") { loadDetail(client, id) }
+    // Watched/favourite changes made here or on any other screen refresh the page (series progress, episode dots).
+    com.vknxworks.jellyctrl.ui.components.OnUserDataChange("detail-$id") { loader.reload(silent = true) }
     val item = loader.value?.item
     val seed: androidx.compose.ui.graphics.Color? = null
 
@@ -274,6 +276,10 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
     val seasonEpisodes = if (cur.type == "Series" && seasonId != null) {
         rememberLoader("eps-${cur.id}-$seasonId") { client.episodes(cur.id, seasonId) }
     } else null
+    // The season's episode list loads separately from the page, so it needs its own refresh after a change.
+    if (seasonEpisodes != null) {
+        com.vknxworks.jellyctrl.ui.components.OnUserDataChange("eps-${cur.id}-$seasonId") { seasonEpisodes.reload(silent = true) }
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 720.dp
@@ -368,7 +374,7 @@ private fun DetailBody(d: Detail, client: JellyfinClient, reload: () -> Unit) {
         }
     }
 
-    menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }, onChanged = reload) }
+    menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }) }
 }
 
 // ---------- headers ----------
@@ -504,8 +510,10 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
         mutableStateOf(subStreams.firstOrNull { it.index == source?.defaultSubtitleStreamIndex })
     }
 
-    val played = item.userData?.played == true
-    val fav = item.userData?.isFavorite == true
+    // Shown straight away on tap; the server's answer (or an error) settles it.
+    var played by remember(item.id, item.userData?.played) { mutableStateOf(item.userData?.played == true) }
+    var fav by remember(item.id, item.userData?.isFavorite) { mutableStateOf(item.userData?.isFavorite == true) }
+    var busy by remember(item.id) { mutableStateOf(false) }
     val resumeMs = item.userData?.playbackPositionTicks?.ticksToMs() ?: 0L
     val isVideo = item.mediaType == "Video" || item.type in VIDEO_TYPES
     val isAudioSet = item.type in setOf("MusicAlbum", "Playlist") && d.children.firstOrNull()?.mediaType == "Audio"
@@ -513,10 +521,17 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
     val canSearchSubs = isVideo && item.type !in setOf("TvChannel", "Program", "Recording") && item.locationType != "Virtual" && sources.isNotEmpty()
     val arrLink = remember(item.id, item.providerIds) { ArrCtrlLink.linkFor(item)?.takeIf { ArrCtrlLink.installed(context) } }
 
-    fun toggle(block: suspend () -> Unit) {
+    // Success needs no reload here: setPlayed/setFavorite announce the change and the page refreshes itself.
+    fun toggle(undo: () -> Unit, block: suspend () -> Unit) {
+        if (busy) return
+        busy = true
         scope.launch {
-            runCatching { block() }.onSuccess { reload() }
-                .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
+            runCatching { block() }
+                .onFailure {
+                    undo()
+                    Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show()
+                }
+            busy = false
         }
     }
 
@@ -577,12 +592,20 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             if (item.type != "Person") {
-                RoundAction(Icons.Outlined.Check, if (played) stringResource(R.string.watched) else stringResource(R.string.mark_watched), { toggle { c.api.setPlayed(item.id, !played) } }, active = played)
+                RoundAction(Icons.Outlined.Check, if (played) stringResource(R.string.watched) else stringResource(R.string.mark_watched), {
+                    val target = !played
+                    played = target
+                    toggle({ played = !target }) { c.api.setPlayed(item.id, target) }
+                }, active = played)
             }
             RoundAction(
                 if (fav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                 stringResource(R.string.favourite),
-                { toggle { c.api.setFavorite(item.id, !fav) } },
+                {
+                    val target = !fav
+                    fav = target
+                    toggle({ fav = !target }) { c.api.setFavorite(item.id, target) }
+                },
                 active = fav,
             )
             if ((isVideo && item.canDownload) || item.type in setOf("Season", "Series", "MusicAlbum")) {

@@ -226,11 +226,44 @@ suspend fun JellyfinClient.lyrics(id: String): LyricDto? = runCatching { get<Lyr
 suspend fun JellyfinClient.setPlayed(id: String, played: Boolean) {
     val params = mapOf("userId" to requireUserId())
     if (played) postUnit("UserPlayedItems/$id", params) else deleteUnit("UserPlayedItems/$id", params)
+    UserDataEvents.emit(id, played = played)
 }
 
 suspend fun JellyfinClient.setFavorite(id: String, favorite: Boolean) {
     val params = mapOf("userId" to requireUserId())
     if (favorite) postUnit("UserFavoriteItems/$id", params) else deleteUnit("UserFavoriteItems/$id", params)
+    UserDataEvents.emit(id, favorite = favorite)
+}
+
+/** A watched or favourite change the user just made, so every screen showing that item can update. */
+data class UserDataChange(val seq: Long, val itemId: String, val played: Boolean? = null, val favorite: Boolean? = null) {
+    /** [item] with this change applied, or [item] unchanged if it's a different item. */
+    fun applyTo(item: BaseItemDto): BaseItemDto {
+        if (item.id != itemId) return item
+        var ud = item.userData ?: UserItemData()
+        played?.let { p ->
+            ud = if (p) {
+                ud.copy(played = true, playbackPositionTicks = 0, playedPercentage = null, unplayedItemCount = if (ud.unplayedItemCount != null) 0 else null)
+            } else {
+                ud.copy(played = false, unplayedItemCount = null)
+            }
+        }
+        favorite?.let { ud = ud.copy(isFavorite = it) }
+        return item.copy(userData = ud)
+    }
+}
+
+object UserDataEvents {
+    private val counter = java.util.concurrent.atomic.AtomicLong()
+    private val _changes = kotlinx.coroutines.flow.MutableStateFlow<UserDataChange?>(null)
+    val changes: kotlinx.coroutines.flow.StateFlow<UserDataChange?> = _changes
+
+    /** Number of the latest change; 0 before the first one. */
+    val seq: Long get() = counter.get()
+
+    fun emit(itemId: String, played: Boolean? = null, favorite: Boolean? = null) {
+        _changes.value = UserDataChange(counter.incrementAndGet(), itemId, played, favorite)
+    }
 }
 
 // ---------- playlists & collections ----------

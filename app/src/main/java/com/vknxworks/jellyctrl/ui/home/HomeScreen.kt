@@ -198,7 +198,9 @@ fun HomeScreen() {
         }
     }
 
-    menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }, onChanged = { loader.reload(silent = true) }) }
+    // Also catches changes made on a detail page: Continue Watching and Next Up drop finished items.
+    com.vknxworks.jellyctrl.ui.components.OnUserDataChange("home") { loader.reload(silent = true) }
+    menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }) }
 }
 
 /** JELLY/CTRL wordmark, the remote-control button and your profile picture. */

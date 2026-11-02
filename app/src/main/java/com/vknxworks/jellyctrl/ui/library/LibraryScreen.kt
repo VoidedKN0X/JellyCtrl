@@ -252,6 +252,12 @@ private fun LibraryGrid(parentId: String, tab: LibTab, sort: SortOption, descend
         onLongItem = { menuItem = it },
         emptyText = if (filters.isEmpty()) stringResource(R.string.this_library_is_empty) else stringResource(R.string.nothing_matches_these_filters),
     )
+    // Show the change on the card at once, then re-fetch in place: filters (Unplayed, Favourites) and
+    // parent counts (a show's unwatched episodes) can change too.
+    com.vknxworks.jellyctrl.ui.components.OnUserDataChange(key) { ch ->
+        if (ch != null) loader.patch(ch::applyTo)
+        loader.reloadInPlace()
+    }
     menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }) }
 }
 

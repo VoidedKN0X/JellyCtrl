@@ -66,12 +66,15 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
     val scope = rememberCoroutineScope()
     var playlistPicker by remember { mutableStateOf(false) }
 
+    // The menu closes at once; the change runs in the app's scope so closing the menu can't cancel it.
+    // Screens showing the item update when setPlayed/setFavorite announce the change.
     fun act(block: suspend () -> Unit) {
-        scope.launch {
+        val appContext = context.applicationContext
+        onDismiss()
+        c.appScope.launch(kotlinx.coroutines.Dispatchers.Main) {
             runCatching { block() }
                 .onSuccess { onChanged() }
-                .onFailure { Toast.makeText(context, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
-            onDismiss()
+                .onFailure { Toast.makeText(appContext, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
         }
     }
 
