@@ -1,5 +1,7 @@
 package com.vknxworks.jellyctrl.ui.admin
 
+import com.vknxworks.jellyctrl.ui.components.ctrlMenuItemColors
+import com.vknxworks.jellyctrl.ui.components.CtrlDropdownMenu
 import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -133,18 +135,18 @@ fun AdminLibrariesScreen() {
                                 }
                                 Box {
                                     IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.more)) }
-                                    DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                                        DropdownMenuItem(text = { Text(stringResource(R.string.scan_this_library)) }, leadingIcon = { Icon(Icons.Outlined.Refresh, null) }, onClick = {
+                                    CtrlDropdownMenu(menu, onDismissRequest = { menu = false }) {
+                                        DropdownMenuItem(colors = ctrlMenuItemColors(), text = { Text(stringResource(R.string.scan_this_library)) }, leadingIcon = { Icon(Icons.Outlined.Refresh, null) }, onClick = {
                                             menu = false
                                             lib.itemId?.let { id -> actions.run(str(R.string.scan_started), after = { loader.reload(silent = true) }) { client.refreshItem(id, replaceAll = false) } }
                                         })
-                                        DropdownMenuItem(text = { Text(stringResource(R.string.add_folder)) }, leadingIcon = { Icon(Icons.Outlined.Add, null) }, onClick = {
+                                        DropdownMenuItem(colors = ctrlMenuItemColors(), text = { Text(stringResource(R.string.add_folder)) }, leadingIcon = { Icon(Icons.Outlined.Add, null) }, onClick = {
                                             menu = false; addPathTo = lib.name
                                         })
-                                        DropdownMenuItem(text = { Text(stringResource(R.string.rename)) }, leadingIcon = { Icon(Icons.Outlined.Edit, null) }, onClick = {
+                                        DropdownMenuItem(colors = ctrlMenuItemColors(), text = { Text(stringResource(R.string.rename)) }, leadingIcon = { Icon(Icons.Outlined.Edit, null) }, onClick = {
                                             menu = false; renaming = lib
                                         })
-                                        DropdownMenuItem(text = { Text(stringResource(R.string.remove_library), color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Outlined.Delete, null) }, onClick = {
+                                        DropdownMenuItem(colors = ctrlMenuItemColors(), text = { Text(stringResource(R.string.remove_library), color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = MaterialTheme.colorScheme.error) }, onClick = {
                                             menu = false; removing = lib
                                         })
                                     }
@@ -261,9 +263,9 @@ private fun AddLibraryDialog(client: JellyfinClient, onDismiss: () -> Unit, onCr
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Box(Modifier.matchParentSize().clickable { typeMenu = true })
-                    DropdownMenu(typeMenu, onDismissRequest = { typeMenu = false }) {
+                    CtrlDropdownMenu(typeMenu, onDismissRequest = { typeMenu = false }) {
                         COLLECTION_TYPES.forEach { (k, label) ->
-                            DropdownMenuItem(text = { Text(label) }, onClick = { type = k; typeMenu = false })
+                            DropdownMenuItem(colors = ctrlMenuItemColors(), text = { Text(label) }, onClick = { type = k; typeMenu = false })
                         }
                     }
                 }

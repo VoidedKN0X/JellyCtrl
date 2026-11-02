@@ -710,3 +710,43 @@ fun CtrlBottomBar(
         }
     }
 }
+
+// ---------- Popup menus ----------
+
+/**
+ * Popup menu in the Signal style: flat surface of the current palette, 16dp corners, 1dp card border and
+ * no shadow or tonal tint (Material's shadow drew a grey box inside the popup window). Same slots as
+ * Material's DropdownMenu.
+ */
+@Composable
+fun CtrlDropdownMenu(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    offset: androidx.compose.ui.unit.DpOffset = androidx.compose.ui.unit.DpOffset(0.dp, 0.dp),
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    androidx.compose.material3.DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismissRequest,
+        modifier = modifier,
+        offset = offset,
+        shape = RoundedCornerShape(16.dp),
+        containerColor = CtrlColors.Surface,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, CtrlColors.Outline),
+        content = content,
+    )
+}
+
+/** Item colours for popup menus: palette text, muted icons, the disabled colour when disabled. */
+@Composable
+fun ctrlMenuItemColors(): androidx.compose.material3.MenuItemColors = androidx.compose.material3.MenuDefaults.itemColors(
+    textColor = CtrlColors.Text,
+    leadingIconColor = CtrlColors.Muted,
+    trailingIconColor = CtrlColors.Muted,
+    disabledTextColor = CtrlColors.Inactive,
+    disabledLeadingIconColor = CtrlColors.Inactive,
+    disabledTrailingIconColor = CtrlColors.Inactive,
+)

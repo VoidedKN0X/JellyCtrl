@@ -4,6 +4,15 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.4 (2026-11-02)
+
+Popup menus no longer show a grey box.
+
+### Fixed
+
+- **Popup menus no longer show a grey box around them.** Menus still used Material's default shadow, which was drawn inside the menu's own window and showed up as a grey, square-edged box, most visibly in light mode. Menus now use the flat Signal style in both themes: the card colour (white in light mode, dark grey in dark mode), 16dp rounded corners, a thin border and no shadow. Menu text uses the normal text colour and icons the muted grey; **Remove library** stays red, icon included.
+- Menus changed: the library menu on each library in **Server dashboard > Libraries** (Scan this library, Add folder, Rename, Remove library) and the library type picker when adding a library. JellyCtrl has no other popup menus, tooltips or popups. Nothing else changes in how they work.
+
 ## v0.5.3 (2026-11-02)
 
 Mark as watched and Favourite now show their result straight away, everywhere.
