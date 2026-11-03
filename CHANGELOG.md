@@ -4,6 +4,12 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Project updates (2026-11-03)
+
+### Project
+
+- **README:** the Ctrl series list now links to ChatCtrl, the Matrix chat app in the series. No app changes, so no new version.
+
 ## v0.5.6 (2026-11-02)
 
 Server logs in the dashboard are now always kept out of screenshots, plus a security check of the whole app.
