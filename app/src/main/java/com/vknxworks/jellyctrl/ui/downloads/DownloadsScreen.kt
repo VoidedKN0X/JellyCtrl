@@ -131,6 +131,7 @@ fun DownloadsScreen() {
     }
 
     confirmDelete?.let { e ->
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { confirmDelete = null },
             title = { Text(if (e.status == DownloadStatus.DONE) stringResource(R.string.delete_download) else stringResource(R.string.cancel_download)) },

@@ -69,6 +69,12 @@ Favourites, downloads, Live TV, remote control, **Settings**, accounts and the s
 
   Advanced users can check it with [AppVerifier](https://github.com/soupslurpr/AppVerifier).
 
+**Check a download**
+
+- The APK's SHA-256 checksum is at the bottom of each release's notes. Compare it with `sha256sum JellyCtrl-vX.Y.Z.apk` (or `Get-FileHash` on Windows).
+- Each release also has a signed build provenance attestation. With the [GitHub CLI](https://cli.github.com/), `gh attestation verify JellyCtrl-vX.Y.Z.apk -R VoidedKN0X/JellyCtrl` proves the APK was built by this repo's build workflow from the tagged commit, not uploaded by hand.
+- The signing-certificate fingerprint above still applies: Android and AppVerifier check it on the phone.
+
 **Permissions** JellyCtrl asks for, and what each one is for:
 
 | Permission | What it's for |
@@ -80,6 +86,7 @@ Favourites, downloads, Live TV, remote control, **Settings**, accounts and the s
 | Foreground service (`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `FOREGROUND_SERVICE_DATA_SYNC`) | Keeping music playing and downloads running while JellyCtrl is in the background |
 | Keep awake (`WAKE_LOCK`) | Music and downloads don't stop when the screen turns off |
 | Biometrics (`USE_BIOMETRIC`) | Optional fingerprint unlock for the app lock |
+| Hide other apps' floating windows (`HIDE_OVERLAY_WINDOWS`) | Hide other apps' floating windows over the PIN screen, the lock screen and confirmations, so nothing can be drawn over them to trick a tap (never over video or picture-in-picture) |
 | Run at startup (`RECEIVE_BOOT_COMPLETED`) | Picking unfinished downloads up again after the phone restarts (added by Android's WorkManager) |
 
 Android also lists a "dynamic receiver" permission (`DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`) that AndroidX adds to every app so only JellyCtrl itself can send it internal broadcasts; it gives the app no access to anything. JellyCtrl has no location, camera, microphone, contacts, storage or Wi-Fi state permissions.
@@ -98,6 +105,7 @@ Turn it on under your profile picture › **Settings > Privacy and security > Ap
 - **Change app PIN** asks for your current PIN first, and turning the app lock off asks for the PIN too.
 - **Forgot your PIN?** It can't be recovered, because it encrypts your sign-ins. The lock screen offers to remove every account and delete the downloads and cached pictures kept on the phone; nothing changes on your Jellyfin server.
 - **With the app lock on**, the recent-apps screen always shows a blank card, music that's already playing (or paused with a queue) and downloads in progress carry on while JellyCtrl is locked, with their controls in the notification, on the lock screen and on Bluetooth devices: they keep the sign-in they need in memory until they stop, and anything new needs an unlock. A video waits, paused, under the lock screen, and downloads that were waiting when the phone restarted start after you unlock.
+- **Nothing can be drawn over the lock screen or PIN pad.** While the lock screen, a PIN screen or a confirmation (delete, sign out, uninstall, restart the server, approve a Quick Connect sign-in, use HTTP) is showing, other apps' floating windows such as chat heads are hidden, so they can't cover a button to trick you into tapping it. On Android 14 and newer, apps that aren't real accessibility tools also can't read the lock and PIN screens; screen readers such as TalkBack still work. Floating windows show again as soon as those screens close, and they're never hidden over the video player or picture-in-picture.
 
 Two more switches in the same section work with or without the app lock, and are both off until you turn them on:
 
@@ -131,6 +139,8 @@ You need [Android Studio](https://developer.android.com/studio), or JDK 17 and t
 3. The APK is in `app/build/outputs/apk/debug/`. Copy it to your phone and install it.
 
 Or open the folder in Android Studio and press **Run** with your phone connected.
+
+Every library and Gradle plugin download is checked against the SHA-256 checksums in `gradle/verification-metadata.xml`; the build stops if anything doesn't match. When a dependency or plugin changes, run the **Dependency verification metadata** workflow (Actions tab), check the diff of the file it prints, and commit the new file in the same push. On Windows or macOS, Android's `aapt2` tool is a different download that isn't listed, so add `--dependency-verification=lenient` to local builds there.
 
 ## Support the project
 

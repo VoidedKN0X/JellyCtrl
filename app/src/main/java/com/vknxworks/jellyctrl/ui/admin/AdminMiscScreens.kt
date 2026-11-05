@@ -203,6 +203,7 @@ fun AdminPluginsScreen() {
     }
 
     confirmRemove?.let { p ->
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { confirmRemove = null },
             title = { Text(stringResource(R.string.uninstall_x, p.name.orEmpty())) },
@@ -423,6 +424,7 @@ fun AdminDevicesScreen() {
     }
     signingOut?.let { d ->
         val id = d.id
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { signingOut = null },
             title = { Text(stringResource(R.string.sign_out_x, (d.customName ?: d.name).orEmpty())) },
@@ -478,6 +480,7 @@ fun AdminKeysScreen() {
         }
     }
     revoking?.let { k ->
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { revoking = null },
             title = { Text(k.appName?.let { stringResource(R.string.revoke_x, it) } ?: stringResource(R.string.revoke_this_key)) },

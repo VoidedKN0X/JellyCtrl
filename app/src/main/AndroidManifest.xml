@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Hides other apps' floating windows while the lock screen, a PIN screen or a confirmation is showing
+         (install-time, no prompt). Never over video or picture-in-picture. -->
+    <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
@@ -27,9 +30,13 @@
         </intent>
     </queries>
 
+    <!-- Android 16 and newer: explicit intents from other apps (the launcher, ArrCtrl's "Play in JellyCtrl") must
+         match one of the intent filters below; intents without an action are refused. JellyCtrl's own intents
+         (notifications, the player) aren't affected. -->
     <application
         android:name=".JellyCtrlApp"
         android:allowBackup="false"
+        android:intentMatchingFlags="enforceIntentFilter"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
@@ -66,9 +73,13 @@
             android:supportsPictureInPicture="true"
             android:theme="@style/Theme.JellyCtrl.Player" />
 
+        <!-- Media controllers in other apps (watches, car and media-control apps) connect to the music service.
+             Not every one of them is known to use the action below, so strict intent matching is off here
+             (intentMatchingFlags="none") to keep them all working. -->
         <service
             android:name=".music.MusicService"
             android:exported="true"
+            android:intentMatchingFlags="none"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="androidx.media3.session.MediaSessionService" />

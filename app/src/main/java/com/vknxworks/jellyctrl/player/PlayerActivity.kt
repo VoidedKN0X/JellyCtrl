@@ -78,7 +78,9 @@ class PlayerActivity : ComponentActivity() {
 
         val c = applicationContext.container
         setContent {
-            // The video player stays dark in both themes: nothing bright next to the picture.
+            // The video player stays dark in both themes: nothing bright next to the picture. Other apps' floating
+            // windows are never hidden over the video or picture-in-picture (only the lock window is guarded).
+            androidx.compose.runtime.CompositionLocalProvider(com.vknxworks.jellyctrl.ui.lock.LocalWindowGuard provides false) {
             JellyCtrlTheme(dark = true) {
                 val engine by vm.engine.collectAsState()
                 val st = engine?.state?.collectAsState()?.value ?: EngineState()
@@ -119,6 +121,7 @@ class PlayerActivity : ComponentActivity() {
                         if (locked) LockWindow { AppLockOverlay(lockSetting) } else AppLockOverlay(lockSetting)
                     }
                 }
+            }
             }
         }
     }

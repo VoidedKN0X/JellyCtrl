@@ -203,6 +203,7 @@ fun AdminLibrariesScreen() {
         )
     }
     removingPath?.let { (libName, path) ->
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { removingPath = null },
             title = { Text(stringResource(R.string.remove_folder_2)) },
@@ -217,6 +218,7 @@ fun AdminLibrariesScreen() {
         )
     }
     removing?.let { lib ->
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { removing = null },
             title = { Text(stringResource(R.string.remove_x, lib.name.orEmpty())) },

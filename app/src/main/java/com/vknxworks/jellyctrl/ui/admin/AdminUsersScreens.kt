@@ -264,6 +264,7 @@ fun AdminUserScreen(id: String) {
     }
 
     if (confirmDelete) {
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(name?.let { stringResource(R.string.delete_x_q, it) } ?: stringResource(R.string.delete_user_q)) },

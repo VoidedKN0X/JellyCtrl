@@ -170,6 +170,7 @@ private fun ServerStep(vm: ServerSetupViewModel) {
         PillButton(stringResource(R.string.continue_label), onClick = { vm.connect() }, enabled = vm.address.isNotBlank(), modifier = Modifier.fillMaxWidth())
     }
     vm.httpFallbackFor?.let { host ->
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { vm.dismissHttpFallback() },
             icon = { Icon(Icons.Outlined.LockOpen, null, tint = MaterialTheme.colorScheme.error) },

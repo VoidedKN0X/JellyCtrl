@@ -338,7 +338,10 @@ fun LockWindow(content: @Composable () -> Unit) {
             // Its own window, so it needs its own FLAG_SECURE: never in screenshots or recordings.
             securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn,
         ),
-    ) { content() }
+    ) {
+        // The video player's window isn't guarded, but this lock window on top of it is.
+        androidx.compose.runtime.CompositionLocalProvider(LocalWindowGuard provides true) { content() }
+    }
 }
 
 /**
@@ -422,6 +425,8 @@ private fun LegacyLockedScreen() {
         unlock()
     }
     BackHandler { activity?.moveTaskToBack(true) }
+    // No other app's floating window over the lock screen, and no reading it by apps that aren't accessibility tools.
+    GuardedScreen(sensitive = true)
     Surface(Modifier.fillMaxSize().blockTouches(), color = CtrlColors.Background) {
         Box(Modifier.fillMaxSize().systemBarsPadding().padding(32.dp), contentAlignment = Alignment.Center) {
             Column(
@@ -556,6 +561,7 @@ private fun PinLockScreen() {
         },
     )
     if (forgetting) {
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { forgetting = false },
             title = { Text(stringResource(R.string.lock_forgot_title)) },
@@ -707,6 +713,8 @@ private fun PinPadScreen(
 ) {
     val cs = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
+    // No other app's floating window over the PIN pad, and no reading it by apps that aren't accessibility tools.
+    GuardedScreen(sensitive = true)
     Surface(Modifier.fillMaxSize().blockTouches(), color = CtrlColors.Background) {
         Column(
             Modifier.fillMaxSize().systemBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),

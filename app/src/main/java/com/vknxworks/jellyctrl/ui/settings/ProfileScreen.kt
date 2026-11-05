@@ -350,6 +350,7 @@ fun AccountsScreen() {
 
     signOut?.let { key ->
         val acc = accounts.firstOrNull { it.key == key }
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { signOut = null },
             title = { Text(stringResource(R.string.sign_out_x, acc?.userName.orEmpty())) },
@@ -424,6 +425,7 @@ fun QuickConnectApproveScreen() {
     }
 
     if (confirming) {
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { confirming = false },
             title = { Text(account?.userName?.let { stringResource(R.string.quick_connect_title_x, it) } ?: stringResource(R.string.quick_connect_title)) },

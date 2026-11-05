@@ -844,6 +844,7 @@ private fun MoreSheet(
     }
 
     if (confirmDelete) {
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(stringResource(R.string.delete_x, item.name.orEmpty())) },

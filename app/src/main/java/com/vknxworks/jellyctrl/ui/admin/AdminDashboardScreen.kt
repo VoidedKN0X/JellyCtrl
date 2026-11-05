@@ -211,6 +211,7 @@ fun AdminDashboardScreen() {
     }
 
     confirm?.let { what ->
+        com.vknxworks.jellyctrl.ui.lock.GuardedScreen()
         CtrlAlertDialog(
             onDismissRequest = { confirm = null },
             title = { Text(if (what == "restart") stringResource(R.string.restart_the_server) else stringResource(R.string.shut_down_the_server)) },
