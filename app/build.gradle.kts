@@ -18,11 +18,11 @@ android {
 
     defaultConfig {
         applicationId = "com.vknxworks.jellyctrl"
-        minSdk = 33
+        minSdk = 35
         targetSdk = 36
         // Bump both to publish a new release (see CHANGELOG.md).
-        versionCode = 48
-        versionName = "0.5.9"
+        versionCode = 49
+        versionName = "0.5.10"
 
         ndk {
             // 64-bit ARM phones and tablets only (arm64-v8a), like every Ctrl app; keeps mpv's native libs small.

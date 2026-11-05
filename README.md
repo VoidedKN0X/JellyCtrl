@@ -2,7 +2,7 @@
 
 **Your Jellyfin library, with a player that plays everything.**
 
-[![Latest release](https://img.shields.io/github/v/release/VoidedKN0X/JellyCtrl?label=download)](https://github.com/VoidedKN0X/JellyCtrl/releases/latest) ![Android 13+](https://img.shields.io/badge/Android-13%2B-3DDC84?logo=android&logoColor=white) [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE) ![Telemetry-free](https://img.shields.io/badge/telemetry-none-brightgreen) [![Sponsor](https://img.shields.io/badge/sponsor-GitHub-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/VoidedKN0X)
+[![Latest release](https://img.shields.io/github/v/release/VoidedKN0X/JellyCtrl?label=download)](https://github.com/VoidedKN0X/JellyCtrl/releases/latest) ![Android 15+](https://img.shields.io/badge/Android-15%2B-3DDC84?logo=android&logoColor=white) [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE) ![Telemetry-free](https://img.shields.io/badge/telemetry-none-brightgreen) [![Sponsor](https://img.shields.io/badge/sponsor-GitHub-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/VoidedKN0X)
 
 JellyCtrl is a native Android app for [Jellyfin](https://jellyfin.org). Watch movies and shows, listen to music, watch Live TV and manage your server, on phones, tablets and foldables.
 
@@ -30,7 +30,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 
 ## Requirements
 
-- Android 13 or newer, on a 64-bit ARM phone (nearly every phone from the last several years)
+- Android 15 or newer, on a 64-bit ARM phone (nearly every phone from the last several years)
 - Jellyfin 10.9 or newer (10.10 or newer for skip intro)
 - **Google-free and de-Googled:** no Google Play services, Firebase or other Google services, and the app never contacts Google. It works the same on de-Googled phones (GrapheneOS, CalyxOS, /e/OS, LineageOS without Google apps).
 
@@ -105,7 +105,7 @@ Turn it on under your profile picture › **Settings > Privacy and security > Ap
 - **Change app PIN** asks for your current PIN first, and turning the app lock off asks for the PIN too.
 - **Forgot your PIN?** It can't be recovered, because it encrypts your sign-ins. The lock screen offers to remove every account and delete the downloads and cached pictures kept on the phone; nothing changes on your Jellyfin server.
 - **With the app lock on**, the recent-apps screen always shows a blank card, music that's already playing (or paused with a queue) and downloads in progress carry on while JellyCtrl is locked, with their controls in the notification, on the lock screen and on Bluetooth devices: they keep the sign-in they need in memory until they stop, and anything new needs an unlock. A video waits, paused, under the lock screen, and downloads that were waiting when the phone restarted start after you unlock.
-- **Nothing can be drawn over the lock screen or PIN pad.** While the lock screen, a PIN screen or a confirmation (delete, sign out, uninstall, restart the server, approve a Quick Connect sign-in, use HTTP) is showing, other apps' floating windows such as chat heads are hidden, so they can't cover a button to trick you into tapping it. On Android 14 and newer, apps that aren't real accessibility tools also can't read the lock and PIN screens; screen readers such as TalkBack still work. Floating windows show again as soon as those screens close, and they're never hidden over the video player or picture-in-picture.
+- **Nothing can be drawn over the lock screen or PIN pad.** While the lock screen, a PIN screen or a confirmation (delete, sign out, uninstall, restart the server, approve a Quick Connect sign-in, use HTTP) is showing, other apps' floating windows such as chat heads are hidden, so they can't cover a button to trick you into tapping it. Apps that aren't real accessibility tools also can't read the lock and PIN screens; screen readers such as TalkBack still work. Floating windows show again as soon as those screens close, and they're never hidden over the video player or picture-in-picture.
 
 Two more switches in the same section work with or without the app lock, and are both off until you turn them on:
 
