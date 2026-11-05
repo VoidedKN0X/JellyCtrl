@@ -4,7 +4,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Finding Jellyfin servers on your Wi-Fi only needs the multicast lock. Nothing reads the Wi-Fi state
+         (network name, scan results), so that permission stays out even if a library adds it. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

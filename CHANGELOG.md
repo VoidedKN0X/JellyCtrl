@@ -4,6 +4,25 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.7 (2026-11-05)
+
+Subtitles in the mpv player can no longer pass your login to another site, and an unused Wi-Fi permission is gone.
+
+### Security
+
+- **Subtitles in the mpv player keep your login on your own server.** When the mpv player loaded a separate subtitle file and your Jellyfin server answered with a redirect to another address, mpv would follow it with your access token attached. JellyCtrl now follows a subtitle's redirects itself first, as it already did for the video, and only gives mpv the final address; your token is only added while that address is still your own server. A subtitle whose address can't be checked is left out instead of being loaded unchecked. This closes the gap mentioned in 0.5.6.
+
+### Privacy
+
+- **The Wi-Fi state permission is gone.** Finding Jellyfin servers on your Wi-Fi only needs the multicast permission, which stays; JellyCtrl never read anything about your Wi-Fi network, so Android no longer lists Wi-Fi state access for it.
+- **No debug logging in release builds.** Debug, verbose and info messages from the libraries JellyCtrl uses are now stripped from the app, so nothing about your server or what you watch can end up in the phone's system log.
+
+### Project
+
+- The build now checks that the Gradle wrapper is an official Gradle release, and fails if any Google Play services, Firebase, ML Kit, Play Core or Tink library ever ends up in the app.
+- `.gitignore` also covers `local.properties` in any folder and `google-services.json`, so they can't be committed by accident.
+- README: every permission in the app is now listed with what it's for, and the Ctrl series list now has all 28 apps.
+
 ## Project updates (2026-11-03)
 
 ### Project

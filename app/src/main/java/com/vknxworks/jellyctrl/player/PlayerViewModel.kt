@@ -223,7 +223,7 @@ class PlayerViewModel(
                 url = url,
                 startMs = startMs,
                 isHls = resolved.isHls,
-                externalSubs = resolved.externalSubs,
+                externalSubs = if (engine is MpvEngine && !resolved.offline) subsForMpv(resolved.externalSubs) else resolved.externalSubs,
                 audioOrdinal = resolved.audioOrdinal,
                 subtitle = resolved.subtitle,
                 title = item?.name.orEmpty(),
@@ -264,6 +264,21 @@ class PlayerViewModel(
             current = target
         }
         throw IllegalStateException(str(R.string.too_many_redirects))
+    }
+
+    /**
+     * Subtitle files mpv loads separately get the same redirect check as the video: mpv gets each one's final
+     * address, so a redirect away from the signed-in server never carries the token. A subtitle whose address
+     * can't be checked is left out rather than handed to mpv unchecked.
+     */
+    private suspend fun subsForMpv(subs: List<ExternalSub>): List<ExternalSub> = subs.mapNotNull { s ->
+        try {
+            s.copy(url = finalUrlForMpv(s.url))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     /** Header line for mpv: only for the signed-in server, never for third-party or unapproved HTTP URLs. */
@@ -454,7 +469,7 @@ class PlayerViewModel(
                     language = target.language,
                     title = target.displayTitle ?: target.title,
                 )
-                engine.addExternalSubtitle(sub)
+                engine.addExternalSubtitle(if (engine is MpvEngine) sub.copy(url = finalUrlForMpv(sub.url)) else sub)
                 playback = pb.copy(
                     source = pb.source.copy(mediaStreams = freshStreams),
                     externalSubs = pb.externalSubs.filter { it.jellyfinIndex != sub.jellyfinIndex } + sub,

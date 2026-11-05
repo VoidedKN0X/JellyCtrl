@@ -75,12 +75,14 @@ Favourites, downloads, Live TV, remote control, **Settings**, accounts and the s
 | --- | --- |
 | Internet (`INTERNET`) | Talking to your Jellyfin server |
 | Network state (`ACCESS_NETWORK_STATE`) | Knowing whether you're online and on mobile data, for offline mode and the mobile data quality limit |
-| Wi-Fi state (`ACCESS_WIFI_STATE`) | Part of finding Jellyfin servers on your Wi-Fi. JellyCtrl never reads your Wi-Fi network's name. |
 | Wi-Fi multicast (`CHANGE_WIFI_MULTICAST_STATE`) | Hearing the answers from Jellyfin servers on your Wi-Fi when it looks for them |
 | Notifications (`POST_NOTIFICATIONS`) | The music player controls and download progress. Android asks you first. |
 | Foreground service (`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `FOREGROUND_SERVICE_DATA_SYNC`) | Keeping music playing and downloads running while JellyCtrl is in the background |
 | Keep awake (`WAKE_LOCK`) | Music and downloads don't stop when the screen turns off |
 | Biometrics (`USE_BIOMETRIC`) | Optional fingerprint unlock for the app lock |
+| Run at startup (`RECEIVE_BOOT_COMPLETED`) | Picking unfinished downloads up again after the phone restarts (added by Android's WorkManager) |
+
+Android also lists a "dynamic receiver" permission (`DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`) that AndroidX adds to every app so only JellyCtrl itself can send it internal broadcasts; it gives the app no access to anything. JellyCtrl has no location, camera, microphone, contacts, storage or Wi-Fi state permissions.
 
 See [Privacy](#privacy) for what JellyCtrl sends and to whom.
 
@@ -145,21 +147,29 @@ Native Android apps for self-hosted services and everyday tools, all with the sa
 | [AdCtrl](https://github.com/VoidedKN0X/AdCtrl) | Control your AdGuard Home DNS server |
 | [ArrCtrl](https://github.com/VoidedKN0X/ArrCtrl) | Radarr, Sonarr, Prowlarr, Bazarr, qBittorrent, autobrr and Cleanuparr in one app |
 | [BeamCtrl](https://github.com/VoidedKN0X/BeamCtrl) | TV remote for phones with an IR blaster |
+| [CallCtrl](https://github.com/VoidedKN0X/CallCtrl) | Phone app: dialer, call history and in-call screen |
 | [ChatCtrl](https://github.com/VoidedKN0X/ChatCtrl) | Matrix chat client for matrix.org and self-hosted Synapse |
+| [ClockCtrl](https://github.com/VoidedKN0X/ClockCtrl) | Alarms, timers, stopwatch and world clock |
+| [ContactCtrl](https://github.com/VoidedKN0X/ContactCtrl) | Contacts: browse, edit, import and export |
 | [CraftyCtrl](https://github.com/VoidedKN0X/CraftyCtrl) | Manage Minecraft servers on Crafty Controller |
+| [DateCtrl](https://github.com/VoidedKN0X/DateCtrl) | Calendar for the calendars on your phone and your accounts |
 | [FilesCtrl](https://github.com/VoidedKN0X/FilesCtrl) | File manager with NFS, SMB, SFTP, FTP and WebDAV |
 | [FrigateCtrl](https://github.com/VoidedKN0X/FrigateCtrl) | Watch and review your Frigate NVR cameras |
 | [ImmichCtrl](https://github.com/VoidedKN0X/ImmichCtrl) | Photos and backup for your Immich server |
 | **JellyCtrl** (this app) | Movies, shows, music and Live TV from Jellyfin |
+| [LijnCtrl](https://github.com/VoidedKN0X/LijnCtrl) | Live De Lijn bus and tram departures |
+| [MailCtrl](https://github.com/VoidedKN0X/MailCtrl) | Email for Gmail and Proton Mail |
 | [MemoCtrl](https://github.com/VoidedKN0X/MemoCtrl) | Notes on your Memos server |
 | [NaviCtrl](https://github.com/VoidedKN0X/NaviCtrl) | Music player for Navidrome servers |
 | [PaperCtrl](https://github.com/VoidedKN0X/PaperCtrl) | Scan and browse documents on Paperless-ngx |
 | [PrintCtrl](https://github.com/VoidedKN0X/PrintCtrl) | Bambu Lab printers through Bambuddy, and Spoolman spools |
 | [ProxCtrl](https://github.com/VoidedKN0X/ProxCtrl) | Manage your Proxmox VE server |
+| **RecorderCtrl** (this app) | Private, offline voice recorder |
 | [RideCtrl](https://github.com/VoidedKN0X/RideCtrl) | Offline maintenance, fuel and mod log for your vehicles |
 | [SeerrCtrl](https://github.com/VoidedKN0X/SeerrCtrl) | Request movies and shows on Seerr / Jellyseerr |
 | [SumCtrl](https://github.com/VoidedKN0X/SumCtrl) | Offline calculator, unit converter and work tools |
 | [SynapseCtrl](https://github.com/VoidedKN0X/SynapseCtrl) | Administer your Matrix Synapse server |
+| [TextCtrl](https://github.com/VoidedKN0X/TextCtrl) | Private SMS and MMS messaging |
 | [TrueCtrl](https://github.com/VoidedKN0X/TrueCtrl) | Monitor and manage your TrueNAS server |
 | [WrtCtrl](https://github.com/VoidedKN0X/WrtCtrl) | Manage your OpenWrt router |
 
