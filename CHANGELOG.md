@@ -4,6 +4,14 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.8 (2026-11-05)
+
+The video player no longer hands playback diagnostics to Android.
+
+### Privacy
+
+- **No playback diagnostics are handed to Android.** The Media3 video player used to report playback details (such as what format is playing, buffering and errors) to Android's own media diagnostics service, which can pass them on to Google when the phone shares usage and diagnostics data. The video player now has this turned off, like the music player already did, so no playback diagnostics are handed to Android. Playback itself, picture-in-picture and the mpv player work as before.
+
 ## v0.5.7 (2026-11-05)
 
 Subtitles in the mpv player can no longer pass your login to another site, and an unused Wi-Fi permission is gone.

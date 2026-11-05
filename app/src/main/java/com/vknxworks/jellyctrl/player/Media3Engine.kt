@@ -63,6 +63,7 @@ class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
         .setHandleAudioBecomingNoisy(true)
         .setSeekBackIncrementMs(10_000)
         .setSeekForwardIncrementMs(10_000)
+        .setUsePlatformDiagnostics(false)
         .build()
 
     private val listener = object : Player.Listener {
