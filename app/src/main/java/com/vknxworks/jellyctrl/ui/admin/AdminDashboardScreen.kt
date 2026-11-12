@@ -8,6 +8,7 @@ import com.vknxworks.jellyctrl.ui.components.Group
 import com.vknxworks.jellyctrl.ui.components.GroupRow
 import com.vknxworks.jellyctrl.ui.components.RoundAction
 import com.vknxworks.jellyctrl.ui.components.SectionHeader
+import com.vknxworks.jellyctrl.ui.components.WhileOnScreen
 import com.vknxworks.jellyctrl.ui.theme.Gutter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,7 +48,6 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -130,7 +130,9 @@ fun AdminDashboardScreen() {
             Dash(info.await(), sessions.await().filter { it.nowPlayingItem != null || it.isActive }, activity.await(), tasks.await())
         }
     }
-    LaunchedEffect(loader) {
+    // Refreshed while the app is on screen; not in the background.
+    WhileOnScreen(loader) { back ->
+        if (back) loader.reload(silent = true)
         while (true) { delay(10_000); loader.reload(silent = true) }
     }
 

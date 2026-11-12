@@ -86,6 +86,7 @@ import com.vknxworks.jellyctrl.data.api.updateItem
 import com.vknxworks.jellyctrl.data.api.withValues
 import com.vknxworks.jellyctrl.ui.components.LoadContent
 import com.vknxworks.jellyctrl.ui.components.MessageView
+import com.vknxworks.jellyctrl.ui.components.WhileOnScreen
 import com.vknxworks.jellyctrl.ui.components.formatBytes
 import com.vknxworks.jellyctrl.ui.components.formatDateTime
 import com.vknxworks.jellyctrl.ui.components.rememberLoader
@@ -116,7 +117,11 @@ fun AdminTasksScreen() {
     val actions = rememberAdminActions()
     val client = c.api
     val loader = rememberLoader("admin-tasks") { client.scheduledTasks() }
-    LaunchedEffect(loader) { while (true) { delay(3000); loader.reload(silent = true) } }
+    // Refreshed while the app is on screen; not in the background.
+    WhileOnScreen(loader) { back ->
+        if (back) loader.reload(silent = true)
+        while (true) { delay(3000); loader.reload(silent = true) }
+    }
 
     AdminScaffold(stringResource(R.string.scheduled_tasks), actions, loader.refreshing, { loader.reload(silent = true) }) {
         LoadContent(loader) { tasks ->

@@ -38,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +61,7 @@ import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.LoadContent
 import com.vknxworks.jellyctrl.ui.components.MessageView
 import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
+import com.vknxworks.jellyctrl.ui.components.WhileOnScreen
 import com.vknxworks.jellyctrl.ui.components.formatClock
 import com.vknxworks.jellyctrl.ui.components.friendlyMessage
 import com.vknxworks.jellyctrl.ui.components.landscapeImage
@@ -85,7 +85,9 @@ fun RemoteScreen(adminView: Boolean = false) {
     val loader = rememberLoader("sessions-$adminView") {
         client.sessions(controllableOnly = !adminView).filter { it.deviceId != client.deviceId }
     }
-    LaunchedEffect(loader) {
+    // Refreshed while the app is on screen; not in the background.
+    WhileOnScreen(loader) { back ->
+        if (back) loader.reload(silent = true)
         while (true) {
             delay(5000)
             loader.reload(silent = true)

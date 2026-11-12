@@ -4,6 +4,13 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.5.11 (2026-11-12)
+
+### Changed
+
+- **Remote control and the admin pages stop asking the server when JellyCtrl isn't on screen.** Remote control (every 5 seconds), the admin dashboard (every 10) and scheduled tasks (every 3) kept refreshing with the app in the background, which matters most while music keeps JellyCtrl running. They now pause when you leave the app and catch up at once when you come back.
+- **Slightly smaller download.** The bundled JetBrains Mono font (numbers, readouts and labels) no longer carries the Cyrillic, Vietnamese and maths-alphabet letters JellyCtrl never shows itself, which takes about 0.1 MB off the download and 0.2 MB off the installed app. Everything looks the same; if a name or a log line shown in that font uses one of those scripts, those letters are now drawn with your phone's own font.
+
 ## v0.5.10 (2026-11-05)
 
 JellyCtrl now needs Android 15 or newer.
