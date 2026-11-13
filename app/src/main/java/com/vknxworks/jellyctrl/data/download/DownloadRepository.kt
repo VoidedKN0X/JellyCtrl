@@ -43,7 +43,12 @@ data class DownloadEntry(
     val status: DownloadStatus = DownloadStatus.QUEUED,
     val error: String? = null,
     val addedAt: Long = System.currentTimeMillis(),
+    /** Bits per second the server converted it to; 0 = the original file. */
+    val bitrate: Long = 0,
+    /** Subtitles saved next to it, for offline playback. */
+    val subtitles: List<DownloadedSub> = emptyList(),
 ) {
+    val converted: Boolean get() = bitrate > 0
     val item: BaseItemDto
         get() = runCatching { JellyfinJson.decodeFromString(BaseItemDto.serializer(), itemJson) }.getOrElse { BaseItemDto(id = itemId, name = name) }
     val progress: Float
@@ -87,8 +92,16 @@ class DownloadRepository(private val context: Context, private val scope: Corout
     fun completedFile(itemId: String): File? =
         find(itemId)?.takeIf { it.status == DownloadStatus.DONE }?.let { file(it) }?.takeIf { it.exists() }
 
-    fun enqueue(item: BaseItemDto, accountKey: String, wifiOnly: Boolean) {
-        val ext = (item.container ?: item.mediaSources.firstOrNull()?.container ?: "mkv").substringBefore(',')
+    /** Saved subtitle files of [entry] that are still there, with their files. */
+    fun subtitleFiles(entry: DownloadEntry): List<Pair<DownloadedSub, File>> =
+        entry.subtitles.mapNotNull { s -> safeFile(s.fileName)?.takeIf { it.isFile }?.let { s to it } }
+
+    /**
+     * Queues [item]. [bitrate] (bits per second) asks the server to convert it; 0 downloads the
+     * original file.
+     */
+    fun enqueue(item: BaseItemDto, accountKey: String, wifiOnly: Boolean, bitrate: Long = 0) {
+        val ext = if (bitrate > 0) DownloadPlan.convertedExtension(item) else (item.container ?: item.mediaSources.firstOrNull()?.container ?: "mkv").substringBefore(',')
             .trim().lowercase().takeIf { EXT_RE.matches(it) } ?: "mkv"
         // Local names come from a hash of the server's item id, never from the raw id, so a hostile server can't
         // point a download outside the folder. Re-downloads of an existing entry keep its stored names.
@@ -101,9 +114,12 @@ class DownloadRepository(private val context: Context, private val scope: Corout
             type = item.type,
             seriesName = item.seriesName,
             itemJson = JellyfinJson.encodeToString(BaseItemDto.serializer(), item),
-            fileName = existing?.fileName?.takeIf { safeFile(it) != null } ?: "$base.$ext",
+            fileName = existing?.fileName?.takeIf { safeFile(it) != null && it.endsWith(".$ext") } ?: "$base.$ext",
             posterFile = existing?.posterFile?.takeIf { safeFile(it) != null } ?: "$base.jpg",
+            bitrate = bitrate.coerceAtLeast(0),
         )
+        // A finished download at another quality, or another file name, is replaced.
+        if (existing != null && existing.fileName != entry.fileName) safeFile(existing.fileName)?.delete()
         scope.launch {
             upsert(entry)
             val request = OneTimeWorkRequestBuilder<DownloadWorker>()
@@ -122,7 +138,7 @@ class DownloadRepository(private val context: Context, private val scope: Corout
 
     fun retry(itemId: String, wifiOnly: Boolean) {
         val e = find(itemId) ?: return
-        enqueue(e.item, e.accountKey, wifiOnly)
+        enqueue(e.item, e.accountKey, wifiOnly, e.bitrate)
     }
 
     fun cancel(itemId: String) {
@@ -135,7 +151,8 @@ class DownloadRepository(private val context: Context, private val scope: Corout
             val e = find(itemId) ?: return@launch
             WorkManager.getInstance(context).cancelUniqueWork(workName(itemId))
             safeFile(e.fileName)?.delete()
-            safeFile(e.fileName + ".part")?.delete()
+            deleteParts(e)
+            e.subtitles.forEach { s -> safeFile(s.fileName)?.delete() }
             e.posterFile?.let { safeFile(it)?.delete() }
             mutex.withLock {
                 _entries.update { list -> list.filterNot { it.itemId == itemId } }
@@ -168,6 +185,12 @@ class DownloadRepository(private val context: Context, private val scope: Corout
     fun busy(): Boolean = _entries.value.any { it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.RUNNING }
 
     fun usedBytes(): Long = dir.listFiles()?.sumOf { it.length() } ?: 0L
+
+    /** Half-finished files of [e] (any quality). */
+    fun deleteParts(e: DownloadEntry, keep: File? = null) {
+        val prefix = e.fileName.substringBeforeLast('.') + "."
+        dir.listFiles { f -> f.name.startsWith(prefix) && f.name.endsWith(".part") && f != keep }?.forEach { it.delete() }
+    }
 
     private fun save() {
         runCatching {

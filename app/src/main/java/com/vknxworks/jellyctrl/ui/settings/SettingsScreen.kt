@@ -173,6 +173,26 @@ fun SettingsScreen() {
                 GroupSwitch(stringResource(R.string.download_on_wi_fi_only), checked = s.downloadWifiOnly) { v -> update { it.copy(downloadWifiOnly = v) } }
             }
 
+            Group(stringResource(R.string.downloads), footer = stringResource(R.string.downloads_settings_footer)) {
+                GroupChoice(
+                    stringResource(R.string.download_video_quality),
+                    listOf(0 to stringResource(R.string.original_file)) + listOf(20, 10, 8, 6, 4, 3, 2, 1).map { it to stringResource(R.string.x_mbps, it) },
+                    s.downloadVideoMbps,
+                    fallbackLabel = stringResource(R.string.x_mbps, s.downloadVideoMbps),
+                ) { v -> update { it.copy(downloadVideoMbps = v) } }
+                GroupChoice(
+                    stringResource(R.string.download_music_quality),
+                    listOf(0 to stringResource(R.string.original_file), 320 to stringResource(R.string.s_320_kbps), 256 to stringResource(R.string.s_256_kbps), 192 to stringResource(R.string.s_192_kbps), 128 to stringResource(R.string.s_128_kbps)),
+                    s.downloadMusicKbps,
+                ) { v -> update { it.copy(downloadMusicKbps = v) } }
+                GroupChoice(
+                    stringResource(R.string.download_limit),
+                    listOf(0 to stringResource(R.string.no_limit)) + listOf(2, 4, 8, 16, 32, 64, 128).map { it to stringResource(R.string.x_gb, it) },
+                    s.downloadLimitGb,
+                    fallbackLabel = stringResource(R.string.x_gb, s.downloadLimitGb),
+                ) { v -> update { it.copy(downloadLimitGb = v) } }
+            }
+
         }
     }
 }

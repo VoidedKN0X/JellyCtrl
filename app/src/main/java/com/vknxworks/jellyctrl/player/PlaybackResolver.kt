@@ -1,6 +1,7 @@
 package com.vknxworks.jellyctrl.player
 
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
+import com.vknxworks.jellyctrl.data.download.DownloadedSub
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import com.vknxworks.jellyctrl.data.api.MediaSourceInfo
 import com.vknxworks.jellyctrl.data.api.MediaStream
@@ -135,9 +136,43 @@ object PlaybackResolver {
         )
     }
 
-    /** Play a downloaded file. Engine choice uses the codecs recorded when it was downloaded. */
-    fun offline(item: BaseItemDto, filePath: String, choice: PlayerEngineChoice): ResolvedPlayback {
-        val source = item.mediaSources.firstOrNull() ?: MediaSourceInfo(id = item.id, mediaStreams = item.mediaStreams)
+    /**
+     * Play a downloaded file. Engine choice uses the codecs recorded when it was downloaded (a converted
+     * download is H.264/AAC or MP3). [subtitles] are the subtitle files saved with it, side-loaded
+     * with their server stream index so the same subtitle is picked as when streaming.
+     */
+    fun offline(
+        item: BaseItemDto,
+        filePath: String,
+        choice: PlayerEngineChoice,
+        converted: Boolean = false,
+        subtitles: List<Pair<DownloadedSub, String>> = emptyList(),
+    ): ResolvedPlayback {
+        val original = item.mediaSources.firstOrNull() ?: MediaSourceInfo(id = item.id, mediaStreams = item.mediaStreams)
+        val downloadedSubs = subtitles.map { (s, _) ->
+            MediaStream(
+                codec = s.codec, language = s.language, title = s.title, displayTitle = s.title, type = "Subtitle",
+                index = s.index, isDefault = s.isDefault, isForced = s.isForced, isExternal = true,
+                isTextSubtitleStream = true, deliveryMethod = "External",
+            )
+        }
+        val source = if (converted) {
+            // What's in the converted file: one video (H.264) and one audio track (AAC), or one MP3 track.
+            val origAudio = original.mediaStreams.firstOrNull { it.type == "Audio" && it.index == original.defaultAudioStreamIndex }
+                ?: original.mediaStreams.firstOrNull { it.type == "Audio" }
+            val isAudioOnly = item.mediaType == "Audio"
+            original.copy(
+                container = if (isAudioOnly) "mp3" else "mp4",
+                mediaStreams = listOfNotNull(
+                    if (isAudioOnly) null else MediaStream(codec = "h264", type = "Video", index = 0),
+                    MediaStream(codec = if (isAudioOnly) "mp3" else "aac", type = "Audio", index = 1, language = origAudio?.language, title = origAudio?.title, displayTitle = origAudio?.displayTitle, channels = 2),
+                ) + downloadedSubs,
+                defaultAudioStreamIndex = 1,
+                defaultSubtitleStreamIndex = original.defaultSubtitleStreamIndex?.takeIf { d -> downloadedSubs.any { it.index == d } },
+            )
+        } else {
+            original.copy(mediaStreams = original.mediaStreams.filter { !it.isExternal } + downloadedSubs)
+        }
         val audio = source.defaultAudioStreamIndex
         val sub = source.defaultSubtitleStreamIndex?.takeIf { it >= 0 }
         val engine = when (choice) {
@@ -145,24 +180,31 @@ object PlaybackResolver {
             PlayerEngineChoice.MEDIA3 -> EngineKind.MEDIA3
             PlayerEngineChoice.AUTO -> if (CodecSupport.media3CanPlay(source, audio, sub)) EngineKind.MEDIA3 else EngineKind.MPV
         }
+        val externals = subtitles.map { (s, path) ->
+            ExternalSub(s.index, if (engine == EngineKind.MPV) path else "file://$path", s.codec, s.language, s.title ?: s.language)
+        }
         val embeddedAudio = source.mediaStreams.filter { it.type == "Audio" && !it.isExternal }
         val embeddedSubs = source.mediaStreams.filter { it.type == "Subtitle" && !it.isExternal }
+        val subSel: SubSelection = when {
+            sub == null -> SubSelection.Off
+            externals.any { it.jellyfinIndex == sub } -> SubSelection.External(sub)
+            else -> embeddedSubs.indexOfFirst { it.index == sub }.takeIf { it >= 0 }?.let { SubSelection.Embedded(it) } ?: SubSelection.Off
+        }
         return ResolvedPlayback(
             engine = engine,
             url = if (engine == EngineKind.MPV) filePath else "file://$filePath",
             isHls = false,
             playMethod = "DirectPlay",
-            source = source.copy(mediaStreams = source.mediaStreams.filter { !it.isExternal }),
+            source = source,
             playSessionId = null,
             audioIndex = audio,
-            subtitleIndex = sub,
-            externalSubs = emptyList(),
+            subtitleIndex = sub.takeIf { subSel != SubSelection.Off },
+            externalSubs = externals,
             audioOrdinal = embeddedAudio.indexOfFirst { it.index == audio }.takeIf { it >= 0 },
-            subtitle = embeddedSubs.indexOfFirst { it.index == sub }.takeIf { it >= 0 }?.let { SubSelection.Embedded(it) } ?: SubSelection.Off,
+            subtitle = subSel,
             offline = true,
         )
     }
-
     private fun playbackError(code: String) = when (code) {
         "NotAllowed" -> str(R.string.this_account_isn_t_allowed_to)
         "NoCompatibleStream" -> str(R.string.no_compatible_stream_try_another_player)

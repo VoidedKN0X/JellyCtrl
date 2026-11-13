@@ -156,7 +156,8 @@ class MpvEngine(
 
     private fun onFileLoaded(request: LoadRequest) {
         mpv.setPropertyString("start", "none")
-        request.externalSubs.filter { isWebUrl(it.url) }.forEach { s ->
+        // Server subtitles over http(s), or subtitle files saved with a download (inside the app's own folders).
+        request.externalSubs.filter { isAllowedSource(it.url) }.forEach { s ->
             val title = s.title ?: s.language ?: "External"
             setAuthFor(s.url)
             mpv.command(arrayOf("sub-add", s.url, "auto", title, s.language ?: ""))

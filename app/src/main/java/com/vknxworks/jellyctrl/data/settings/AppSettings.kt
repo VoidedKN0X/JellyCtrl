@@ -62,6 +62,12 @@ data class AppSettings(
     val gestures: Boolean = true,
     val autoPip: Boolean = true,
     val downloadWifiOnly: Boolean = true,
+    /** Mbps for video downloads; 0 = the original file. */
+    val downloadVideoMbps: Int = 0,
+    /** kbps for music downloads; 0 = the original file. */
+    val downloadMusicKbps: Int = 0,
+    /** GB that downloads may take up on the phone; 0 = no limit. */
+    val downloadLimitGb: Int = 0,
     val musicBitrateKbps: Int = 320,
     val hwDecoding: Boolean = true,
     /** The app lock is on (the PIN itself lives in LockVault). */
@@ -92,6 +98,9 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val gestures = booleanPreferencesKey("gestures")
         val autoPip = booleanPreferencesKey("auto_pip")
         val wifiOnly = booleanPreferencesKey("download_wifi_only")
+        val downloadVideo = intPreferencesKey("download_video_mbps")
+        val downloadMusic = intPreferencesKey("download_music_kbps")
+        val downloadLimit = intPreferencesKey("download_limit_gb")
         val musicBitrate = intPreferencesKey("music_bitrate")
         val hwDec = booleanPreferencesKey("hw_decoding")
         val appLock = booleanPreferencesKey("app_lock")
@@ -129,6 +138,9 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         gestures = this[K.gestures] ?: true,
         autoPip = this[K.autoPip] ?: true,
         downloadWifiOnly = this[K.wifiOnly] ?: true,
+        downloadVideoMbps = (this[K.downloadVideo] ?: 0).coerceAtLeast(0),
+        downloadMusicKbps = (this[K.downloadMusic] ?: 0).coerceAtLeast(0),
+        downloadLimitGb = (this[K.downloadLimit] ?: 0).coerceAtLeast(0),
         musicBitrateKbps = this[K.musicBitrate] ?: 320,
         hwDecoding = this[K.hwDec] ?: true,
         appLock = this[K.appLock] ?: false,
@@ -152,6 +164,9 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             p[K.gestures] = s.gestures
             p[K.autoPip] = s.autoPip
             p[K.wifiOnly] = s.downloadWifiOnly
+            p[K.downloadVideo] = s.downloadVideoMbps
+            p[K.downloadMusic] = s.downloadMusicKbps
+            p[K.downloadLimit] = s.downloadLimitGb
             p[K.musicBitrate] = s.musicBitrateKbps
             p[K.hwDec] = s.hwDecoding
             // "Protect the server dashboard" (before 0.2.3) is covered by the two switches now.

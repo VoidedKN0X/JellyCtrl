@@ -588,7 +588,6 @@
     <string name="tab_home">Home</string>
     <string name="tab_search">Search</string>
     <string name="tab_library">Library</string>
-    <string name="x_kbps">%1$d kbps</string>
     <string name="admin_users">Users</string>
     <string name="admin_libraries">Libraries</string>
     <string name="admin_scheduled_tasks">Scheduled tasks</string>
@@ -737,4 +736,29 @@
     <!-- Open in ArrCtrl -->
     <string name="open_in_arrctrl">Open in ArrCtrl</string>
     <string name="arrctrl_open_failed">Couldn\'t open ArrCtrl</string>
+    <!-- Downloads: quality, space, series choices -->
+    <string name="original_file">Original file</string>
+    <string name="x_kbps">%1$d kbps</string>
+    <string name="x_gb">%1$d GB</string>
+    <string name="no_limit">No limit</string>
+    <string name="download_limit">Space for downloads</string>
+    <string name="download_limit_reached">Not enough room: downloads may use %1$s (Settings &gt; Downloads)</string>
+    <string name="download_video_quality">Video quality</string>
+    <string name="download_music_quality">Music quality</string>
+    <string name="downloads_settings_footer">Original files keep every audio track and subtitle. A lower quality is converted by your server (video to H.264 and AAC, music to MP3), which takes up less room; text subtitles are saved next to it. Downloads that lose their connection carry on once the phone is back online.</string>
+    <string name="download_x">Download %1$s</string>
+    <string name="download_quality_converted_x">Converted to %1$d Mbps by your server. Change it in Settings &gt; Downloads.</string>
+    <string name="download_quality_original_note">Original files. To save room, pick a lower quality in Settings &gt; Downloads.</string>
+    <string name="download_every_episode">Every episode</string>
+    <string name="download_this_season">This whole season</string>
+    <plurals name="download_next_unwatched">
+        <item quantity="one">Next unwatched episode</item>
+        <item quantity="other">Next %d unwatched episodes</item>
+    </plurals>
+    <string name="nothing_new_to_download">Nothing new to download</string>
+    <string name="download_converted_x">converted, %1$s</string>
+    <plurals name="x_subtitles">
+        <item quantity="one">%d subtitle</item>
+        <item quantity="other">%d subtitles</item>
+    </plurals>
 </resources>

@@ -188,7 +188,7 @@ class PlayerViewModel(
                 val start = startMs ?: if (resumeMs > 0 && (runtime == 0L || resumeMs < runtime * 0.95)) resumeMs else 0L
 
                 val resolved = if (local != null && mediaSourceId == null) {
-                    PlaybackResolver.offline(it, local.absolutePath, engineOverride ?: settings.engine)
+                    offlinePlayback(it, local.absolutePath, engineOverride ?: settings.engine)
                 } else {
                     val api = cl ?: throw IllegalStateException(str(R.string.not_signed_in))
                     PlaybackResolver.resolve(
@@ -205,6 +205,13 @@ class PlayerViewModel(
                 loading = false
             }
         }
+    }
+
+    /** A downloaded file, with the subtitles saved next to it. */
+    private fun offlinePlayback(it: BaseItemDto, path: String, choice: PlayerEngineChoice): ResolvedPlayback {
+        val entry = c.downloads.find(it.id)
+        val subs = entry?.let { e -> c.downloads.subtitleFiles(e).map { (s, f) -> s to f.absolutePath } }.orEmpty()
+        return PlaybackResolver.offline(it, path, choice, converted = entry?.converted == true, subtitles = subs)
     }
 
     private fun currentMaxBitrate(): Long = maxBitrateOverride ?: settings.maxBitrateBps(c.isOnCellular())
@@ -557,7 +564,7 @@ class PlayerViewModel(
                 loading = true
                 val cl = client ?: throw IllegalStateException(message)
                 val resolved = when {
-                    pb.offline -> PlaybackResolver.offline(item ?: throw IllegalStateException(message), pb.url.removePrefix("file://"),
+                    pb.offline -> offlinePlayback(item ?: throw IllegalStateException(message), pb.url.removePrefix("file://"),
                         if (pb.engine == EngineKind.MEDIA3) PlayerEngineChoice.MPV else PlayerEngineChoice.MEDIA3)
                     pb.engine == EngineKind.MEDIA3 && !pb.isTranscoding && settings.engine != PlayerEngineChoice.MEDIA3 -> {
                         notice = str(R.string.switched_to_mpv_for_this_file)
@@ -651,11 +658,25 @@ class PlayerViewModel(
         )
     }
 
+    /**
+     * Sends a playback report. A download watched offline is noted on the phone instead (its position,
+     * and "watched" near the end), and sent to the server once the phone is online again.
+     */
     private fun report(block: suspend com.vknxworks.jellyctrl.data.api.JellyfinClient.(ProgressReport) -> Unit) {
         val r = currentReport() ?: return
-        val cl = client ?: return
-        if (playback?.offline == true && !c.isOnline()) return
-        c.appScope.launch { runCatching { cl.block(r) } }
+        val offlinePlay = playback?.offline == true
+        val it = item
+        fun keepForLater() {
+            if (!offlinePlay || it == null) return
+            val account = c.downloads.find(it.id)?.accountKey ?: c.sessions.active.value?.account?.key ?: return
+            c.offlineProgress.record(account, it.id, r.positionTicks, it.runTimeTicks)
+        }
+        val cl = client
+        if (cl == null || (offlinePlay && !c.isOnline())) {
+            keepForLater()
+            return
+        }
+        c.appScope.launch { runCatching { cl.block(r) }.onFailure { keepForLater() } }
     }
 
     private fun sendProgress() {

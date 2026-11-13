@@ -46,6 +46,11 @@ import com.vknxworks.jellyctrl.data.api.ItemQuery
 import com.vknxworks.jellyctrl.data.api.addToPlaylist
 import com.vknxworks.jellyctrl.data.api.createPlaylist
 import com.vknxworks.jellyctrl.data.api.items
+import com.vknxworks.jellyctrl.data.api.episodes
+import com.vknxworks.jellyctrl.data.download.DownloadPlan
+import com.vknxworks.jellyctrl.data.download.DownloadStatus
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.pluralStringResource
 import com.vknxworks.jellyctrl.data.api.setFavorite
 import com.vknxworks.jellyctrl.data.api.setPlayed
 import com.vknxworks.jellyctrl.ui.nav.ItemRoute
@@ -78,8 +83,14 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
         }
     }
 
+    var downloadOptions by remember { mutableStateOf(false) }
+
     if (playlistPicker) {
         AddToPlaylistDialog(item, onDismiss = { playlistPicker = false; onDismiss() })
+        return
+    }
+    if (downloadOptions) {
+        DownloadOptionsSheet(item, onDismiss = { downloadOptions = false; onDismiss() })
         return
     }
 
@@ -124,6 +135,10 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
             }
             if (item.isPlayable && item.mediaType == "Video" || item.type in DOWNLOADABLE_FOLDERS) {
                 Action(Icons.Outlined.Download, stringResource(R.string.download)) {
+                    if (askHowMuchToDownload(item)) {
+                        downloadOptions = true
+                        return@Action
+                    }
                     (context as? MainActivity)?.ensureNotificationPermission()
                     scope.launch {
                         val n = downloadItemWith(c, item)
@@ -144,12 +159,22 @@ private fun Action(icon: ImageVector, label: String, onClick: () -> Unit) {
     GroupRow(label, icon = icon, iconTint = MaterialTheme.colorScheme.onSurfaceVariant, onClick = onClick)
 }
 
-/** Queue an item (or every playable child of a season/series/album) for offline use. Returns how many were queued. */
-suspend fun downloadItemWith(c: com.vknxworks.jellyctrl.AppContainer, item: BaseItemDto): Int {
+/**
+ * Queue an item (or every playable child of a season/series/album) for offline use. With
+ * [nextUnwatched] > 0, a series or season only gets its next that many unwatched episodes.
+ * Quality comes from Settings > Downloads. Returns how many were queued.
+ */
+suspend fun downloadItemWith(c: com.vknxworks.jellyctrl.AppContainer, item: BaseItemDto, nextUnwatched: Int = 0): Int {
     val account = c.sessions.active.value?.account ?: return 0
-    val wifiOnly = c.settings.settings.value.downloadWifiOnly
-    val targets = if (item.isFolder) {
-        c.api.items(
+    val s = c.settings.settings.value
+    val targets = when {
+        !item.isFolder -> listOf(item)
+        nextUnwatched > 0 && item.type in setOf("Series", "Season") -> {
+            val seriesId = if (item.type == "Series") item.id else item.seriesId ?: item.parentId ?: return 0
+            val episodes = c.api.episodes(seriesId, seasonId = if (item.type == "Season") item.id else null)
+            DownloadPlan.nextUnwatched(episodes, nextUnwatched)
+        }
+        else -> c.api.items(
             ItemQuery(
                 parentId = item.id,
                 recursive = true,
@@ -159,11 +184,56 @@ suspend fun downloadItemWith(c: com.vknxworks.jellyctrl.AppContainer, item: Base
             ),
             limit = 1000,
         ).items
-    } else listOf(item)
-    targets.forEach { c.downloads.enqueue(it, account.key, wifiOnly) }
+    }.filter { t -> c.downloads.find(t.id)?.status != DownloadStatus.DONE }
+    targets.forEach { c.downloads.enqueue(it, account.key, s.downloadWifiOnly, DownloadPlan.bitrateFor(it, s.downloadVideoMbps, s.downloadMusicKbps)) }
     return targets.size
 }
 
+/** Series and seasons ask what to download: everything, or the next few unwatched episodes. */
+fun askHowMuchToDownload(item: BaseItemDto): Boolean = item.type == "Series" || item.type == "Season"
+
+/** Download choices for a series or season, with the quality it will use. */
+@Composable
+fun DownloadOptionsSheet(item: BaseItemDto, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val c = context.container
+    val s by c.settings.settings.collectAsStateWithLifecycle()
+
+    fun start(next: Int) {
+        (context as? MainActivity)?.ensureNotificationPermission()
+        val appContext = context.applicationContext
+        onDismiss()
+        c.appScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+            runCatching { downloadItemWith(c, item, next) }
+                .onSuccess { n ->
+                    Toast.makeText(appContext, if (n == 0) str(R.string.nothing_new_to_download) else plural(R.plurals.downloading_items, n, n), Toast.LENGTH_SHORT).show()
+                }
+                .onFailure { Toast.makeText(appContext, it.friendlyMessage(), Toast.LENGTH_SHORT).show() }
+        }
+    }
+
+    CtrlSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
+            Text(
+                stringResource(R.string.download_x, item.name.orEmpty()),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                if (s.downloadVideoMbps > 0) stringResource(R.string.download_quality_converted_x, s.downloadVideoMbps) else stringResource(R.string.download_quality_original_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
+            )
+            Action(Icons.Outlined.Download, stringResource(if (item.type == "Series") R.string.download_every_episode else R.string.download_this_season)) { start(0) }
+            listOf(1, 3, 5, 10).forEach { n ->
+                Action(Icons.Outlined.Download, pluralStringResource(R.plurals.download_next_unwatched, n, n)) { start(n) }
+            }
+        }
+    }
+}
 @Composable
 fun AddToPlaylistDialog(item: BaseItemDto, onDismiss: () -> Unit) {
     val context = LocalContext.current

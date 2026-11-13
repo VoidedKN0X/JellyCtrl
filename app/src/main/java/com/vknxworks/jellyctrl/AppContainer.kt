@@ -65,6 +65,9 @@ class AppContainer(val context: Context) {
 
     val sessions = SessionManager(context, http, vault, appScope)
     val downloads = DownloadRepository(context, appScope)
+
+    /** Positions of downloads watched offline, sent to the server once online. */
+    val offlineProgress = com.vknxworks.jellyctrl.data.download.OfflineProgressStore(context, appScope)
     val music by lazy { MusicController(context, this) }
 
     /** The app lock is on, either with a PIN or still the old one waiting for a PIN. */
@@ -90,6 +93,7 @@ class AppContainer(val context: Context) {
     suspend fun forgetEverything() {
         if (MusicService.running) runCatching { music.stop() }
         downloads.deleteAll()
+        offlineProgress.forget(null)
         sessions.forgetAllAccounts()
         AppLock.markUnlocked()
         settings.update { it.copy(appLock = false) }

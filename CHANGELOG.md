@@ -4,6 +4,23 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.6.0 (2026-11-13)
+
+Better downloads: smaller converted copies, subtitles that come along, whole seasons or just the next few episodes, and what you watch offline counts on your server.
+
+### New
+
+- **Download a smaller version.** Under **Settings > Downloads**, pick a video quality (20 down to 1 Mbps) and a music quality (320 down to 128 kbps). Your server then converts the download (video to H.264 and AAC in MP4, music to MP3), so a two-hour film at 4 Mbps takes about 3.6 GB instead of whatever the original weighs. **Original file** (the default) downloads the file as it is, like before.
+- **Subtitles come with your downloads.** Subtitles that are separate files on your server (such as .srt files next to the video, or ones you downloaded with subtitle search) are saved with the download, and a converted video gets all its text subtitles saved this way. They show up in the player's subtitle menu offline, in Media3 and in mpv, and the one your server would pick is switched on. Picture subtitles (PGS, DVD) can't be saved separately: keep the original file if you need those.
+- **Download a whole season, a whole series or the next few unwatched episodes.** The download button on a series or season now asks: every episode, the whole season, or the next 1, 3, 5 or 10 episodes after the last one you watched. Episodes you already have are skipped.
+- **Watched offline counts.** When you watch a download (or play a downloaded song) without a connection, JellyCtrl remembers how far you got, or that you finished it, and tells your server as soon as the phone is online again, so Continue watching, Next up and the watched marks are right on every device.
+- **Space for downloads**: pick how much room downloads may use (2 to 128 GB, or no limit). A download that doesn't fit stops with a message instead of filling the phone.
+- **The Downloads page shows each download's quality** (original or converted, and at what bitrate) and how many subtitles came with it.
+
+### Changed
+
+- **Downloads keep trying for longer.** A download that loses its connection now tries up to 8 times (WorkManager waits longer between tries) before it shows as failed; original files carry on where they stopped. A converted download starts that file again, because your server converts it on the fly.
+- **Retrying a failed download keeps the quality it was started with.**
 ## v0.5.12 (2026-11-13)
 
 ### Security

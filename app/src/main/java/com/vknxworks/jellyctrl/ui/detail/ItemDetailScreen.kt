@@ -115,6 +115,8 @@ import com.vknxworks.jellyctrl.data.api.removeFromPlaylist
 import com.vknxworks.jellyctrl.data.api.seasons
 import com.vknxworks.jellyctrl.data.api.setFavorite
 import com.vknxworks.jellyctrl.data.api.setPlayed
+import com.vknxworks.jellyctrl.ui.components.DownloadOptionsSheet
+import com.vknxworks.jellyctrl.ui.components.askHowMuchToDownload
 import com.vknxworks.jellyctrl.data.api.similar
 import com.vknxworks.jellyctrl.data.api.specialFeatures
 import com.vknxworks.jellyctrl.data.api.ticksToMs
@@ -543,9 +545,15 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
         subtitleIndex = sub?.index ?: -1,
     )
 
+    var downloadOptions by remember { mutableStateOf(false) }
+
     fun download() {
         if (dl?.status == DownloadStatus.DONE) {
             Toast.makeText(context, str(R.string.already_downloaded), Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (askHowMuchToDownload(item)) {
+            downloadOptions = true
             return
         }
         (context as? MainActivity)?.ensureNotificationPermission()
@@ -554,6 +562,8 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
             Toast.makeText(context, if (n == 0) str(R.string.couldn_t_start_the_download) else plural(R.plurals.downloading_items, n, n), Toast.LENGTH_SHORT).show()
         }
     }
+
+    if (downloadOptions) DownloadOptionsSheet(item) { downloadOptions = false }
 
     Column(verticalArrangement = Arrangement.spacedBy(18.dp), modifier = Modifier.padding(top = 4.dp)) {
         if (item.type != "Person") {

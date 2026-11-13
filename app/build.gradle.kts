@@ -21,8 +21,8 @@ android {
         minSdk = 35
         targetSdk = 36
         // Bump both to publish a new release (see CHANGELOG.md).
-        versionCode = 51
-        versionName = "0.5.12"
+        versionCode = 52
+        versionName = "0.6.0"
 
         ndk {
             // 64-bit ARM phones and tablets only (arm64-v8a), like every Ctrl app; keeps mpv's native libs small.
@@ -82,6 +82,10 @@ android {
         includeInBundle = false
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -134,4 +138,6 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.session)
     implementation(libs.libmpv)
+
+    testImplementation(libs.junit)
 }

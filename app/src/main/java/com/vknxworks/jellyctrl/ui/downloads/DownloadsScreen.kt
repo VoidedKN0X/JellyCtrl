@@ -47,6 +47,7 @@ import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.MessageView
 import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.formatBytes
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
@@ -96,7 +97,11 @@ fun DownloadsScreen() {
                     supportingContent = {
                         Column {
                             val status = when (e.status) {
-                                DownloadStatus.DONE -> formatBytes(e.totalBytes)
+                                DownloadStatus.DONE -> listOfNotNull(
+                                    formatBytes(e.totalBytes),
+                                    if (e.converted) stringResource(R.string.download_converted_x, formatBitrate(e.bitrate)) else stringResource(R.string.original_file),
+                                    e.subtitles.size.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.x_subtitles, it, it) },
+                                ).joinToString(" · ")
                                 DownloadStatus.RUNNING -> stringResource(R.string.x_x_of_x, (e.progress * 100).toInt(), formatBytes(e.downloadedBytes), formatBytes(e.totalBytes))
                                 DownloadStatus.QUEUED -> if (settings.downloadWifiOnly) stringResource(R.string.waiting_for_wi_fi_or_queue) else stringResource(R.string.queued)
                                 DownloadStatus.PAUSED -> stringResource(R.string.paused)
@@ -141,3 +146,7 @@ fun DownloadsScreen() {
         )
     }
 }
+
+/** A download's bitrate for the list: Mbps for video, kbps for music. */
+private fun formatBitrate(bps: Long): String =
+    if (bps >= 1_000_000) com.vknxworks.jellyctrl.str(R.string.x_mbps, (bps / 1_000_000).toString()) else com.vknxworks.jellyctrl.str(R.string.x_kbps, bps / 1000)

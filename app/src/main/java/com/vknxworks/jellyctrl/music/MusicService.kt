@@ -94,7 +94,16 @@ class MusicService : MediaSessionService() {
             audioStreamIndex = null,
             subtitleStreamIndex = null,
         )
-        container.appScope.launch { runCatching { client.block(r) } }
+        val runtimeTicks = player.duration.takeIf { it > 0 }?.msToTicks()
+        container.appScope.launch {
+            runCatching { client.block(r) }.onFailure {
+                // A downloaded song played offline: its position (or "played") is sent once online again.
+                val entry = container.downloads.find(itemId)
+                if (entry?.status == com.vknxworks.jellyctrl.data.download.DownloadStatus.DONE) {
+                    container.offlineProgress.record(entry.accountKey, itemId, r.positionTicks, runtimeTicks)
+                }
+            }
+        }
     }
 
     private fun startReport(player: Player, item: MediaItem) {

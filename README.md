@@ -18,7 +18,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Search and download subtitles** from the player or the title page with your server's subtitle plugins (such as OpenSubtitles); they load straight into what you're watching
 - **Music** with background playback, queue, shuffle and synced lyrics
 - **Live TV** with channels, a guide, recordings and scheduled recordings
-- **Downloads** for watching offline, with a Wi-Fi-only option
+- **Downloads** for watching offline: movies, episodes (one, a whole season or series, or the next few unwatched), music and albums; the original file or a smaller version converted by your server at the bitrate you pick; subtitles saved with them; a space limit, Wi-Fi only, resume after a dropped connection, and what you watch offline is marked on your server once you're back online
 - **Favourites** and photo libraries
 - **Remote control** for your other Jellyfin devices
 - **Full admin dashboard**: users, libraries, plugins, scheduled tasks, logs, devices, API keys and server settings
@@ -116,7 +116,7 @@ The sign-in screen, the Change password dialog, the server dashboard screens tha
 
 ## Privacy
 
-**Telemetry-free.** JellyCtrl has no analytics, crash reporting, usage stats or tracking of any kind. It only talks to your own Jellyfin server. Neither the video nor the music player hands playback diagnostics to Android's media diagnostics service. Finding servers sends a short "where are you?" message on your own Wi-Fi network only, which Jellyfin servers there answer. Artwork comes through your server, never straight from sites like TMDB; trailers and links to sites like IMDb only open in your browser when you tap them. Subtitle search goes through your server too: its subtitle plugins (such as OpenSubtitles) do the searching, never JellyCtrl. **Open in ArrCtrl** only passes the title's TMDB or TVDB id, and only to ArrCtrl. Your password is never stored: JellyCtrl keeps only the access token your server gives it, encrypted on the phone (and with your app PIN while the app lock is on), and only sends it to that server.
+**Telemetry-free.** JellyCtrl has no analytics, crash reporting, usage stats or tracking of any kind. It only talks to your own Jellyfin server. Neither the video nor the music player hands playback diagnostics to Android's media diagnostics service. Finding servers sends a short "where are you?" message on your own Wi-Fi network only, which Jellyfin servers there answer. Artwork comes through your server, never straight from sites like TMDB; trailers and links to sites like IMDb only open in your browser when you tap them. Subtitle search goes through your server too: its subtitle plugins (such as OpenSubtitles) do the searching, never JellyCtrl. **Open in ArrCtrl** only passes the title's TMDB or TVDB id, and only to ArrCtrl. Downloads come from your own server too, and what you watch offline (how far you got, or "watched") is kept on the phone until it can be sent to that server. Your password is never stored: JellyCtrl keeps only the access token your server gives it, encrypted on the phone (and with your app PIN while the app lock is on), and only sends it to that server.
 
 ## How JellyCtrl is made
 
