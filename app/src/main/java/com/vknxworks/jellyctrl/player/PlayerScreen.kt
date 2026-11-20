@@ -83,6 +83,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -140,7 +142,14 @@ fun PlayerScreen(
     val c = context.container
     val settings by c.settings.settings.collectAsState()
     val engine by vm.engine.collectAsState()
-    val st = engine?.state?.collectAsState()?.value ?: EngineState()
+    // The engine reports its position four times a second. The state is handed on unread, and only the parts
+    // that show the position (time, seek bar, the up-next countdown) read it, so this whole screen isn't composed
+    // again for every report. What changes rarely (playing, waiting, speed) is picked out here.
+    val noEngine = remember { mutableStateOf(EngineState()) }
+    val stState: State<EngineState> = engine?.state?.collectAsState() ?: noEngine
+    val playWhenReady by remember(stState) { derivedStateOf { stState.value.playWhenReady } }
+    val waiting by remember(stState) { derivedStateOf { stState.value.buffering && !stState.value.ended } }
+    val speed by remember(stState) { derivedStateOf { stState.value.speed } }
     var controls by remember { mutableStateOf(true) }
     var sheet by remember { mutableStateOf<String?>(null) }
     var gestureHint by remember { mutableStateOf<String?>(null) }
@@ -154,8 +163,8 @@ fun PlayerScreen(
 
     BackHandler { onBack() }
 
-    LaunchedEffect(controls, lastInteraction, st.playWhenReady, sheet, scrubMs) {
-        if (controls && st.playWhenReady && sheet == null && scrubMs == null) {
+    LaunchedEffect(controls, lastInteraction, playWhenReady, sheet, scrubMs) {
+        if (controls && playWhenReady && sheet == null && scrubMs == null) {
             delay(3500)
             controls = false
         }
@@ -177,14 +186,14 @@ fun PlayerScreen(
                     gestureHint = str(if (forward) R.string.seek_step_forward else R.string.seek_step_back, settings.seekStepSeconds)
                 },
                 onHint = { gestureHint = it },
-                positionMs = st.positionMs,
-                durationMs = st.durationMs,
+                positionMs = { stState.value.positionMs },
+                durationMs = { stState.value.durationMs },
                 onScrub = { scrubMs = it },
                 onScrubEnd = { ms -> vm.seekTo(ms); scrubMs = null },
             )
         }
 
-        if (vm.loading || (st.buffering && vm.error == null && !st.ended)) {
+        if (vm.loading || (waiting && vm.error == null)) {
             CircularProgressIndicator(Modifier.align(Alignment.Center).size(48.dp), color = CtrlColors.Accent, strokeWidth = 3.dp)
         }
 
@@ -198,7 +207,7 @@ fun PlayerScreen(
             AnimatedVisibility(controls && vm.error == null, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.fillMaxSize()) {
                 Controls(
                     vm = vm,
-                    st = st,
+                    st = stState,
                     scrubMs = scrubMs,
                     seekStepMs = seekStep,
                     onBack = onBack,
@@ -233,11 +242,11 @@ fun PlayerScreen(
                             style = MaterialTheme.typography.titleSmall,
                         )
                     }
-                    vm.showUpNext && next != null -> UpNextCard(
+                    vm.showUpNext && next != null -> UpNextNow(
+                        st = stState,
                         title = next.name.orEmpty(),
                         subtitle = if (next.type == "Episode") str(R.string.season_x_episode_x, next.parentIndexNumber?.toString() ?: "?", next.indexNumber?.toString() ?: "?") else next.productionYear?.toString(),
                         imageUrl = c.sessions.active.value?.client?.landscapeImage(next, 400),
-                        remainingMs = (st.durationMs - st.positionMs).coerceAtLeast(0),
                         onPlay = { vm.playNext() },
                         onDismiss = { vm.dismissUpNext() },
                     )
@@ -278,7 +287,7 @@ fun PlayerScreen(
             }
         }
         "settings" -> SettingsSheet(
-            vm, st,
+            vm, speed,
             rotationLocked = rotationLocked,
             onToggleRotationLock = onToggleRotationLock,
             onPip = { sheet = null; onEnterPip() },
@@ -293,8 +302,8 @@ private fun GestureLayer(
     onTap: () -> Unit,
     onDoubleTapSide: (forward: Boolean) -> Unit,
     onHint: (String) -> Unit,
-    positionMs: Long,
-    durationMs: Long,
+    positionMs: () -> Long,
+    durationMs: () -> Long,
     onScrub: (Long) -> Unit,
     onScrubEnd: (Long) -> Unit,
 ) {
@@ -306,6 +315,7 @@ private fun GestureLayer(
     var dragStartPos by remember { mutableLongStateOf(0L) }
     var dragTarget by remember { mutableLongStateOf(0L) }
     var accum by remember { mutableFloatStateOf(0f) }
+    // Asked for when a drag starts or moves, not on every position report.
     val currentPos by rememberUpdatedState(positionMs)
     val currentDur by rememberUpdatedState(durationMs)
 
@@ -355,16 +365,17 @@ private fun GestureLayer(
                 }
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
-                        onDragStart = { dragStartPos = currentPos; dragTarget = currentPos; accum = 0f },
-                        onDragEnd = { if (currentDur > 0) onScrubEnd(dragTarget) },
+                        onDragStart = { dragStartPos = currentPos(); dragTarget = dragStartPos; accum = 0f },
+                        onDragEnd = { if (currentDur() > 0) onScrubEnd(dragTarget) },
                         onDragCancel = { onScrubEnd(dragStartPos) },
                         onHorizontalDrag = { change, dx ->
-                            if (currentDur <= 0) return@detectHorizontalDragGestures
+                            val dur = currentDur()
+                            if (dur <= 0) return@detectHorizontalDragGestures
                             change.consume()
                             accum += dx
                             // Full screen width = 3 minutes, so precise seeking stays easy.
                             val delta = (accum / widthPx * 180_000).toLong()
-                            dragTarget = (dragStartPos + delta).coerceIn(0, currentDur)
+                            dragTarget = (dragStartPos + delta).coerceIn(0, dur)
                             onScrub(dragTarget)
                             val d = delta / 1000
                             onHint(str(if (d >= 0) R.string.seek_hint_forward else R.string.seek_hint_back, abs(d), formatClock(dragTarget)))
@@ -379,7 +390,7 @@ private fun GestureLayer(
 @Composable
 private fun Controls(
     vm: PlayerViewModel,
-    st: EngineState,
+    st: State<EngineState>,
     scrubMs: Long?,
     seekStepMs: Long,
     onBack: () -> Unit,
@@ -390,6 +401,9 @@ private fun Controls(
 ) {
     val item = vm.item
     val pb = vm.playback
+    // Only what the buttons need; the position is read in SeekArea alone.
+    val ended by remember(st) { derivedStateOf { st.value.ended } }
+    val playWhenReady by remember(st) { derivedStateOf { st.value.playWhenReady } }
     Box(
         Modifier
             .fillMaxSize()
@@ -442,11 +456,11 @@ private fun Controls(
             ) {
                 Icon(
                     when {
-                        st.ended -> Icons.Filled.Replay
-                        st.playWhenReady -> Icons.Filled.Pause
+                        ended -> Icons.Filled.Replay
+                        playWhenReady -> Icons.Filled.Pause
                         else -> Icons.Filled.PlayArrow
                     },
-                    if (st.playWhenReady) stringResource(R.string.pause) else stringResource(R.string.play),
+                    if (playWhenReady) stringResource(R.string.pause) else stringResource(R.string.play),
                     tint = CtrlColors.OnAccent,
                     modifier = Modifier.size(40.dp),
                 )
@@ -463,60 +477,103 @@ private fun Controls(
         }
 
         // Bottom: time, seek bar, next.
-        Column(
+        SeekArea(
+            vm, st, scrubMs, onScrub, onSeek, onPoke,
             Modifier.align(Alignment.BottomCenter).fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 20.dp, vertical = 8.dp),
-        ) {
-            // Only real live streams (TV channels) count as live. Before the player knows the file's
-            // length, fall back to the runtime from the server so the seek bar shows straight away.
-            val live = pb?.source?.isInfiniteStream == true || item?.type == "TvChannel" || item?.type == "Program"
-            val duration = st.durationMs.takeIf { it > 0 } ?: (item?.runTimeTicks?.ticksToMs() ?: 0L)
-            val shown = scrubMs ?: st.positionMs
-            val trick = vm.trickplay
-            if (scrubMs != null && trick != null && item != null) {
-                BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val frac = if (duration > 0) scrubMs.toFloat() / duration else 0f
-                    val previewW = 184.dp
-                    val x = (maxWidth - previewW) * frac
-                    TrickplayPreview(trick, item.id, pb?.source?.id, scrubMs, previewW, Modifier.offset(x = x))
-                }
-                Spacer(Modifier.height(10.dp))
+        )
+    }
+}
+
+/**
+ * The time, chapter name, seek bar and "Next" at the bottom of the controls. A composable of its own because it
+ * is the part that follows the position, which the engine reports four times a second: only this is composed
+ * again for each report, not the whole player screen.
+ */
+@Composable
+private fun SeekArea(
+    vm: PlayerViewModel,
+    st: State<EngineState>,
+    scrubMs: Long?,
+    onScrub: (Long) -> Unit,
+    onSeek: (Long) -> Unit,
+    onPoke: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val item = vm.item
+    val pb = vm.playback
+    val now = st.value
+    Column(modifier) {
+        // Only real live streams (TV channels) count as live. Before the player knows the file's
+        // length, fall back to the runtime from the server so the seek bar shows straight away.
+        val live = pb?.source?.isInfiniteStream == true || item?.type == "TvChannel" || item?.type == "Program"
+        val duration = now.durationMs.takeIf { it > 0 } ?: (item?.runTimeTicks?.ticksToMs() ?: 0L)
+        val shown = scrubMs ?: now.positionMs
+        val trick = vm.trickplay
+        if (scrubMs != null && trick != null && item != null) {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val frac = if (duration > 0) scrubMs.toFloat() / duration else 0f
+                val previewW = 184.dp
+                val x = (maxWidth - previewW) * frac
+                TrickplayPreview(trick, item.id, pb?.source?.id, scrubMs, previewW, Modifier.offset(x = x))
             }
-            if (live) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
-                    CtrlStatusDot(CtrlColors.Accent)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.live).uppercase(), color = CtrlColors.Accent, style = CtrlType.LabelStrong)
-                }
-            } else {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(formatClock(shown), color = Color.White, style = CtrlType.MonoMedium)
+            Spacer(Modifier.height(10.dp))
+        }
+        if (live) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+                CtrlStatusDot(CtrlColors.Accent)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.live).uppercase(), color = CtrlColors.Accent, style = CtrlType.LabelStrong)
+            }
+        } else {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(formatClock(shown), color = Color.White, style = CtrlType.MonoMedium)
+                Spacer(Modifier.weight(1f))
+                val chapter = item?.chapters?.lastOrNull { it.startPositionTicks.ticksToMs() <= shown }?.name
+                if (chapter != null && (item?.chapters?.size ?: 0) > 1) {
+                    Text(chapter, color = CtrlColors.Muted, style = CtrlType.Mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Spacer(Modifier.weight(1f))
-                    val chapter = item?.chapters?.lastOrNull { it.startPositionTicks.ticksToMs() <= shown }?.name
-                    if (chapter != null && (item?.chapters?.size ?: 0) > 1) {
-                        Text(chapter, color = CtrlColors.Muted, style = CtrlType.Mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Spacer(Modifier.weight(1f))
-                    }
-                    Text("−" + formatClock((duration - shown).coerceAtLeast(0)), color = CtrlColors.Muted, style = CtrlType.MonoMedium)
-                    if (vm.nextItem != null) {
-                        Spacer(Modifier.width(12.dp))
-                        TextButton(onClick = { vm.playNext(); onPoke() }) {
-                            Icon(Icons.Filled.SkipNext, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.next), color = Color.White, style = MaterialTheme.typography.labelLarge)
-                        }
+                }
+                Text("−" + formatClock((duration - shown).coerceAtLeast(0)), color = CtrlColors.Muted, style = CtrlType.MonoMedium)
+                if (vm.nextItem != null) {
+                    Spacer(Modifier.width(12.dp))
+                    TextButton(onClick = { vm.playNext(); onPoke() }) {
+                        Icon(Icons.Filled.SkipNext, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.next), color = Color.White, style = MaterialTheme.typography.labelLarge)
                     }
                 }
-                SeekBar(
-                    positionMs = shown,
-                    durationMs = duration,
-                    bufferedMs = st.bufferedMs,
-                    onScrub = onScrub,
-                    onSeek = onSeek,
-                    activeColor = CtrlColors.Accent,
-                )
             }
+            SeekBar(
+                positionMs = shown,
+                durationMs = duration,
+                bufferedMs = now.bufferedMs,
+                onScrub = onScrub,
+                onSeek = onSeek,
+                activeColor = CtrlColors.Accent,
+            )
         }
     }
+}
+
+/** The up-next card with its countdown, which follows the position. */
+@Composable
+private fun UpNextNow(
+    st: State<EngineState>,
+    title: String,
+    subtitle: String?,
+    imageUrl: String?,
+    onPlay: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val now = st.value
+    UpNextCard(
+        title = title,
+        subtitle = subtitle,
+        imageUrl = imageUrl,
+        remainingMs = (now.durationMs - now.positionMs).coerceAtLeast(0),
+        onPlay = onPlay,
+        onDismiss = onDismiss,
+    )
 }
 
 @Composable
@@ -646,7 +703,7 @@ private val SPEEDS = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
 @Composable
 private fun SettingsSheet(
     vm: PlayerViewModel,
-    st: EngineState,
+    speed: Float,
     rotationLocked: Boolean,
     onToggleRotationLock: () -> Unit,
     onPip: () -> Unit,
@@ -658,7 +715,7 @@ private fun SettingsSheet(
         LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
                 SheetHeader(stringResource(R.string.speed))
-                ChipLine(SPEEDS.map { if (it == 1f) stringResource(R.string.normal) else "${it}×" }, SPEEDS.indexOfFirst { abs(st.speed - it) < 0.01f }) { vm.setSpeed(SPEEDS[it]) }
+                ChipLine(SPEEDS.map { if (it == 1f) stringResource(R.string.normal) else "${it}×" }, SPEEDS.indexOfFirst { abs(speed - it) < 0.01f }) { vm.setSpeed(SPEEDS[it]) }
             }
             item {
                 SheetHeader(stringResource(R.string.picture))

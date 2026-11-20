@@ -54,6 +54,12 @@ class PlayerActivity : ComponentActivity() {
     private var inPip by mutableStateOf(false)
     /** Started (on screen or in picture-in-picture). The lock screen's own window is only opened then. */
     private var started by mutableStateOf(false)
+
+    /**
+     * Whether the rotation is locked, for the playback options. The window's requested orientation can't be
+     * watched by itself, so this follows it: set when the content is first shown and each time the lock is toggled.
+     */
+    private var rotationLocked by mutableStateOf(false)
     private var playingForPip = false
 
     private val pipReceiver = object : BroadcastReceiver() {
@@ -77,17 +83,13 @@ class PlayerActivity : ComponentActivity() {
         ContextCompat.registerReceiver(this, pipReceiver, IntentFilter(ACTION_PIP_TOGGLE), ContextCompat.RECEIVER_NOT_EXPORTED)
 
         val c = applicationContext.container
+        rotationLocked = requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         setContent {
             // The video player stays dark in both themes: nothing bright next to the picture. Other apps' floating
             // windows are never hidden over the video or picture-in-picture (only the lock window is guarded).
             androidx.compose.runtime.CompositionLocalProvider(com.vknxworks.jellyctrl.ui.lock.LocalWindowGuard provides false) {
             JellyCtrlTheme(dark = true) {
-                val engine by vm.engine.collectAsState()
-                val st = engine?.state?.collectAsState()?.value ?: EngineState()
-                LaunchedEffect(st.playWhenReady, st.videoWidth, st.videoHeight, vm.loading) {
-                    playingForPip = st.playWhenReady && !vm.loading
-                    updatePipParams(st)
-                }
+                KeepPipParams()
                 LaunchedEffect(vm.finished) { if (vm.finished) finish() }
                 val settings by c.settings.settings.collectAsState()
                 val stored by c.settings.stored.collectAsState(initial = null)
@@ -106,7 +108,7 @@ class PlayerActivity : ComponentActivity() {
                             inPip = inPip,
                             onBack = { finish() },
                             onEnterPip = { enterPip() },
-                            rotationLocked = requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED,
+                            rotationLocked = rotationLocked,
                             onToggleRotationLock = { toggleRotationLock() },
                         )
                     }
@@ -126,6 +128,20 @@ class PlayerActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Keeps the picture-in-picture settings in step with the player. A composable of its own, so the engine's
+     * position reports (four a second) compose only this again, not everything this window shows.
+     */
+    @androidx.compose.runtime.Composable
+    private fun KeepPipParams() {
+        val engine by vm.engine.collectAsState()
+        val st = engine?.state?.collectAsState()?.value ?: EngineState()
+        LaunchedEffect(st.playWhenReady, st.videoWidth, st.videoHeight, vm.loading) {
+            playingForPip = st.playWhenReady && !vm.loading
+            updatePipParams(st)
+        }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         // A different video was started while this one is open (e.g. from PiP): start fresh.
@@ -139,6 +155,7 @@ class PlayerActivity : ComponentActivity() {
             if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             else ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         } else ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        rotationLocked = requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
     private fun hideSystemBars() {
