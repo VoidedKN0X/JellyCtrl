@@ -38,6 +38,10 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         c.sessions.loaded.filter { it }.first()
         // The worker may start the app cold: wait until the download list was read (and decrypted).
         repo.awaitLoaded()
+        // The list is encrypted and can't be opened right now: nothing of it is known and nothing may be written
+        // to it, so no file is touched either. Try again later; this download is picked up once the list opens
+        // ("Try again" on the Downloads page), and ends below when it's no longer in the list ("Start empty").
+        if (repo.unreadable.value) return@withContext Result.retry()
         val entry = repo.find(itemId) ?: return@withContext Result.failure()
         val account = c.sessions.accounts.value.firstOrNull { it.key == entry.accountKey }
             ?: return@withContext fail(itemId, str(R.string.account_was_signed_out))

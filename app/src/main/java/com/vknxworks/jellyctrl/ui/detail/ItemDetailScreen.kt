@@ -552,6 +552,8 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
             Toast.makeText(context, str(R.string.already_downloaded), Toast.LENGTH_SHORT).show()
             return
         }
+        // The download list can't be opened: nothing new can be saved in it. The Downloads page explains.
+        if (com.vknxworks.jellyctrl.ui.components.downloadsUnreadable(context, c)) return
         if (askHowMuchToDownload(item)) {
             downloadOptions = true
             return

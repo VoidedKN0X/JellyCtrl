@@ -65,6 +65,8 @@ fun LibrariesScreen() {
     val loader = rememberLoader("libraries") { client.userViews() }
     val downloads by c.downloads.entries.collectAsStateWithLifecycle()
     val ready = downloads.count { it.status == DownloadStatus.DONE }
+    // The download list can't be opened: the row says so instead of "nothing saved"; its page explains.
+    val downloadsUnreadable by c.dataUnreadable.collectAsStateWithLifecycle()
 
     PullToRefreshBox(loader.refreshing, onRefresh = { loader.reload(silent = true) }, modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         LoadContent(loader) { views ->
@@ -81,7 +83,7 @@ fun LibrariesScreen() {
                             GroupRow(stringResource(R.string.favourites), icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
                             GroupRow(
                                 stringResource(R.string.downloads),
-                                if (ready == 0) stringResource(R.string.nothing_saved_for_offline_yet) else pluralStringResource(R.plurals.ready_to_watch_offline, ready, ready),
+                                if (downloadsUnreadable) stringResource(R.string.unreadable_downloads_row) else if (ready == 0) stringResource(R.string.nothing_saved_for_offline_yet) else pluralStringResource(R.plurals.ready_to_watch_offline, ready, ready),
                                 icon = Icons.Outlined.Download,
                                 showChevron = true,
                                 onClick = { nav.navigate(DownloadsRoute) },

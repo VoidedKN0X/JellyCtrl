@@ -198,6 +198,8 @@ class DownloadRepository(private val context: Context, private val scope: Corout
 
     fun delete(itemId: String) {
         scope.launch {
+            // The list can't be opened: it isn't known which files belong to what, so nothing is removed.
+            if (_unreadable.value) return@launch
             val e = find(itemId) ?: return@launch
             WorkManager.getInstance(context).cancelUniqueWork(workName(itemId))
             safeFile(e.fileName)?.delete()

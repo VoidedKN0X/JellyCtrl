@@ -47,6 +47,7 @@ import com.vknxworks.jellyctrl.ui.components.ArtImage
 import com.vknxworks.jellyctrl.ui.components.LoadingView
 import com.vknxworks.jellyctrl.ui.components.MessageView
 import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
+import com.vknxworks.jellyctrl.ui.nav.UnreadableData
 import com.vknxworks.jellyctrl.ui.components.formatBytes
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -62,6 +63,8 @@ fun DownloadsScreen() {
     val c = context.container
     val entries by c.downloads.entries.collectAsStateWithLifecycle()
     val loaded by c.downloads.loaded.collectAsStateWithLifecycle()
+    // The download list (or the saved offline positions) is encrypted and can't be opened.
+    val unreadable by c.dataUnreadable.collectAsStateWithLifecycle()
     val settings by c.settings.settings.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf<DownloadEntry?>(null) }
 
@@ -83,6 +86,12 @@ fun DownloadsScreen() {
         // The list is still being read (and decrypted): not "nothing downloaded" yet.
         if (!loaded) {
             LoadingView(Modifier.padding(padding))
+            return@Scaffold
+        }
+        // Not "nothing downloaded" either: say what happened, with "Try again" and "Start empty". Only this page
+        // shows it; the rest of the app keeps working.
+        if (unreadable) {
+            UnreadableData(Modifier.padding(padding))
             return@Scaffold
         }
         if (entries.isEmpty()) {

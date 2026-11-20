@@ -135,6 +135,10 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
             }
             if (item.isPlayable && item.mediaType == "Video" || item.type in DOWNLOADABLE_FOLDERS) {
                 Action(Icons.Outlined.Download, stringResource(R.string.download)) {
+                    if (downloadsUnreadable(context, c)) {
+                        onDismiss()
+                        return@Action
+                    }
                     if (askHowMuchToDownload(item)) {
                         downloadOptions = true
                         return@Action
@@ -150,6 +154,16 @@ fun ItemActionsSheet(item: BaseItemDto, onDismiss: () -> Unit, onChanged: () -> 
             Action(Icons.Outlined.Info, stringResource(R.string.details)) { nav.navigate(ItemRoute(item.id)); onDismiss() }
         }
     }
+}
+
+/**
+ * The download list is encrypted and can't be opened, so nothing new can be saved in it: says so (the Downloads
+ * page has "Try again" and "Start empty") and returns true. Nothing is queued, written or deleted.
+ */
+fun downloadsUnreadable(context: android.content.Context, c: com.vknxworks.jellyctrl.AppContainer): Boolean {
+    if (!c.downloads.unreadable.value) return false
+    Toast.makeText(context, str(R.string.unreadable_download_blocked), Toast.LENGTH_LONG).show()
+    return true
 }
 
 private val DOWNLOADABLE_FOLDERS = setOf("Season", "Series", "MusicAlbum")

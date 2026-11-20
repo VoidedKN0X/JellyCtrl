@@ -125,6 +125,8 @@ fun ProfileScreen() {
     rememberLoader("profile-me") { client?.currentUser()?.let { c.sessions.updateAdminFlag(it.policy?.isAdministrator == true) } }
     var changePassword by remember { mutableStateOf(false) }
     val ready = downloads.count { it.status == DownloadStatus.DONE }
+    // The download list can't be opened: the row says so; its page explains.
+    val downloadsUnreadable by c.dataUnreadable.collectAsStateWithLifecycle()
     val hasLiveTv = views.value?.any { it.collectionType == "livetv" } == true
 
     Column(Modifier.fillMaxSize()) {
@@ -172,7 +174,7 @@ fun ProfileScreen() {
                 GroupRow(stringResource(R.string.favourites), icon = Icons.Filled.Favorite, showChevron = true, onClick = { nav.navigate(FavoritesRoute) })
                 GroupRow(
                     stringResource(R.string.downloads),
-                    if (ready == 0) null else pluralStringResource(R.plurals.ready_offline, ready, ready),
+                    if (downloadsUnreadable) stringResource(R.string.unreadable_downloads_row) else if (ready == 0) null else pluralStringResource(R.plurals.ready_offline, ready, ready),
                     icon = Icons.Outlined.Download,
                     showChevron = true,
                     onClick = { nav.navigate(DownloadsRoute) },

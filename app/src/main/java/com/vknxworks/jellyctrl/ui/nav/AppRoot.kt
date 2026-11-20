@@ -112,11 +112,9 @@ fun AppRoot() {
         when {
             !ready -> LoadingView()
             active == null -> ServerSetupFlow(onDone = {}, onCancel = null)
-            else -> {
-                // An encrypted file of the app can't be opened: say so instead of showing empty lists.
-                val unreadable by c.dataUnreadable.collectAsStateWithLifecycle()
-                if (unreadable) UnreadableData() else key(active!!.account.key) { MainScaffold() }
-            }
+            // An encrypted file of the app that can't be opened no longer stops the whole app: browsing and
+            // streaming don't need it. The Downloads page says what happened (UnreadableData below).
+            else -> key(active!!.account.key) { MainScaffold() }
         }
     }
 }
@@ -125,18 +123,20 @@ fun AppRoot() {
  * The download list (or the positions of downloads watched offline) is encrypted and can't be opened: the key in
  * the phone's secure storage is gone or changed, or the file is damaged. Nothing was deleted or changed: say so,
  * offer to try again, and only start empty when asked to, keeping the unreadable files aside.
+ *
+ * Shown where that data is used (the Downloads page), not over the whole app: the rest keeps working.
  */
 @Composable
-private fun UnreadableData() {
+internal fun UnreadableData(modifier: Modifier = Modifier) {
     val c = LocalContext.current.container
     var confirm by remember { mutableStateOf(false) }
-    Box(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+    Box(modifier.fillMaxSize().padding(bottom = LocalBottomClearance.current)) {
         MessageView(
             Icons.Outlined.Lock,
             stringResource(R.string.unreadable_title),
             stringResource(R.string.unreadable_body),
             actionLabel = stringResource(R.string.unreadable_retry),
-            // In the app's own scope: this screen goes away as soon as the files open, which mustn't stop the work halfway.
+            // In the app's own scope: this message goes away as soon as the files open, which mustn't stop the work halfway.
             onAction = { c.appScope.launch { c.retryUnreadableData() } },
         )
         TextButton(onClick = { confirm = true }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)) {

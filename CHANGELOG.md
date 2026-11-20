@@ -4,6 +4,15 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+Built and checked by CI only: nothing here had been run on a phone when it was pushed.
+
+### Changed
+
+- **A download list that can't be opened no longer blocks the whole app.** Since 0.7.0 the list of your downloads is encrypted on the phone, and when it couldn't be opened (the key in the phone's secure storage was lost, or the file was damaged) JellyCtrl showed "Can't open your downloads" over everything, so you couldn't browse or stream either. Now that message, with the same **Try again** and **Start empty** (and the same question before starting empty), only appears on the **Downloads** page. Home, search, your libraries, streaming and music work as usual. The Downloads rows on the Library tab and the You page say "Can't be opened: tap to see why" instead of a count.
+- **What stays exactly as careful as before while the list can't be opened:** nothing is deleted, renamed or written over until you choose **Start empty** (which still only sets the unreadable files aside). A title you downloaded earlier streams from your server instead of playing from the phone, and can't be played offline until the list opens again. Tapping **Download** shows a short notice instead of starting a download, because a new download couldn't be saved in the list. A download that Android restarts in the background waits and tries again later, without touching any file; it carries on once the list opens, and stops if you start empty. If only the small file with your offline positions can't be opened, the Downloads page shows the same message; positions of what you watch offline are then kept until the app closes and still sent to your server when it's reachable, but not saved on the phone.
+
 ## v0.7.0 (2026-11-20)
 
 **This release encrypts some of what the app stores on the phone. An older version cannot read it afterwards, so export or back up anything you need before you update (details below).** Built and checked by CI only: nothing in this release had been run on a phone when it was published.
