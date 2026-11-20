@@ -119,10 +119,11 @@ fun HomeScreen() {
 
     val loader = rememberLoader("home") {
         coroutineScope {
-            val views = client.userViews()
+            // These three don't depend on the list of libraries, so they start before it is fetched, not after.
             val resume = async { runCatching { client.resumeItems("Video") }.getOrDefault(emptyList()) }
             val resumeAudio = async { runCatching { client.resumeItems("Audio", 12) }.getOrDefault(emptyList()) }
             val next = async { runCatching { client.nextUp() }.getOrDefault(emptyList()) }
+            val views = client.userViews()
             val latest = views
                 .filter { it.collectionType !in setOf("livetv", "playlists", "boxsets", "folders") }
                 .map { v -> async { v to runCatching { client.latest(v.id) }.getOrDefault(emptyList()) } }

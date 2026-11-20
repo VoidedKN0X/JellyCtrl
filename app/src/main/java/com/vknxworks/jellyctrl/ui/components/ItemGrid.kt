@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -69,6 +70,10 @@ fun PagedItemGrid(
         return
     }
 
+    // Pages can overlap (random order, or items added while you scroll); a key twice would crash the grid.
+    // Worked out again only when the loaded items change, not every time the grid is recomposed.
+    val shown by remember(loader) { derivedStateOf { loader.items.distinctBy { it.id + (it.playlistItemId ?: "") } } }
+
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minCell),
         state = state,
@@ -80,8 +85,7 @@ fun PagedItemGrid(
         if (header != null) {
             item(span = { GridItemSpan(maxLineSpan) }, key = "header") { header() }
         }
-        // Pages can overlap (random order, or items added while you scroll); a key twice would crash the grid.
-        items(loader.items.distinctBy { it.id + (it.playlistItemId ?: "") }, key = { it.id + (it.playlistItemId ?: "") }) { item ->
+        items(shown, key = { it.id + (it.playlistItemId ?: "") }) { item ->
             PosterCard(
                 item, client, null,
                 onClick = { onItem(item) },
@@ -131,6 +135,9 @@ fun ItemGrid(
         16f / 9f -> 220.dp
         else -> 112.dp
     }
+    // The same item twice would crash the grid; worked out again only when the list changes.
+    val current by rememberUpdatedState(items)
+    val shown by remember { derivedStateOf { current.distinctBy { it.id + (it.playlistItemId ?: "") } } }
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minCell),
         modifier = modifier.fillMaxSize(),
@@ -138,7 +145,7 @@ fun ItemGrid(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        items(items.distinctBy { it.id + (it.playlistItemId ?: "") }, key = { it.id + (it.playlistItemId ?: "") }) { item ->
+        items(shown, key = { it.id + (it.playlistItemId ?: "") }) { item ->
             PosterCard(item, client, null, onClick = { onItem(item) }, onLongClick = onLongItem?.let { { it(item) } })
         }
     }

@@ -33,15 +33,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.AsyncImage
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import com.vknxworks.jellyctrl.data.api.ticksToMs
@@ -79,14 +84,23 @@ fun ArtImage(
     if (url == null) {
         Box(modifier) { fallback() }
     } else {
-        SubcomposeAsyncImage(
-            model = url,
-            contentDescription = null,
-            modifier = modifier,
-            contentScale = contentScale,
-            error = { fallback() },
-            loading = { Box(Modifier.fillMaxSize().background(CtrlColors.Surface)) },
-        )
+        // A plain AsyncImage: the subcomposing variant is slow in grids and rows. The same plain colour shows
+        // while loading, and the same fallback takes the image's place when it can't be loaded.
+        var failed by remember(url) { mutableStateOf(false) }
+        if (failed) {
+            Box(modifier) { fallback() }
+        } else {
+            val loadingColor = CtrlColors.Surface
+            val loading = remember(loadingColor) { ColorPainter(loadingColor) }
+            AsyncImage(
+                model = url,
+                contentDescription = null,
+                modifier = modifier,
+                placeholder = loading,
+                onError = { failed = true },
+                contentScale = contentScale,
+            )
+        }
     }
 }
 

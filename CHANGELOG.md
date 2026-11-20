@@ -4,6 +4,16 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+Changes from the November 2026 code audit that are on `main` but not in a release yet (no version bump, so nothing was published). JellyCtrl has no home-screen widgets and no Quick Settings tiles, so there was nothing of that kind to remove.
+
+### Changed
+
+- **Home opens a little sooner.** Continue watching, Continue listening and Next up are now asked for at the same moment as your list of libraries, instead of only after that list has arrived. That saves one round trip to the server each time Home loads. What Home shows is the same.
+- **Smoother scrolling in library grids.** A grid (a library, a list, Live TV recordings) checks that no item is in it twice, because that would crash the grid. That check went over every loaded item each time anything on the grid was redrawn; it now only runs when the loaded items actually change.
+- **Artwork is drawn in a lighter way.** Posters, backdrops, logos, cast photos, chapter pictures and the music artwork were each drawn through a slower kind of image view (Coil's `SubcomposeAsyncImage`) that the image library itself advises against in lists and grids. They now use the plain image view. It should look the same: the same plain colour while a picture loads, and the same name or film icon in its place when there is no picture or it can't be loaded. Not yet checked on a phone.
+
 ## Project updates (2026-11-19)
 
 ### Project
