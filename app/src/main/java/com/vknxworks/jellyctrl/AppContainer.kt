@@ -35,6 +35,13 @@ import java.util.concurrent.TimeUnit
 class AppContainer(val context: Context) {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    /**
+     * Made first on purpose: it starts reading the settings file on a background thread straight away, so that
+     * read runs while the main thread builds the HTTP client below, and [lockAtStart] (which still waits for
+     * the stored settings, so nothing sees defaults) usually has nothing left to wait for.
+     */
+    val settings = SettingsRepository(context, appScope)
+
     val http: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -60,8 +67,6 @@ class AppContainer(val context: Context) {
             com.vknxworks.jellyctrl.data.api.CredentialRedirectGuard { url -> runCatching { sessions.isCleartextAllowed(url) }.getOrDefault(false) }
         )
         .build()
-
-    val settings = SettingsRepository(context, appScope)
 
     /** The app lock's PIN, fingerprint key and the key that seals the saved sign-ins while locked. */
     val vault = LockVault(context, "jellyctrl")
