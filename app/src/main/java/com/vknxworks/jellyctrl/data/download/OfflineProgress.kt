@@ -12,6 +12,8 @@ import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.ApiException
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import com.vknxworks.jellyctrl.data.api.PlainJson
+import com.vknxworks.jellyctrl.data.crypto.DataKeyStore
+import com.vknxworks.jellyctrl.data.crypto.SealedStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.buildJsonObject
@@ -74,18 +77,42 @@ object ProgressRules {
  * Playback of downloads while offline: positions and "watched" are kept on the phone and sent to
  * Jellyfin by [ProgressSyncWorker] as soon as there's a connection.
  */
-class OfflineProgressStore(private val context: Context, private val scope: CoroutineScope) {
+class OfflineProgressStore(private val context: Context, private val scope: CoroutineScope, keys: DataKeyStore) {
     private val file = File(context.filesDir, "offline-progress.json")
+
+    /** The file is encrypted at rest with the app's data key; one from before encryption is still read. */
+    private val store = SealedStore(file, keys)
     private val _pending = MutableStateFlow<List<PendingProgress>>(emptyList())
     val pending: StateFlow<List<PendingProgress>> = _pending.asStateFlow()
     private val loaded = MutableStateFlow(false)
 
+    private val _unreadable = MutableStateFlow(false)
+
+    /** The saved file is encrypted and can't be opened: it's kept as it is and nothing is written over it. */
+    val unreadable: StateFlow<Boolean> = _unreadable.asStateFlow()
+
     init {
-        scope.launch(Dispatchers.IO) {
-            val saved = runCatching { PlainJson.decodeFromString(ListSerializer(PendingProgress.serializer()), file.readText()) }.getOrNull().orEmpty()
-            _pending.update { current -> current.fold(saved) { acc, p -> ProgressRules.merge(acc, p) } }
-            loaded.value = true
-            if (_pending.value.isNotEmpty()) scheduleSync()
+        scope.launch(Dispatchers.IO) { load() }
+    }
+
+    private fun load() {
+        val bytes = synchronized(file) { store.read() }
+        val saved = bytes?.let {
+            runCatching { PlainJson.decodeFromString(ListSerializer(PendingProgress.serializer()), String(it, Charsets.UTF_8)) }.getOrNull()
+        }.orEmpty()
+        _pending.update { current -> current.fold(saved) { acc, p -> ProgressRules.merge(acc, p) } }
+        _unreadable.value = store.unreadable
+        loaded.value = true
+        if (_pending.value.isNotEmpty()) scheduleSync()
+    }
+
+    /** "Try again" after [unreadable]: reads the file once more. */
+    suspend fun reload() = withContext(Dispatchers.IO) { load() }
+
+    /** "Start empty" after [unreadable]: the file is renamed to `offline-progress.json.unreadable`, not deleted. */
+    suspend fun setAside() = withContext(Dispatchers.IO) {
+        synchronized(file) {
+            if (store.setAside()) _unreadable.value = false
         }
     }
 
@@ -132,17 +159,21 @@ class OfflineProgressStore(private val context: Context, private val scope: Coro
     /** Signing out of [accountKey], or "Forgot PIN?" (null: everything). */
     fun forget(accountKey: String?) {
         _pending.update { list -> if (accountKey == null) emptyList() else list.filterNot { it.accountKey == accountKey } }
-        save()
+        // "Forgot PIN?" removes everything on purpose, also a file that couldn't be opened.
+        save(wipe = accountKey == null)
     }
 
-    private fun save() {
+    private fun save(wipe: Boolean = false) {
         val snapshot = _pending.value
         scope.launch(Dispatchers.IO) {
             synchronized(file) {
                 runCatching {
-                    val tmp = File(file.parentFile, file.name + ".tmp")
-                    tmp.writeText(PlainJson.encodeToString(ListSerializer(PendingProgress.serializer()), snapshot))
-                    if (!tmp.renameTo(file)) { tmp.copyTo(file, overwrite = true); tmp.delete() }
+                    if (wipe) {
+                        store.clear()
+                        _unreadable.value = store.unreadable
+                    }
+                    // Encrypted when there's a data key; nothing is written while the file can't be opened.
+                    store.write(PlainJson.encodeToString(ListSerializer(PendingProgress.serializer()), snapshot).toByteArray(Charsets.UTF_8))
                 }
             }
         }

@@ -6,6 +6,8 @@ import android.net.NetworkCapabilities
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import com.vknxworks.jellyctrl.data.api.ServerAuthInterceptor
 import com.vknxworks.jellyctrl.data.auth.SessionManager
+import com.vknxworks.jellyctrl.data.crypto.DataKeyStore
+import com.vknxworks.jellyctrl.data.crypto.KeystoreWrapper
 import com.vknxworks.jellyctrl.data.download.DownloadRepository
 import com.vknxworks.jellyctrl.data.lock.LockVault
 import com.vknxworks.jellyctrl.data.settings.SettingsRepository
@@ -16,7 +18,11 @@ import com.vknxworks.jellyctrl.ui.lock.AppLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -64,10 +70,45 @@ class AppContainer(val context: Context) {
     val lockAtStart: Boolean = vault.enabled || runBlocking { runCatching { settings.stored.first().appLock }.getOrDefault(false) }
 
     val sessions = SessionManager(context, http, vault, appScope)
-    val downloads = DownloadRepository(context, appScope)
+
+    /**
+     * The key that encrypts the app's own files at rest (the download list and the offline positions). Making
+     * this reads nothing: the Keystore is first asked on a background thread, when those files are loaded.
+     */
+    val dataKeys = DataKeyStore(context.filesDir, KeystoreWrapper("jellyctrl_data_at_rest"))
+    val downloads = DownloadRepository(context, appScope, dataKeys)
 
     /** Positions of downloads watched offline, sent to the server once online. */
-    val offlineProgress = com.vknxworks.jellyctrl.data.download.OfflineProgressStore(context, appScope)
+    val offlineProgress = com.vknxworks.jellyctrl.data.download.OfflineProgressStore(context, appScope, dataKeys)
+
+    /**
+     * An encrypted file of the app (the download list or the offline positions) can't be opened. Nothing is
+     * deleted or written over; the app shows what happened, with "Try again" and "Start empty".
+     */
+    val dataUnreadable: StateFlow<Boolean> =
+        combine(downloads.unreadable, offlineProgress.unreadable) { a, b -> a || b }.stateIn(appScope, SharingStarted.Eagerly, false)
+
+    /** "Try again": asks the Keystore for the data key once more and reads the files again. */
+    suspend fun retryUnreadableData() = withContext(Dispatchers.IO) {
+        dataKeys.reset()
+        downloads.reload()
+        offlineProgress.reload()
+    }
+
+    /**
+     * "Start empty": the files that can't be opened are renamed (`.unreadable`), not deleted, and the lists start
+     * empty. A data key that's gone makes way for a new one (its file is kept as `data.key.unreadable`); a key
+     * that still works stays.
+     */
+    suspend fun startEmptyData() = withContext(Dispatchers.IO) {
+        downloads.setAside()
+        offlineProgress.setAside()
+        if (!downloads.unreadable.value && !offlineProgress.unreadable.value && dataKeys.get(create = false) == null) {
+            dataKeys.discard(keep = true)
+        }
+        downloads.reload()
+        offlineProgress.reload()
+    }
     val music by lazy { MusicController(context, this) }
 
     /** The app lock is on, either with a PIN or still the old one waiting for a PIN. */

@@ -24,11 +24,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.runtime.Composable
@@ -46,6 +48,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -73,7 +76,10 @@ import com.vknxworks.jellyctrl.ui.admin.AdminUserScreen
 import com.vknxworks.jellyctrl.ui.admin.AdminUsersScreen
 import com.vknxworks.jellyctrl.ui.admin.EditMetadataScreen
 import com.vknxworks.jellyctrl.ui.auth.ServerSetupFlow
+import com.vknxworks.jellyctrl.ui.components.CtrlAlertDialog
 import com.vknxworks.jellyctrl.ui.components.LoadingView
+import com.vknxworks.jellyctrl.ui.components.MessageView
+import kotlinx.coroutines.launch
 import com.vknxworks.jellyctrl.ui.components.LocalBottomClearance
 import com.vknxworks.jellyctrl.ui.components.CtrlBottomBar
 import com.vknxworks.jellyctrl.ui.theme.CtrlColors
@@ -106,8 +112,50 @@ fun AppRoot() {
         when {
             !ready -> LoadingView()
             active == null -> ServerSetupFlow(onDone = {}, onCancel = null)
-            else -> key(active!!.account.key) { MainScaffold() }
+            else -> {
+                // An encrypted file of the app can't be opened: say so instead of showing empty lists.
+                val unreadable by c.dataUnreadable.collectAsStateWithLifecycle()
+                if (unreadable) UnreadableData() else key(active!!.account.key) { MainScaffold() }
+            }
         }
+    }
+}
+
+/**
+ * The download list (or the positions of downloads watched offline) is encrypted and can't be opened: the key in
+ * the phone's secure storage is gone or changed, or the file is damaged. Nothing was deleted or changed: say so,
+ * offer to try again, and only start empty when asked to, keeping the unreadable files aside.
+ */
+@Composable
+private fun UnreadableData() {
+    val c = LocalContext.current.container
+    var confirm by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+        MessageView(
+            Icons.Outlined.Lock,
+            stringResource(R.string.unreadable_title),
+            stringResource(R.string.unreadable_body),
+            actionLabel = stringResource(R.string.unreadable_retry),
+            // In the app's own scope: this screen goes away as soon as the files open, which mustn't stop the work halfway.
+            onAction = { c.appScope.launch { c.retryUnreadableData() } },
+        )
+        TextButton(onClick = { confirm = true }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)) {
+            Text(stringResource(R.string.unreadable_start_empty), color = CtrlColors.Muted)
+        }
+    }
+    if (confirm) {
+        CtrlAlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text(stringResource(R.string.unreadable_start_empty_title)) },
+            text = { Text(stringResource(R.string.unreadable_start_empty_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirm = false
+                    c.appScope.launch { c.startEmptyData() }
+                }) { Text(stringResource(R.string.unreadable_start_empty)) }
+            },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 }
 

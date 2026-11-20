@@ -761,4 +761,10 @@
         <item quantity="one">%d subtitle</item>
         <item quantity="other">%d subtitles</item>
     </plurals>
+    <string name="unreadable_title">Can\'t open your downloads</string>
+    <string name="unreadable_body">The list of your downloads is stored encrypted on this phone, and the key that opens it is missing from the phone\'s secure storage or no longer matches. Nothing has been deleted or changed. Try again first; restarting the phone can help too.</string>
+    <string name="unreadable_retry">Try again</string>
+    <string name="unreadable_start_empty">Start empty</string>
+    <string name="unreadable_start_empty_title">Start with an empty download list?</string>
+    <string name="unreadable_start_empty_body">Only do this if trying again doesn\'t help. The list that can\'t be opened is kept aside on this phone, not deleted, but JellyCtrl won\'t show it. The downloaded files stay on the phone too, without being listed: download a title again to get it back in the list, or clear JellyCtrl\'s storage in Android\'s settings to free the space.</string>
 </resources>

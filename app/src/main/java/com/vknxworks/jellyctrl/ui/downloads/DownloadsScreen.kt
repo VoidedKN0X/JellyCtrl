@@ -44,6 +44,7 @@ import com.vknxworks.jellyctrl.data.download.DownloadEntry
 import com.vknxworks.jellyctrl.data.download.DownloadStatus
 import com.vknxworks.jellyctrl.player.PlayerActivity
 import com.vknxworks.jellyctrl.ui.components.ArtImage
+import com.vknxworks.jellyctrl.ui.components.LoadingView
 import com.vknxworks.jellyctrl.ui.components.MessageView
 import com.vknxworks.jellyctrl.ui.components.ScreenTopBar
 import com.vknxworks.jellyctrl.ui.components.formatBytes
@@ -60,6 +61,7 @@ fun DownloadsScreen() {
     val context = LocalContext.current
     val c = context.container
     val entries by c.downloads.entries.collectAsStateWithLifecycle()
+    val loaded by c.downloads.loaded.collectAsStateWithLifecycle()
     val settings by c.settings.settings.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf<DownloadEntry?>(null) }
 
@@ -78,6 +80,11 @@ fun DownloadsScreen() {
             }
         },
     ) { padding ->
+        // The list is still being read (and decrypted): not "nothing downloaded" yet.
+        if (!loaded) {
+            LoadingView(Modifier.padding(padding))
+            return@Scaffold
+        }
         if (entries.isEmpty()) {
             MessageView(
                 Icons.Outlined.DownloadForOffline,

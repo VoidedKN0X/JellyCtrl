@@ -36,6 +36,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val itemId = inputData.getString(KEY_ITEM_ID) ?: return@withContext Result.failure()
         c.sessions.loaded.filter { it }.first()
+        // The worker may start the app cold: wait until the download list was read (and decrypted).
+        repo.awaitLoaded()
         val entry = repo.find(itemId) ?: return@withContext Result.failure()
         val account = c.sessions.accounts.value.firstOrNull { it.key == entry.accountKey }
             ?: return@withContext fail(itemId, str(R.string.account_was_signed_out))

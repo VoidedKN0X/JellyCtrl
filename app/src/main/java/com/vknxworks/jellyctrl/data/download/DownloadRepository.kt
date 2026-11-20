@@ -10,11 +10,14 @@ import androidx.work.workDataOf
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.JellyfinJson
 import com.vknxworks.jellyctrl.data.api.PlainJson
+import com.vknxworks.jellyctrl.data.crypto.DataKeyStore
+import com.vknxworks.jellyctrl.data.crypto.SealedStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -55,22 +58,67 @@ data class DownloadEntry(
         get() = if (totalBytes > 0) (downloadedBytes.toFloat() / totalBytes).coerceIn(0f, 1f) else 0f
 }
 
-/** Offline copies of media, stored in app-private storage with a small JSON index. */
-class DownloadRepository(private val context: Context, private val scope: CoroutineScope) {
+/**
+ * Offline copies of media, stored in app-private storage with a small JSON index. The index (titles and
+ * details of what was downloaded) is encrypted at rest with the app's data key ([SealedStore]); the media
+ * files, posters and subtitles next to it are ordinary files, because the players open them directly.
+ */
+class DownloadRepository(private val context: Context, private val scope: CoroutineScope, keys: DataKeyStore) {
     val dir: File = File(context.getExternalFilesDir(null) ?: context.filesDir, "downloads").apply { mkdirs() }
-    private val indexFile = File(dir, "index.json")
+    private val store = SealedStore(File(dir, "index.json"), keys)
     private val mutex = Mutex()
 
     private val _entries = MutableStateFlow<List<DownloadEntry>>(emptyList())
     val entries: StateFlow<List<DownloadEntry>> = _entries.asStateFlow()
 
+    private val _loaded = MutableStateFlow(false)
+
+    /** The index was read from disk (or found unreadable): until then [entries] is empty because nothing is known yet. */
+    val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
+
+    private val _unreadable = MutableStateFlow(false)
+
+    /**
+     * The index is encrypted and can't be opened (the key in the phone's secure storage is gone or changed, or
+     * the file is damaged). It is left exactly as it is, nothing is written over it, and the app says so.
+     */
+    val unreadable: StateFlow<Boolean> = _unreadable.asStateFlow()
+
     init {
-        scope.launch(Dispatchers.IO) {
-            val loaded = runCatching {
-                PlainJson.decodeFromString(ListSerializer(DownloadEntry.serializer()), indexFile.readText())
+        scope.launch(Dispatchers.IO) { load() }
+    }
+
+    /** Reads the index (off the main thread: the first read asks the Keystore for the data key). */
+    private suspend fun load() = mutex.withLock {
+        val bytes = store.read()
+        if (bytes != null) {
+            val saved = runCatching {
+                PlainJson.decodeFromString(ListSerializer(DownloadEntry.serializer()), String(bytes, Charsets.UTF_8))
             }.getOrDefault(emptyList())
             // Anything that was mid-download when the app died is re-queued by WorkManager; show it as queued.
-            _entries.value = loaded.map { if (it.status == DownloadStatus.RUNNING) it.copy(status = DownloadStatus.QUEUED) else it }
+            _entries.value = saved.map { if (it.status == DownloadStatus.RUNNING) it.copy(status = DownloadStatus.QUEUED) else it }
+        }
+        _unreadable.value = store.unreadable
+        _loaded.value = true
+    }
+
+    /** Waits until the index was read. A worker can start the app cold and must not look before that. */
+    suspend fun awaitLoaded() {
+        _loaded.first { it }
+    }
+
+    /** "Try again" after [unreadable]: reads the index once more. */
+    suspend fun reload() = withContext(Dispatchers.IO) { load() }
+
+    /**
+     * "Start empty" after [unreadable]: the index that can't be opened is renamed to `index.json.unreadable`
+     * (kept, not deleted) and the list starts empty. The media files stay where they are.
+     */
+    suspend fun setAside() = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            if (store.setAside()) {
+                _unreadable.value = false
+            }
         }
     }
 
@@ -101,6 +149,8 @@ class DownloadRepository(private val context: Context, private val scope: Corout
      * original file.
      */
     fun enqueue(item: BaseItemDto, accountKey: String, wifiOnly: Boolean, bitrate: Long = 0) {
+        // The list can't be opened, so a new download couldn't be saved in it either.
+        if (_unreadable.value) return
         val ext = if (bitrate > 0) DownloadPlan.convertedExtension(item) else (item.container ?: item.mediaSources.firstOrNull()?.container ?: "mkv").substringBefore(',')
             .trim().lowercase().takeIf { EXT_RE.matches(it) } ?: "mkv"
         // Local names come from a hash of the server's item id, never from the raw id, so a hostile server can't
@@ -176,8 +226,13 @@ class DownloadRepository(private val context: Context, private val scope: Corout
         WorkManager.getInstance(context).cancelAllWorkByTag(DownloadWorker.TAG)
         mutex.withLock {
             _entries.value = emptyList()
-            withContext(Dispatchers.IO) { dir.listFiles()?.forEach { it.deleteRecursively() } }
-            save()
+            withContext(Dispatchers.IO) {
+                dir.listFiles()?.forEach { it.deleteRecursively() }
+                // Everything goes on purpose here, also an index that couldn't be opened.
+                store.clear()
+                _unreadable.value = store.unreadable
+                save()
+            }
         }
     }
 
@@ -192,11 +247,10 @@ class DownloadRepository(private val context: Context, private val scope: Corout
         dir.listFiles { f -> f.name.startsWith(prefix) && f.name.endsWith(".part") && f != keep }?.forEach { it.delete() }
     }
 
+    /** Writes the index (encrypted when there's a data key). Never on the main thread; does nothing while it's unreadable. */
     private fun save() {
         runCatching {
-            val tmp = File(dir, "index.json.tmp")
-            tmp.writeText(PlainJson.encodeToString(ListSerializer(DownloadEntry.serializer()), _entries.value))
-            tmp.renameTo(indexFile)
+            store.write(PlainJson.encodeToString(ListSerializer(DownloadEntry.serializer()), _entries.value).toByteArray(Charsets.UTF_8))
         }
     }
 

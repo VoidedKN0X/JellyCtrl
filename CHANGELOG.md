@@ -4,6 +4,23 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+Built and checked by CI only: none of this has been run on a phone yet.
+
+### Security
+
+- **The list of your downloads is now encrypted on the phone.** JellyCtrl keeps a small list next to your downloads (`downloads/index.json`, in the app's own folder) with the title, series name and Jellyfin details of every download, so it could be read by anyone who got a copy of the app's files, for example over USB. That list, and the small file with how far you got in downloads you watched offline (`offline-progress.json`), are now encrypted with AES-256-GCM. The key is 32 random bytes kept in the app's private folder (`data.key`), itself encrypted by a key in the phone's secure hardware (Android Keystore; StrongBox when the phone has it) that can't be copied off the phone. It needs no PIN or fingerprint, so downloads and the sending of offline progress keep working in the background. This protects those files when they are copied off the phone; it does not protect against someone who can use the unlocked phone or a compromised app while it runs, and it works the same with the app lock on or off.
+- **What is not encrypted, and why.** The downloaded films, episodes and songs themselves, half-finished downloads, their posters and their subtitle files stay ordinary files: the video players (Media3 and mpv), the music player and the picture loader open them straight from the folder, and they are far too large to decrypt in memory. Their file names are made from a hash, not from the title. Also unchanged: cached artwork (it is downloaded again when needed), mpv's certificate bundle, your settings and the list of accounts (the sign-in tokens in it were already encrypted), and the small database Android's WorkManager keeps for queued downloads.
+- **Moving to the encrypted files is automatic and can't lose the list.** The first time this version starts, each of the two files is copied in encrypted form to a temporary file, written to disk, read back, decrypted and compared with the original, and only then put in the original's place in one step. If anything goes wrong, or the app is stopped halfway, the original file stays in use and it is tried again at the next start. On a phone where the secure hardware doesn't work, the files simply stay as they were.
+- **If the key is ever lost** (for example the phone's secure storage was reset), JellyCtrl does not start with an empty list and does not overwrite anything: it shows "Can't open your downloads" with **Try again**. **Start empty** is there for when that doesn't help: the list that can't be opened is renamed (`index.json.unreadable`), not deleted, and the downloaded files stay on the phone without being listed; downloading a title again puts it back in the list.
+- **Don't go back to an older version without expecting to lose the list.** JellyCtrl 0.6.1 and older can't read the encrypted list: they show no downloads and write a new, empty list over it the next time something is downloaded. The downloaded files stay, but they are no longer listed. There is no export for downloads; they can be downloaded again from your server.
+
+### Changed
+
+- **The Downloads page shows a spinner for the moment the list is being read**, instead of "Nothing downloaded" for a split second.
+- **A download that restarts together with the app waits for the download list to be read** before it looks itself up. Before, a download picked up by Android right at app start could find the list still empty and stop.
+
 ## v0.6.1 (2026-11-20)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published.
