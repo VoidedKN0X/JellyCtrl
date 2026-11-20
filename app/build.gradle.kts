@@ -5,12 +5,16 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// Release signing comes from environment variables (set by GitHub Actions).
-// Local builds without a keystore fall back to the debug key; on CI a missing key fails the build
-// so a debug-signed APK can never be published as a release.
+// Release signing. On GitHub Actions the build job has no signing key at all: it sets
+// UNSIGNED_RELEASE=true and gets app-release-unsigned.apk, which a separate job signs with apksigner
+// (see .github/workflows/build.yml). An unsigned APK cannot be installed, so nothing unsigned can ship.
+// A keystore from environment variables still works (SIGNING_KEYSTORE_PATH, KEYSTORE_PASSWORD,
+// KEY_ALIAS, KEY_PASSWORD). Local builds without one fall back to the debug key; on CI a build that
+// has neither a key nor UNSIGNED_RELEASE=true fails, so a debug-signed APK can never be published as a release.
 val releaseKeystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")?.takeIf { it.isNotBlank() && file(it).exists() }
 val isCi: Boolean = System.getenv("CI") == "true" || System.getenv("GITHUB_ACTIONS") == "true"
 val signingEnvMissing: Boolean = listOf("KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD").any { System.getenv(it).isNullOrBlank() }
+val unsignedRelease: Boolean = System.getenv("UNSIGNED_RELEASE") == "true"
 
 android {
     namespace = "com.vknxworks.jellyctrl"
@@ -46,13 +50,19 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = if (releaseKeystorePath != null) {
+            signingConfig = if (unsignedRelease) {
+                // Asked for explicitly: no signing here at all, the output is app-release-unsigned.apk.
+                null
+            } else if (releaseKeystorePath != null) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
             }
-            if (isCi && (releaseKeystorePath == null || signingEnvMissing)) {
-                throw GradleException("Release signing values are missing on CI - refusing to sign a release with the debug key.")
+            if (!unsignedRelease && isCi && (releaseKeystorePath == null || signingEnvMissing)) {
+                throw GradleException(
+                    "Release signing values are missing on CI and UNSIGNED_RELEASE=true is not set - " +
+                        "refusing to sign a release with the debug key.",
+                )
             }
         }
         debug {
