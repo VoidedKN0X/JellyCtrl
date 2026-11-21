@@ -33,7 +33,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Open in ArrCtrl** from movie and series pages, to manage them in Radarr and Sonarr
 - **Request in SeerrCtrl** from movie and series pages (shown when SeerrCtrl is installed), to request more of a title in Seerr or Jellyseerr
 - **Back up and restore** the app's settings to a file (settings only, never sign-ins or the PIN)
-- **In English and Dutch**: the app follows your phone's language
+- **In English, Dutch, French and German**: the app follows your phone's language
 - Picture-in-picture, swipe gestures, audio and subtitle language preferences, a separate quality limit for mobile data
 
 ## Requirements

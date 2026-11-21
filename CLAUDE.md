@@ -46,6 +46,6 @@ Every library and plugin download is checked against `gradle/verification-metada
 
 ## Languages
 
-- The app follows the phone's language: English in `app/src/main/res/values/strings.xml`, Dutch (Belgian, informal "je") in `values-nl/strings.xml`. There is no in-app language picker; `res/xml/locales_config.xml` lists the two for Android's own per-app language setting.
+- The app follows the phone's language: English in `app/src/main/res/values/strings.xml`, Dutch (Belgian, informal "je") in `values-nl/strings.xml`, French (polite "vous") in `values-fr/strings.xml` and German (informal "du") in `values-de/strings.xml`. Every new string needs all four. There is no in-app language picker; `res/xml/locales_config.xml` lists the four for Android's own per-app language setting.
 - Every user-visible text comes from resources (`stringResource`, or `str()`/`plural()` outside composables). A new string goes into both files in the same push, with the same placeholders. Technical names, units and the app name stay untranslated.
 - The names of server configuration fields in the dashboard are made from Jellyfin's own field names and stay English.
