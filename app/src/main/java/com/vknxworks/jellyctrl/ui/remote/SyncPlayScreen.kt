@@ -70,7 +70,7 @@ fun SyncPlayScreen() {
         onDispose { c.syncPlay.screenOpen.value = false }
     }
 
-    val groups = rememberLoader("syncplay-groups") { c.syncPlay.listGroups() }
+    val groups = rememberLoader("syncplay-groups") { c.syncPlay.listGroups().also { c.syncPlay.reconcile(it) } }
     // Other people's groups come and go: looked up again every few seconds while this screen shows.
     WhileOnScreen(groups) { back ->
         if (back) groups.reload(silent = true)

@@ -142,8 +142,12 @@ class SyncPlayManager(private val c: AppContainer) {
         }
     }
 
+    /** When this phone last (re)joined its group, so a group list fetched just before that can't undo it. */
+    private var joinedAt = 0L
+
     private fun joined(g: SyncGroup) {
         if (!sameId(g.groupId, _group.value?.groupId)) _queue.value = null
+        joinedAt = android.os.SystemClock.elapsedRealtime()
         _group.value = g
         startClock()
     }
@@ -278,12 +282,32 @@ class SyncPlayManager(private val c: AppContainer) {
     fun reset() = left()
 
     /**
-     * The connection came back while in a group: joining the same group again makes the server send the group
-     * and its queue once more, so nothing that was missed stays missed.
+     * The connection came back while in a group. Joining the same group again makes the server send the group
+     * and its queue once more, and makes the group wait until this phone is ready again: right when the
+     * player here is following the group, and unwanted when it isn't (the others would be paused for a phone
+     * nobody is watching), so then nothing is asked. "Open what the group is watching" catches up by itself:
+     * the server corrects a phone that reports an old queue entry.
      */
     fun onReconnected() {
         val id = _group.value?.groupId ?: return
+        if (PlayerBridge.active?.syncActive != true) return
         c.appScope.launch { runCatching { join(id) } }
+    }
+
+    /**
+     * The server's list of groups, as just fetched: when the group this phone thinks it is in is gone, or this
+     * account is no longer one of its members (the server drops a session that ended), forget it here too.
+     */
+    fun reconcile(groups: List<SyncGroup>) {
+        val mine = _group.value ?: return
+        if (android.os.SystemClock.elapsedRealtime() - joinedAt < 10_000) return
+        val me = c.sessions.active.value?.account?.userName
+        val listed = groups.firstOrNull { sameId(it.groupId, mine.groupId) }
+        if (listed == null || (me != null && listed.participants.isNotEmpty() && listed.participants.none { it.equals(me, ignoreCase = true) })) {
+            left()
+        } else {
+            _group.value = mine.copy(groupName = listed.groupName, state = listed.state, participants = listed.participants)
+        }
     }
 
     // ---------- clock ----------
