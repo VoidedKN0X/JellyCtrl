@@ -28,6 +28,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object AccountsRoute
 @Serializable data object AddAccountRoute
 @Serializable data object RemoteRoute
+@Serializable data object SyncPlayRoute
 @Serializable data object NowPlayingRoute
 @Serializable data object QuickConnectApproveRoute
 @Serializable data class EditMetadataRoute(val id: String)

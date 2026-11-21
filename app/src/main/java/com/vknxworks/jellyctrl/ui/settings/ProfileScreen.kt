@@ -97,6 +97,7 @@ import com.vknxworks.jellyctrl.ui.nav.LocalNavigator
 import com.vknxworks.jellyctrl.ui.nav.QuickConnectApproveRoute
 import com.vknxworks.jellyctrl.ui.nav.RemoteRoute
 import com.vknxworks.jellyctrl.ui.nav.SettingsRoute
+import androidx.compose.material.icons.outlined.Groups
 import com.vknxworks.jellyctrl.ui.theme.Gutter
 import kotlinx.coroutines.launch
 import com.vknxworks.jellyctrl.str
@@ -118,6 +119,7 @@ fun ProfileScreen() {
     val nav = LocalNavigator.current
     val session by c.sessions.active.collectAsStateWithLifecycle()
     val downloads by c.downloads.entries.collectAsStateWithLifecycle()
+    val syncGroup by c.syncPlay.group.collectAsStateWithLifecycle()
     val acc = session?.account
     val client = session?.client
     val views = rememberLoader("profile-views") { client?.userViews().orEmpty() }
@@ -183,6 +185,13 @@ fun ProfileScreen() {
             }
             Group(stringResource(R.string.group_devices_label)) {
                 GroupRow(stringResource(R.string.control_another_device), stringResource(R.string.play_and_pause_jellyfin_on_your), icon = Icons.Outlined.Cast, showChevron = true, onClick = { nav.navigate(RemoteRoute) })
+                GroupRow(
+                    stringResource(R.string.syncplay_title),
+                    syncGroup?.let { stringResource(R.string.syncplay_in_group_x, it.groupName) } ?: stringResource(R.string.syncplay_row_summary),
+                    icon = Icons.Outlined.Groups,
+                    showChevron = true,
+                    onClick = { nav.navigate(com.vknxworks.jellyctrl.ui.nav.SyncPlayRoute) },
+                )
                 GroupRow(stringResource(R.string.sign_in_another_device), stringResource(R.string.approve_a_quick_connect_code), icon = Icons.Outlined.Key, showChevron = true, onClick = { nav.navigate(QuickConnectApproveRoute) })
             }
             Group(stringResource(R.string.group_app_label)) {

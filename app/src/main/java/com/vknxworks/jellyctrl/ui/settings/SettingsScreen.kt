@@ -158,6 +158,7 @@ fun SettingsScreen() {
                 GroupSwitch(stringResource(R.string.picture_in_picture_when_you_leave), checked = s.autoPip) { v -> update { it.copy(autoPip = v) } }
                 GroupChoice(stringResource(R.string.video_player), PlayerEngineChoice.entries.map { it to it.label }, s.engine) { v -> update { it.copy(engine = v) } }
                 GroupSwitch(stringResource(R.string.hardware_decoding_in_mpv), stringResource(R.string.turn_off_if_mpv_shows_a), s.hwDecoding) { v -> update { it.copy(hwDecoding = v) } }
+                GroupSwitch(stringResource(R.string.remote_control_switch), stringResource(R.string.remote_control_summary), s.remoteControl) { v -> update { it.copy(remoteControl = v) } }
                 GroupSwitch(stringResource(R.string.audio_passthrough), stringResource(R.string.audio_passthrough_summary), s.audioPassthrough) { v -> update { it.copy(audioPassthrough = v) } }
                 if (s.audioPassthrough) {
                     // What the output connected right now reports; asked again each time this screen is opened.

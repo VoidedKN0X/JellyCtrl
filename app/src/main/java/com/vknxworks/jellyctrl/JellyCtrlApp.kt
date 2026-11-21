@@ -23,10 +23,12 @@ class JellyCtrlApp : Application(), SingletonImageLoader.Factory {
         // The app lock: lock when the app leaves the screen, or after the chosen time away.
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
+                container.foreground.value = true
                 AppLock.onForeground(container.lockEnabled, container.settings.settings.value.lockTimeout.millis)
             }
 
             override fun onStop(owner: LifecycleOwner) {
+                container.foreground.value = false
                 AppLock.onBackground(container.lockEnabled, container.settings.settings.value.lockTimeout.millis)
             }
         })

@@ -246,6 +246,22 @@ class MusicController(private val context: Context, private val c: AppContainer)
         mc.play()
     }
 
+    /** Adds [items] to the queue, right after the current track ([next]) or at the end; starts playing if nothing was. */
+    fun addToQueue(items: List<BaseItemDto>, next: Boolean) = launch {
+        val playable = items.filter { it.mediaType == "Audio" || it.type == "Audio" }
+        if (playable.isEmpty()) return@launch
+        val mc = controller()
+        val wasEmpty = mc.mediaItemCount == 0
+        val at = if (next) (mc.currentMediaItemIndex + 1).coerceAtMost(mc.mediaItemCount) else mc.mediaItemCount
+        mc.addMediaItems(at, playable.map(::mediaItem))
+        if (wasEmpty) { mc.prepare(); mc.play() }
+    }
+
+    /** Play or pause as asked (another device controlling this one). */
+    fun setPlaying(playing: Boolean) = launch {
+        controller().let { if (playing) { if (it.playbackState == Player.STATE_ENDED) it.seekTo(0, 0); it.play() } else it.pause() }
+    }
+
     fun togglePlay() = launch { controller().let { if (it.isPlaying) it.pause() else { if (it.playbackState == Player.STATE_ENDED) it.seekTo(0, 0); it.play() } } }
     fun next() = launch { controller().seekToNextMediaItem() }
     fun previous() = launch { controller().seekToPrevious() }

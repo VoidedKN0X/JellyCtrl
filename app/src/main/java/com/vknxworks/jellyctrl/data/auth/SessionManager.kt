@@ -86,6 +86,9 @@ class SessionManager(
      */
     @Volatile var mediaBusy: () -> Boolean = { false }
 
+    /** Set by the app: whether "Let other devices control this phone" is on (announced to the server at sign-in). */
+    @Volatile var remoteControl: () -> Boolean = { true }
+
     private var installId: String = ""
 
     /** Servers (scheme://host:port) the user agreed to reach over plain HTTP during this run of the app. */
@@ -330,7 +333,7 @@ class SessionManager(
             return
         }
         _active.value = ActiveSession(acc, client)
-        scope.launch { client.postCapabilities() }
+        scope.launch { client.postCapabilities(remoteControl()) }
     }
 
     private suspend fun persist(list: List<Account>, activeId: String?) {

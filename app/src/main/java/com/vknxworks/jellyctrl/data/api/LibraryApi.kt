@@ -177,6 +177,15 @@ suspend fun JellyfinClient.items(q: ItemQuery, startIndex: Int = 0, limit: Int =
         ),
     )
 
+/** The items with these ids, in the order asked for (GET /Items?ids=...); ids the user can't see are left out. */
+suspend fun JellyfinClient.itemsByIds(ids: List<String>): List<BaseItemDto> {
+    if (ids.isEmpty()) return emptyList()
+    val found = ids.chunked(100).flatMap { chunk ->
+        get<ItemsResult>("Items", mapOf("userId" to requireUserId(), "ids" to chunk, "fields" to LIST_FIELDS)).items
+    }.associateBy { it.id.replace("-", "").lowercase() }
+    return ids.mapNotNull { found[it.replace("-", "").lowercase()] }
+}
+
 suspend fun JellyfinClient.item(id: String): BaseItemDto =
     get("Items/$id", mapOf("userId" to requireUserId(), "fields" to DETAIL_FIELDS))
 

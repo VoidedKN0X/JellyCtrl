@@ -370,6 +370,7 @@ private fun AppNavHost(navController: androidx.navigation.NavHostController) {
             })
         }
         composable<RemoteRoute> { RemoteScreen() }
+        composable<SyncPlayRoute> { com.vknxworks.jellyctrl.ui.remote.SyncPlayScreen() }
         composable<NowPlayingRoute> { NowPlayingScreen() }
         composable<QuickConnectApproveRoute> { QuickConnectApproveScreen() }
         composable<EditMetadataRoute> { EditMetadataScreen(it.toRoute<EditMetadataRoute>().id) }

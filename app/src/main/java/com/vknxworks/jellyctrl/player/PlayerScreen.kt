@@ -126,6 +126,7 @@ import com.vknxworks.jellyctrl.ui.components.CtrlSwitch
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.runtime.rememberCoroutineScope
 import com.vknxworks.jellyctrl.data.settings.SUBTITLE_SIZES
@@ -834,9 +835,22 @@ private fun SettingsSheet(
     var sleep by remember { mutableStateOf(false) }
     CtrlSheet(onDismissRequest = onDismiss) {
         LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
-            item {
-                SheetHeader(stringResource(R.string.speed))
-                ChipLine(SPEEDS.map { if (it == 1f) stringResource(R.string.normal) else "${it}×" }, SPEEDS.indexOfFirst { abs(speed - it) < 0.01f }) { vm.setSpeed(SPEEDS[it]) }
+            if (vm.syncActive) {
+                // Watching together: the group plays at normal speed, so there is no speed choice here.
+                item {
+                    val group by LocalContext.current.container.syncPlay.group.collectAsState()
+                    GroupRow(
+                        stringResource(R.string.syncplay_watching_with_x, group?.groupName.orEmpty()),
+                        stringResource(R.string.syncplay_player_hint),
+                        icon = Icons.Outlined.Groups,
+                        iconTint = CtrlColors.AccentText,
+                    )
+                }
+            } else {
+                item {
+                    SheetHeader(stringResource(R.string.speed))
+                    ChipLine(SPEEDS.map { if (it == 1f) stringResource(R.string.normal) else "${it}×" }, SPEEDS.indexOfFirst { abs(speed - it) < 0.01f }) { vm.setSpeed(SPEEDS[it]) }
+                }
             }
             item {
                 SheetHeader(stringResource(R.string.picture))

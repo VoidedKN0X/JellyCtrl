@@ -832,7 +832,7 @@
     <string name="home_section_latest_summary">One row per library with what was added last</string>
     <!-- Settings: back up and restore -->
     <string name="backup_title">Back up and restore</string>
-    <string name="backup_footer">A settings file holds JellyCtrl\'s own settings only: no password, sign-in, PIN or key, and no accounts or downloads. The app lock is never changed by a file, and a file can turn \"Hide in screenshots\" and \"Hide in recent apps\" on but not off.</string>
+    <string name="backup_footer">A settings file holds JellyCtrl\'s own settings only: no password, sign-in, PIN or key, and no accounts or downloads. The app lock is never changed by a file, and a file can turn \"Hide in screenshots\" and \"Hide in recent apps\" on but not off, and \"Let other devices control this phone\" off but not on.</string>
     <string name="backup_save">Save settings to a file</string>
     <string name="backup_save_sub">Pick where to keep it, such as Downloads or a cloud folder</string>
     <string name="backup_restore">Restore settings from a file</string>
@@ -847,4 +847,46 @@
     <string name="backup_restore_confirm">Replace</string>
     <string name="backup_restored">Settings restored</string>
     <string name="backup_restore_failed">Couldn\'t restore the settings</string>
+    <!-- Remote-control target and SyncPlay (watch together) -->
+    <string name="remote_control_switch">Let other devices control this phone</string>
+    <string name="remote_control_summary">While JellyCtrl is open, the Jellyfin web app or another phone signed in to your account can play, pause and seek here. Nothing new starts while the app is locked.</string>
+    <string name="syncplay_title">Watch together</string>
+    <string name="syncplay_row_summary">Play in step with others (SyncPlay)</string>
+    <string name="syncplay_in_group_x">In \"%1$s\"</string>
+    <string name="syncplay_your_group">Your group</string>
+    <string name="syncplay_in_group_footer">Whatever you play now is played for everyone in the group, and play, pause and seeking move everyone together. Closing the video doesn\'t leave the group; the others just stop waiting for you.</string>
+    <string name="syncplay_start">Start</string>
+    <string name="syncplay_intro">Watch together uses your Jellyfin server\'s SyncPlay: everyone in a group sees the same moment of the same video, each on their own device. Your account needs SyncPlay permission on the server.</string>
+    <string name="syncplay_new_group">Start a group</string>
+    <string name="syncplay_new_group_summary">Others on this server can then join it</string>
+    <string name="syncplay_group_name">Group name</string>
+    <string name="syncplay_default_name">%1$s\'s group</string>
+    <string name="syncplay_create">Start</string>
+    <string name="syncplay_groups">Groups on this server</string>
+    <string name="syncplay_other_groups">Other groups</string>
+    <string name="syncplay_no_groups">No groups right now</string>
+    <string name="syncplay_no_groups_summary">Tap to look again</string>
+    <string name="syncplay_leave">Leave the group</string>
+    <string name="syncplay_open_playing">Open what the group is watching</string>
+    <string name="syncplay_open_playing_summary">Joins the video at the moment the group is at</string>
+    <string name="syncplay_reconnecting">reconnecting</string>
+    <string name="syncplay_state_playing">Playing</string>
+    <string name="syncplay_state_paused">Paused</string>
+    <string name="syncplay_state_waiting">Waiting for everyone</string>
+    <string name="syncplay_state_idle">Nothing playing</string>
+    <string name="syncplay_x_joined">%1$s joined the group</string>
+    <string name="syncplay_x_left">%1$s left the group</string>
+    <string name="syncplay_group_gone">That group no longer exists</string>
+    <string name="syncplay_access_denied">Someone in the group can\'t see this title in their libraries, so it wasn\'t started</string>
+    <string name="syncplay_no_connection">Couldn\'t reach the server\'s live connection. Check the connection and try again.</string>
+    <string name="syncplay_nothing_playing">The group isn\'t playing anything right now</string>
+    <string name="syncplay_no_answer">The group didn\'t answer. Check the connection and try again.</string>
+    <string name="syncplay_left_notice">You left the group. This video carries on by itself.</string>
+    <string name="syncplay_stopped_following">No longer in step with the group. Open it again from Watch together.</string>
+    <string name="syncplay_watching_with_x">Watching together: %1$s</string>
+    <string name="syncplay_player_hint">Play, pause and seeking apply to everyone in the group. Speed stays normal.</string>
+    <plurals name="syncplay_people">
+        <item quantity="one">%1$d person</item>
+        <item quantity="other">%1$d people</item>
+    </plurals>
 </resources>

@@ -56,6 +56,8 @@ object SettingsBackup {
         Field("homeHidden", R.string.home_layout, { s -> s.homeHidden.sortedBy { it.ordinal }.joinToString(",") { it.name } }) { s, v ->
             if (v is String) s.copy(homeHidden = homeHiddenFrom(v)) else s
         },
+        // A file can stop other devices controlling this phone, but never allow it.
+        bool("remoteControl", R.string.remote_control_switch, { it.remoteControl }) { s, v -> s.copy(remoteControl = s.remoteControl && v) },
         // The two privacy switches can be turned on by a file, never off.
         bool("hideScreenshots", R.string.hide_screenshots, { it.hideScreenshots }) { s, v -> s.copy(hideScreenshots = s.hideScreenshots || v) },
         bool("hideRecents", R.string.hide_recents, { it.hideRecents }) { s, v -> s.copy(hideRecents = s.hideRecents || v) },

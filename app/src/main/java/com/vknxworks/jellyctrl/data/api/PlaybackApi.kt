@@ -82,14 +82,17 @@ suspend fun JellyfinClient.stopEncoding(playSessionId: String) =
 suspend fun JellyfinClient.closeLiveStream(liveStreamId: String) =
     runCatching { postUnit("LiveStreams/Close", mapOf("liveStreamId" to liveStreamId)) }
 
-/** Tell the server what this client supports, so it shows up as controllable and gets remote commands. */
-suspend fun JellyfinClient.postCapabilities() = runCatching {
+/**
+ * Tells the server what this client can be asked to do by another device. With [remoteControl] off it says
+ * "nothing": the phone then isn't offered as a device to play on.
+ */
+suspend fun JellyfinClient.postCapabilities(remoteControl: Boolean = true) = runCatching {
     postUnit(
         "Sessions/Capabilities",
         mapOf(
-            "playableMediaTypes" to listOf("Video", "Audio"),
-            "supportedCommands" to listOf("DisplayMessage", "SetAudioStreamIndex", "SetSubtitleStreamIndex"),
-            "supportsMediaControl" to true,
+            "playableMediaTypes" to if (remoteControl) listOf("Video", "Audio") else null,
+            "supportedCommands" to if (remoteControl) com.vknxworks.jellyctrl.data.realtime.RemoteControlTarget.COMMANDS else null,
+            "supportsMediaControl" to remoteControl,
         ),
     )
 }

@@ -116,6 +116,18 @@ class AppContainer(val context: Context) {
     }
     val music by lazy { MusicController(context, this) }
 
+    /** JellyCtrl is on screen (or playing in picture-in-picture). Set by the app's lifecycle observer. */
+    val foreground = kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    /** The live connection to the server: remote-control commands and SyncPlay updates arrive over it. */
+    val socket = com.vknxworks.jellyctrl.data.realtime.ServerSocket(http, appScope)
+
+    /** SyncPlay ("watch together") groups. */
+    val syncPlay = com.vknxworks.jellyctrl.data.realtime.SyncPlayManager(this)
+
+    /** Carries out what another device asks this phone to play, pause or seek. */
+    val remoteTarget = com.vknxworks.jellyctrl.data.realtime.RemoteControlTarget(this)
+
     /** The app lock is on, either with a PIN or still the old one waiting for a PIN. */
     val lockEnabled: Boolean get() = vault.enabled || settings.settings.value.appLock
 
@@ -167,6 +179,45 @@ class AppContainer(val context: Context) {
     init {
         AppLock.onLocked = { onLocked() }
         sessions.mediaBusy = { MusicService.running || PlayerActivity.visible > 0 || downloads.busy() }
+        sessions.remoteControl = { settings.settings.value.remoteControl }
+        // The live connection is open only while it is of use: JellyCtrl is on screen (or its music service is
+        // running) and either other devices may control this phone, or SyncPlay is in use. It follows the
+        // signed-in session, so it closes when the app locks and drops that session.
+        appScope.launch {
+            combine(
+                sessions.active,
+                foreground,
+                MusicService.runningFlow,
+                settings.settings.map { it.remoteControl }.distinctUntilChanged(),
+                combine(syncPlay.group, syncPlay.screenOpen) { g, open -> g != null || open },
+            ) { session, onScreen, music, remote, sync ->
+                session?.client?.takeIf { (onScreen || music) && (remote || sync) }
+            }.collect { client -> socket.connectTo(client) }
+        }
+        // Another account, signed out or locked: a SyncPlay group belonged to the session that is gone.
+        appScope.launch {
+            sessions.active.map { it?.account?.key }.distinctUntilChanged().collect { syncPlay.reset() }
+        }
+        // The switch was flipped: tell the server straight away whether this phone can be controlled.
+        appScope.launch {
+            settings.settings.map { it.remoteControl }.distinctUntilChanged().collect { on ->
+                sessions.active.value?.client?.postCapabilities(on)
+            }
+        }
+        appScope.launch(Dispatchers.Main) {
+            socket.messages.collect { message ->
+                runCatching { remoteTarget.handle(message) }
+                runCatching { syncPlay.handle(message) }
+            }
+        }
+        // Back after a dropped connection while in a group: ask the server for the group's state again.
+        appScope.launch {
+            var was = false
+            socket.connected.collect { now ->
+                if (now && !was) syncPlay.onReconnected()
+                was = now
+            }
+        }
         // The last download finished while the app is locked: nothing needs the sign-in any more.
         appScope.launch {
             downloads.entries.map { downloads.busy() }.distinctUntilChanged().collect { busy -> if (!busy) sessions.mediaStopped() }

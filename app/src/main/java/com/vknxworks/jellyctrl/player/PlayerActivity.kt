@@ -249,7 +249,10 @@ class PlayerActivity : ComponentActivity() {
         super.onStop()
         started = false
         // Leaving the app without PiP pauses playback (the progress gets reported on pause).
-        if (!isInPictureInPictureMode) vm.engine.value?.pause()
+        if (!isInPictureInPictureMode) {
+            vm.leftScreen()
+            vm.engine.value?.pause()
+        }
         visible = (visible - 1).coerceAtLeast(0)
         // With the app locked, the sign-in was only kept in memory for this video.
         applicationContext.container.sessions.mediaStopped()
@@ -273,6 +276,9 @@ class PlayerActivity : ComponentActivity() {
         private const val EXTRA_SUB = "sub"
         private const val EXTRA_CONTAINER = "container"
         private const val EXTRA_SHUFFLE = "shuffle"
+        private const val EXTRA_QUEUE = "queue"
+        private const val EXTRA_QUEUE_INDEX = "queue_index"
+        private const val EXTRA_SYNC = "sync"
 
         /** [startMs] null resumes from the saved position; [subtitleIndex] -1 means off, null the server default. */
         fun start(
@@ -303,6 +309,37 @@ class PlayerActivity : ComponentActivity() {
             context.startActivity(i)
         }
 
+        /** Plays [itemIds] in order, starting at [startIndex] (asked for by another device controlling this one). */
+        fun startQueue(
+            context: Context,
+            itemIds: List<String>,
+            startIndex: Int,
+            startMs: Long? = null,
+            mediaSourceId: String? = null,
+            audioIndex: Int? = null,
+            subtitleIndex: Int? = null,
+        ) {
+            val i = Intent(context, PlayerActivity::class.java).apply {
+                putStringArrayListExtra(EXTRA_QUEUE, ArrayList(itemIds))
+                putExtra(EXTRA_QUEUE_INDEX, startIndex)
+                startMs?.let { putExtra(EXTRA_START, it) }
+                mediaSourceId?.let { putExtra(EXTRA_SOURCE, it) }
+                audioIndex?.let { putExtra(EXTRA_AUDIO, it) }
+                subtitleIndex?.let { putExtra(EXTRA_SUB, it) }
+                if (context !is android.app.Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(i)
+        }
+
+        /** Opens the player on what the SyncPlay group is playing. */
+        fun startSync(context: Context) {
+            val i = Intent(context, PlayerActivity::class.java).apply {
+                putExtra(EXTRA_SYNC, true)
+                if (context !is android.app.Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(i)
+        }
+
         private fun argsFrom(i: Intent) = PlayerArgs(
             itemId = i.getStringExtra(EXTRA_ITEM),
             startMs = if (i.hasExtra(EXTRA_START)) i.getLongExtra(EXTRA_START, 0) else null,
@@ -311,6 +348,9 @@ class PlayerActivity : ComponentActivity() {
             subtitleIndex = if (i.hasExtra(EXTRA_SUB)) i.getIntExtra(EXTRA_SUB, -1) else null,
             containerId = i.getStringExtra(EXTRA_CONTAINER),
             shuffle = i.getBooleanExtra(EXTRA_SHUFFLE, false),
+            queue = i.getStringArrayListExtra(EXTRA_QUEUE),
+            queueIndex = i.getIntExtra(EXTRA_QUEUE_INDEX, 0),
+            sync = i.getBooleanExtra(EXTRA_SYNC, false),
         )
     }
 }

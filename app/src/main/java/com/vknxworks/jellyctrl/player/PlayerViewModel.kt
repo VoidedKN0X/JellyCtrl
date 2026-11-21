@@ -57,10 +57,24 @@ data class PlayerArgs(
     val subtitleIndex: Int?,
     val containerId: String?,
     val shuffle: Boolean,
+    /** An explicit list of videos to play in order (another device asked for them), starting at [queueIndex]. */
+    val queue: List<String>? = null,
+    val queueIndex: Int = 0,
+    /** Opened because the SyncPlay group started something: play what the group plays. */
+    val sync: Boolean = false,
 )
 
 /** How many redirects on the signed-in server are followed for mpv before giving up. */
 private const val MAX_MPV_REDIRECTS = 5
+
+/** In a SyncPlay group an episode brings at most this many following episodes along as the group's queue. */
+private const val MAX_SYNC_QUEUE = 50
+
+/** Positions closer than this to where the group is are left alone. */
+private const val SYNC_TOLERANCE_MS = 400L
+
+/** Waiting for data this long while it should be playing is reported to the group, which then waits. */
+private const val SYNC_STALL_MS = 1_500L
 
 /** [PlayerViewModel.setSleepTimer]: nothing plays after the current video. */
 const val SLEEP_AT_END = -1
@@ -128,7 +142,41 @@ class PlayerViewModel(
     private val settings get() = c.settings.settings.value
     private val client get() = c.sessions.active.value?.client
 
+    // ---------- SyncPlay state ----------
+    private val sync get() = c.syncPlay
+
+    /**
+     * This player follows a SyncPlay group: play, pause and seeking are asked of the group, and the server's
+     * answer (a command for everyone, with a time to carry it out) is what moves the player.
+     */
+    var syncActive by mutableStateOf(false)
+        private set
+    /** The group's id for what is loaded here (one entry of its queue). */
+    private var syncItem: String? = null
+    /** The group waits for this phone to say "ready" (after loading or a seek it was told to do). */
+    private var syncReadyOwed = false
+    private var syncReadyNotBefore = 0L
+    /** The group was told this phone is waiting for data. */
+    private var syncStallReported = false
+    private var stallSince = 0L
+    /** A command waiting for its moment. */
+    private var syncTimed: Job? = null
+
     init {
+        PlayerBridge.active = this
+        syncActive = args.sync
+        viewModelScope.launch { sync.queue.collect { q -> if (syncActive && q != null) syncLoad(q) } }
+        viewModelScope.launch { sync.commands.collect { onSyncCommand(it) } }
+        viewModelScope.launch {
+            sync.group.collect { g ->
+                if (g == null && syncActive) {
+                    // Left the group (or it ended): what's loaded keeps playing, on its own from here.
+                    syncActive = false
+                    syncTimed?.cancel()
+                    notice = str(R.string.syncplay_left_notice)
+                }
+            }
+        }
         viewModelScope.launch { buildQueueAndStart() }
         viewModelScope.launch { tickLoop() }
         viewModelScope.launch { watchEngine() }
@@ -144,7 +192,20 @@ class PlayerViewModel(
         val cl = client
         val containerId = args.containerId
         try {
-            if (containerId != null && cl != null) {
+            if (args.sync) {
+                // The group's queue is loaded by the collector in init; from now on the group waits for this phone again.
+                sync.setIgnoreWait(false)
+                if (sync.queue.value?.current == null) throw IllegalStateException(str(R.string.syncplay_nothing_playing))
+                return
+            }
+            val inGroup = sync.group.value != null && cl != null && c.isOnline()
+            val explicit = args.queue.orEmpty()
+            if (explicit.isNotEmpty()) {
+                queue = explicit
+                queueIndex = args.queueIndex.coerceIn(0, explicit.lastIndex)
+                if (inGroup) startInGroup(queue, queueIndex, args.startMs)
+                else playIndex(queueIndex, args.startMs, args.mediaSourceId, args.audioIndex, args.subtitleIndex)
+            } else if (containerId != null && cl != null) {
                 val container = cl.item(containerId)
                 val list = when (container.type) {
                     "Playlist" -> cl.playlistItems(containerId).filter { it.mediaType == "Video" }
@@ -166,10 +227,11 @@ class PlayerViewModel(
                     val next = runCatching { cl.nextUp(1, seriesId = containerId).firstOrNull()?.id }.getOrNull()
                     queueIndex = queue.indexOf(next).coerceAtLeast(0)
                 }
-                playIndex(queueIndex, null)
+                if (inGroup) startInGroup(queue.take(1000), queueIndex, null) else playIndex(queueIndex, null)
             } else {
                 queue = listOfNotNull(args.itemId)
-                playIndex(0, args.startMs, args.mediaSourceId, args.audioIndex, args.subtitleIndex)
+                if (inGroup && queue.isNotEmpty()) startInGroup(queue, 0, args.startMs)
+                else playIndex(0, args.startMs, args.mediaSourceId, args.audioIndex, args.subtitleIndex)
             }
         } catch (e: CancellationException) {
             throw e
@@ -177,6 +239,171 @@ class PlayerViewModel(
             error = e.friendlyMessage()
             loading = false
         }
+    }
+
+    /**
+     * In a SyncPlay group: instead of playing here, the group gets [ids] as its queue. The server then tells
+     * everyone, this phone included, what to load; [syncLoad] does that.
+     */
+    private suspend fun startInGroup(ids: List<String>, index: Int, startMs: Long?) {
+        val cl = client ?: throw IllegalStateException(str(R.string.not_signed_in))
+        syncActive = true
+        loading = true
+        val first = cl.item(ids[index])
+        var list = ids
+        var at = index
+        // One episode: the following episodes come along, so "next episode" moves the whole group on.
+        if (ids.size == 1 && first.type == "Episode" && first.seriesId != null) {
+            val all = runCatching { cl.episodes(first.seriesId) }.getOrDefault(emptyList())
+            val i = all.indexOfFirst { it.id == first.id }
+            if (i >= 0) {
+                list = all.drop(i).take(MAX_SYNC_QUEUE).map { it.id }
+                at = 0
+            }
+        }
+        val resume = first.userData?.playbackPositionTicks ?: 0L
+        val runtime = first.runTimeTicks ?: 0L
+        val startTicks = startMs?.msToTicks() ?: if (resume > 0 && (runtime == 0L || resume < runtime * 0.95)) resume else 0L
+        sync.setIgnoreWait(false)
+        sync.setQueue(list, at, startTicks)
+        viewModelScope.launch {
+            delay(12_000)
+            if (syncActive && syncItem == null && playback == null && error == null) {
+                error = str(R.string.syncplay_no_answer)
+                loading = false
+            }
+        }
+    }
+
+    /** The group's queue changed: load its current item (paused; the group says when to play), or just keep the list. */
+    private fun syncLoad(q: com.vknxworks.jellyctrl.data.realtime.SyncQueue) {
+        val current = q.current ?: return
+        queue = q.playlist.map { it.itemId }
+        if (com.vknxworks.jellyctrl.data.realtime.sameId(current.playlistItemId, syncItem) && (playback != null || loadJob?.isActive == true)) {
+            queueIndex = q.playingItemIndex
+            // The same item announced again (after a reconnect): the group waits to hear that this phone is ready.
+            if (q.reason == "NewPlaylist" || q.reason == "SetCurrentItem") syncReadyOwed = true
+            return
+        }
+        syncItem = current.playlistItemId
+        syncTimed?.cancel()
+        syncReadyOwed = true
+        syncReadyNotBefore = 0
+        syncStallReported = false
+        stallSince = 0
+        playIndex(q.playingItemIndex, sync.positionNowTicks(q).ticksToMs())
+    }
+
+    /** Tells the group this phone is waiting for data ([buffering]) or ready, with where it is. */
+    private fun syncSend(buffering: Boolean) {
+        val id = syncItem ?: return
+        val st = _engine.value?.state?.value ?: EngineState()
+        val ticks = st.positionMs.msToTicks()
+        val playing = st.playWhenReady
+        viewModelScope.launch { runCatching { sync.reportState(buffering, ticks, playing, id) } }
+    }
+
+    /** Something here is about to reload (quality, track or player change): the group waits meanwhile. */
+    private fun syncReportStall() {
+        if (!syncActive || syncReadyOwed || syncStallReported) return
+        syncStallReported = true
+        syncSend(buffering = true)
+    }
+
+    private fun syncTick(st: EngineState) {
+        val ready = !st.buffering && (st.durationMs > 0 || st.positionMs > 0)
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (syncReadyOwed) {
+            if (ready && now >= syncReadyNotBefore) {
+                syncReadyOwed = false
+                syncStallReported = false
+                stallSince = 0
+                syncSend(buffering = false)
+            }
+            return
+        }
+        if (st.playWhenReady && st.buffering && !st.ended) {
+            if (stallSince == 0L) stallSince = now
+            else if (!syncStallReported && now - stallSince > SYNC_STALL_MS) {
+                syncStallReported = true
+                syncSend(buffering = true)
+            }
+        } else {
+            stallSince = 0
+            if (syncStallReported && ready) {
+                syncStallReported = false
+                syncSend(buffering = false)
+            }
+        }
+    }
+
+    /** A command for everyone in the group: carried out at the moment the server names, on this phone's clock. */
+    private fun onSyncCommand(cmd: com.vknxworks.jellyctrl.data.realtime.SyncCommand) {
+        if (!syncActive || !com.vknxworks.jellyctrl.data.realtime.sameId(cmd.playlistItemId, syncItem)) return
+        if (_engine.value == null) return
+        val at = sync.localTimeOf(cmd.`when`) ?: System.currentTimeMillis()
+        val target = cmd.positionTicks?.ticksToMs()
+        fun position() = _engine.value?.state?.value?.positionMs ?: 0L
+        syncTimed?.cancel()
+        when (cmd.command) {
+            "Unpause" -> syncTimed = viewModelScope.launch {
+                val wait = at - System.currentTimeMillis()
+                if (wait > 0) {
+                    if (target != null && kotlin.math.abs(position() - target) > SYNC_TOLERANCE_MS) _engine.value?.seekTo(target)
+                    delay(wait)
+                } else if (target != null) {
+                    // Late: go to where the group is by now.
+                    val nowAt = target - wait
+                    if (kotlin.math.abs(position() - nowAt) > SYNC_TOLERANCE_MS) _engine.value?.seekTo(nowAt)
+                }
+                _engine.value?.play()
+            }
+            "Pause" -> syncTimed = viewModelScope.launch {
+                val wait = at - System.currentTimeMillis()
+                if (wait > 0) delay(wait.coerceAtMost(10_000))
+                _engine.value?.pause()
+                if (target != null && kotlin.math.abs(position() - target) > SYNC_TOLERANCE_MS) _engine.value?.seekTo(target)
+            }
+            "Seek" -> {
+                _engine.value?.pause()
+                if (target != null) _engine.value?.seekTo(target)
+                // The group waits until every phone says it is ready at the new position.
+                syncReadyOwed = true
+                syncReadyNotBefore = android.os.SystemClock.elapsedRealtime() + 700
+            }
+            "Stop" -> _engine.value?.pause()
+        }
+    }
+
+    /** Asks the group for something; a refusal (no permission, connection lost) shows as a notice. */
+    private fun syncRequest(block: suspend com.vknxworks.jellyctrl.data.realtime.SyncPlayManager.() -> Unit) {
+        viewModelScope.launch {
+            try {
+                sync.block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                notice = e.friendlyMessage()
+            }
+        }
+    }
+
+    /**
+     * The player left the screen without picture-in-picture, which pauses it: the group must not wait for a
+     * phone nobody is watching, so it stops following. "Watch together" opens the group's video again.
+     */
+    fun leftScreen() {
+        if (!syncActive) return
+        stopFollowing()
+        notice = str(R.string.syncplay_stopped_following)
+    }
+
+    /** Stops following the group (it no longer waits for this phone); what's loaded stays. */
+    private fun stopFollowing() {
+        if (!syncActive) return
+        syncActive = false
+        syncTimed?.cancel()
+        c.appScope.launch { sync.setIgnoreWait(true) }
     }
 
     private fun playIndex(
@@ -245,6 +472,10 @@ class PlayerViewModel(
     private fun currentMaxBitrate(): Long = maxBitrateOverride ?: settings.maxBitrateBps(c.isOnCellular())
 
     private suspend fun startEngine(resolved: ResolvedPlayback, startMs: Long) {
+        // Following a group: a reload in the middle (quality, track, player) makes the group wait, and
+        // everything loads paused, because the group says when to play.
+        syncReportStall()
+        val paused = syncActive
         val current = _engine.value
         val engine = if (current != null && current.kind() == resolved.engine) current else {
             current?.release()
@@ -264,6 +495,7 @@ class PlayerViewModel(
                 title = item?.name.orEmpty(),
             )
         )
+        if (paused) engine.pause()
         engine.setSpeed(1f)
         engine.setSubtitleStyle(settings.subtitleSizePercent / 100f, settings.subtitleColor.argb)
         // mpv keeps the delay across files, so it is always set; Media3 has none (the delay stays 0 there).
@@ -355,6 +587,8 @@ class PlayerViewModel(
     private suspend fun findNext(current: BaseItemDto): BaseItemDto? {
         val cl = client ?: return null
         queue.getOrNull(queueIndex + 1)?.let { id -> return runCatching { cl.item(id) }.getOrNull() }
+        // In a group only the group's own queue decides what comes next.
+        if (syncActive) return null
         if (current.type != "Episode") return null
         val seriesId = current.seriesId ?: return null
         return runCatching {
@@ -368,14 +602,43 @@ class PlayerViewModel(
 
     fun togglePlay() {
         val e = _engine.value ?: return
+        if (syncActive) {
+            val playing = e.state.value.playWhenReady
+            syncRequest { if (playing) requestPause() else requestUnpause() }
+            return
+        }
         if (e.state.value.ended) {
             e.seekTo(0); e.play()
         } else if (e.state.value.playWhenReady) e.pause() else e.play()
     }
 
     fun seekTo(ms: Long) {
+        if (syncActive) {
+            // The whole group seeks: the server tells every phone, this one included.
+            syncRequest { requestSeek(ms.coerceAtLeast(0).msToTicks()) }
+            return
+        }
         _engine.value?.seekTo(ms)
         sendProgress()
+    }
+
+    /** Play or pause as asked (another device controlling this one); nothing happens when it already is. */
+    fun setPlaying(playing: Boolean) {
+        val e = _engine.value ?: return
+        if (e.state.value.playWhenReady != playing || (playing && e.state.value.ended)) togglePlay()
+    }
+
+    /** Closes the player (a "stop" from another device). */
+    fun close() {
+        finished = true
+    }
+
+    /** More videos for the queue (another device asked): right after the current one ([next]) or at the end. */
+    fun addToQueue(ids: List<String>, next: Boolean) {
+        if (syncActive || ids.isEmpty()) return
+        queue = if (next) queue.take(queueIndex + 1) + ids + queue.drop(queueIndex + 1) else queue + ids
+        val current = item ?: return
+        viewModelScope.launch { nextItem = findNext(current) }
     }
 
     fun seekBy(deltaMs: Long) {
@@ -386,6 +649,8 @@ class PlayerViewModel(
     }
 
     fun setSpeed(speed: Float) {
+        // A group plays at normal speed: anything else would drift away from the others.
+        if (syncActive) return
         _engine.value?.setSpeed(speed)
     }
 
@@ -426,6 +691,8 @@ class PlayerViewModel(
     private fun sleepNow() {
         sleepAt = null
         sleepAtEnd = false
+        // In a group the sleep timer pauses this phone only: it stops following, and the others carry on.
+        stopFollowing()
         _engine.value?.pause()
         sleepPaused = true
         notice = str(R.string.sleep_paused)
@@ -455,6 +722,11 @@ class PlayerViewModel(
     }
 
     fun playNext() {
+        if (syncActive) {
+            val id = syncItem ?: return
+            if (queue.getOrNull(queueIndex + 1) != null) syncRequest { nextItem(id) }
+            return
+        }
         val next = nextItem ?: return
         if (queue.getOrNull(queueIndex + 1) == next.id) {
             playIndex(queueIndex + 1, null)
@@ -466,6 +738,11 @@ class PlayerViewModel(
 
     fun hasPrevious(): Boolean = queueIndex > 0
     fun playPrevious() {
+        if (syncActive) {
+            val id = syncItem ?: return
+            if (queueIndex > 0) syncRequest { previousItem(id) }
+            return
+        }
         if (queueIndex > 0) playIndex(queueIndex - 1, null)
     }
 
@@ -695,6 +972,12 @@ class PlayerViewModel(
             finished = true
             return
         }
+        if (syncActive) {
+            // The group moves on together; the server only acts on the first phone that asks.
+            val id = syncItem
+            if (id != null && queue.getOrNull(queueIndex + 1) != null && settings.autoplayNext) syncRequest { nextItem(id) } else finished = true
+            return
+        }
         if (nextItem != null && settings.autoplayNext) playNext() else finished = true
     }
 
@@ -707,6 +990,7 @@ class PlayerViewModel(
             if (playback == null || loading) continue
 
             sleepAt?.let { at -> if (android.os.SystemClock.elapsedRealtime() >= at) sleepNow() }
+            if (syncActive) syncTick(st)
 
             if (!reportedStart && !st.buffering && st.durationMs > 0 || !reportedStart && st.positionMs > 0) {
                 reportedStart = true
@@ -725,10 +1009,12 @@ class PlayerViewModel(
             }
             when {
                 seg == null -> activeSegment = null
-                mode == SkipSegmentMode.AUTO -> {
+                // In a group nothing skips by itself (every phone would ask the group to seek at once): the button shows.
+                mode == SkipSegmentMode.AUTO && !syncActive -> {
                     activeSegment = seg
                     skipSegment(auto = true)
                 }
+                mode == SkipSegmentMode.AUTO -> activeSegment = seg
                 mode == SkipSegmentMode.ASK -> activeSegment = seg
                 else -> activeSegment = null
             }
@@ -805,6 +1091,9 @@ class PlayerViewModel(
     }
 
     override fun onCleared() {
+        if (PlayerBridge.active === this) PlayerBridge.active = null
+        // Still in the group, but with the player closed it must not wait for this phone.
+        if (syncActive) c.appScope.launch { c.syncPlay.setIgnoreWait(true) }
         reportStop()
         _engine.value?.release()
         _engine.value = null

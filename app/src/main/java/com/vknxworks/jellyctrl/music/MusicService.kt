@@ -180,6 +180,7 @@ class MusicService : MediaSessionService() {
         releaseSession()
         if (running) {
             running = false
+            runningFlow.value = false
             // With the app locked, the sign-in was only kept in memory for playback.
             container.sessions.mediaStopped()
         }
@@ -191,6 +192,7 @@ class MusicService : MediaSessionService() {
         val now = player.mediaItemCount > 0 && player.playbackState != Player.STATE_IDLE && player.playbackState != Player.STATE_ENDED
         if (now == running) return
         running = now
+        runningFlow.value = now
         if (!now) container.sessions.mediaStopped()
     }
 
@@ -198,5 +200,8 @@ class MusicService : MediaSessionService() {
         /** Music is playing or paused with a queue: it keeps the sign-in in memory while the app is locked. */
         @Volatile var running = false
             private set
+
+        /** [running] as a flow, for what follows it (the live connection to the server stays open while music runs). */
+        val runningFlow = kotlinx.coroutines.flow.MutableStateFlow(false)
     }
 }

@@ -87,6 +87,8 @@ data class AppSettings(
     val subtitleColor: SubtitleColor = SubtitleColor.WHITE,
     /** Send Dolby and DTS sound undecoded to an output that takes it (HDMI or USB receiver). */
     val audioPassthrough: Boolean = false,
+    /** Other Jellyfin devices may control playback on this phone while JellyCtrl is open. */
+    val remoteControl: Boolean = true,
     /** The Home screen's rows from top to bottom (always every [HomeSection] once). */
     val homeOrder: List<HomeSection> = HomeSection.entries,
     /** Rows of the Home screen that are switched off. */
@@ -127,6 +129,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val subSize = intPreferencesKey("subtitle_size")
         val subColor = stringPreferencesKey("subtitle_color")
         val passthrough = booleanPreferencesKey("audio_passthrough")
+        val remoteControl = booleanPreferencesKey("remote_control")
         val homeOrder = stringPreferencesKey("home_order")
         val homeHidden = stringPreferencesKey("home_hidden")
         val appLock = booleanPreferencesKey("app_lock")
@@ -172,6 +175,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         subtitleSizePercent = (this[K.subSize] ?: 100).takeIf { it in SUBTITLE_SIZES } ?: 100,
         subtitleColor = enumOr(this[K.subColor], SubtitleColor.WHITE),
         audioPassthrough = this[K.passthrough] ?: false,
+        remoteControl = this[K.remoteControl] ?: true,
         homeOrder = homeOrderFrom(this[K.homeOrder]),
         homeHidden = homeHiddenFrom(this[K.homeHidden]),
         appLock = this[K.appLock] ?: false,
@@ -203,6 +207,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             p[K.subSize] = s.subtitleSizePercent
             p[K.subColor] = s.subtitleColor.name
             p[K.passthrough] = s.audioPassthrough
+            p[K.remoteControl] = s.remoteControl
             p[K.homeOrder] = s.homeOrder.joinToString(",") { it.name }
             p[K.homeHidden] = s.homeHidden.joinToString(",") { it.name }
             // "Protect the server dashboard" (before 0.2.3) is covered by the two switches now.
