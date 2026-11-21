@@ -8,6 +8,10 @@ To publish a new version: bump `versionCode` and `versionName` in `app/build.gra
 
 Built and checked by CI only: nothing here had been run on a phone when it was pushed.
 
+### Fixed
+
+- **Fixed before release: the app would have crashed at start with the new build tools.** JellyCtrl uses WorkManager for its background work, and WorkManager stores its jobs in a small Room database that is created by name when the app starts. The shrinker (R8) in Android Gradle Plugin 9 is stricter than the old one and removed the constructor that needs, which makes the app stop right at launch (a known problem with Room 2.6.1 under Android Gradle Plugin 9). A keep rule for that constructor, the same one newer Room versions ship themselves, is now in `app/proguard-rules.pro`. No released version was affected: the new build tools have not been in any release. Built by CI only; not yet run on a phone.
+
 ### Changed
 
 - **A download list that can't be opened no longer blocks the whole app.** Since 0.7.0 the list of your downloads is encrypted on the phone, and when it couldn't be opened (the key in the phone's secure storage was lost, or the file was damaged) JellyCtrl showed "Can't open your downloads" over everything, so you couldn't browse or stream either. Now that message, with the same **Try again** and **Start empty** (and the same question before starting empty), only appears on the **Downloads** page. Home, search, your libraries, streaming and music work as usual. The Downloads rows on the Library tab and the You page say "Can't be opened: tap to see why" instead of a count.
