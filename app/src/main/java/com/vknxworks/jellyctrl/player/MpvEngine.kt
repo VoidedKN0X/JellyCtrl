@@ -23,8 +23,11 @@ class MpvEngine(
     hwDecoding: Boolean,
     /** Returns an HTTP header line ("Name: value") authenticating [url], or null when it isn't our server. */
     private val authHeaderFor: (url: String) -> String? = { null },
+    /** mpv codec names (ac3, eac3, dts, dts-hd, truehd) to send undecoded to the sound output; empty: decode everything. */
+    passthroughCodecs: List<String> = emptyList(),
 ) : PlayerEngine {
     override val name = "mpv"
+    override val supportsSubtitleDelay = true
 
     // mpv does its own TLS. Never run it without certificate verification: no CA bundle, no mpv.
     private val caFile: File = caBundle(context)
@@ -103,6 +106,8 @@ class MpvEngine(
             setOptionString("hwdec-codecs", "h264,hevc,mpeg4,mpeg2video,vp8,vp9,av1")
             setOptionString("ao", "audiotrack,opensles")
             setOptionString("audio-set-media-role", "yes")
+            // Audio passthrough: only the formats the connected output said it takes; mpv decodes the rest.
+            if (passthroughCodecs.isNotEmpty()) setOptionString("audio-spdif", passthroughCodecs.joinToString(","))
             setOptionString("force-window", "no")
             setOptionString("idle", "yes")
             setOptionString("keep-open", "yes")
@@ -244,6 +249,17 @@ class MpvEngine(
         setAuthFor(sub.url)
         mpv.command(arrayOf("sub-add", sub.url, "select", title, sub.language ?: ""))
         setAuthFor(req.url)
+    }
+
+    override fun setSubtitleStyle(scale: Float, argb: Int) {
+        if (released) return
+        mpv.setPropertyDouble("sub-scale", scale.toDouble())
+        mpv.setPropertyString("sub-color", "#%06X".format(java.util.Locale.US, argb and 0xFFFFFF))
+    }
+
+    override fun setSubtitleDelay(ms: Long) {
+        if (released) return
+        mpv.setPropertyDouble("sub-delay", ms / 1000.0)
     }
 
     override fun release() {

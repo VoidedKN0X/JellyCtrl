@@ -736,6 +736,9 @@
     <!-- Open in ArrCtrl -->
     <string name="open_in_arrctrl">Open in ArrCtrl</string>
     <string name="arrctrl_open_failed">Couldn\'t open ArrCtrl</string>
+    <!-- Request in SeerrCtrl -->
+    <string name="request_in_seerrctrl">Request in SeerrCtrl</string>
+    <string name="seerrctrl_open_failed">Couldn\'t open SeerrCtrl</string>
     <!-- Downloads: quality, space, series choices -->
     <string name="original_file">Original file</string>
     <string name="x_kbps">%1$d kbps</string>
@@ -769,4 +772,35 @@
     <string name="unreadable_start_empty">Start empty</string>
     <string name="unreadable_start_empty_title">Start with an empty download list?</string>
     <string name="unreadable_start_empty_body">Only do this if trying again doesn\'t help. The list that can\'t be opened is kept aside on this phone, not deleted, but JellyCtrl won\'t show it. The downloaded files stay on the phone too, without being listed: download a title again to get it back in the list, or clear JellyCtrl\'s storage in Android\'s settings to free the space.</string>
+    <!-- Player: chapters, sleep timer, subtitle look and timing, audio passthrough -->
+    <string name="previous_chapter">Previous chapter</string>
+    <string name="next_chapter">Next chapter</string>
+    <string name="sleep_timer">Sleep timer</string>
+    <string name="sleep_off">Off</string>
+    <string name="sleep_x_min">%1$d minutes</string>
+    <string name="sleep_end_of_video">When this video ends</string>
+    <string name="sleep_x_left">Pauses in %1$s</string>
+    <string name="sleep_at_end">Pauses when this video ends</string>
+    <string name="sleep_paused">Sleep timer: paused</string>
+    <string name="subtitle_look">Subtitle look</string>
+    <string name="subtitle_size">Subtitle size</string>
+    <string name="subtitle_colour">Subtitle colour</string>
+    <string name="subtitle_size_x">%1$d%%</string>
+    <string name="sub_colour_white">White</string>
+    <string name="sub_colour_yellow">Yellow</string>
+    <string name="sub_colour_green">Green</string>
+    <string name="sub_colour_cyan">Light blue</string>
+    <string name="sub_colour_grey">Grey</string>
+    <string name="subtitle_look_footer">Applies to text subtitles in both video players. Picture subtitles (PGS, DVD) are drawn as they are, and styled subtitles (ASS) in mpv keep their own colours.</string>
+    <string name="subtitle_timing">Subtitle timing</string>
+    <string name="subtitle_timing_none">In step with the video</string>
+    <string name="subtitle_timing_later">%1$s s later</string>
+    <string name="subtitle_timing_earlier">%1$s s earlier</string>
+    <string name="subtitle_timing_mpv_only">Works in the mpv player. Tap to switch to mpv for this video.</string>
+    <string name="subtitle_timing_reset">Reset</string>
+    <string name="subtitle_timing_hint">For this video only. Use it when subtitles show too early or too late.</string>
+    <string name="audio_passthrough">Audio passthrough</string>
+    <string name="audio_passthrough_summary">Send Dolby and DTS sound untouched to a TV, receiver or soundbar that decodes it itself (over HDMI or USB). Everything else is decoded on the phone as usual.</string>
+    <string name="audio_passthrough_now_x">The sound output connected right now takes: %1$s.</string>
+    <string name="audio_passthrough_now_none">The sound output connected right now takes no Dolby or DTS sound directly, so it is decoded on the phone.</string>
 </resources>

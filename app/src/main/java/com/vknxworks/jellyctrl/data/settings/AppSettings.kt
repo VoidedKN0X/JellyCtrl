@@ -38,6 +38,18 @@ enum class SkipSegmentMode(@StringRes private val labelRes: Int) {
     val label: String get() = str(labelRes)
 }
 
+/** Colour of text subtitles in the video player (both engines). */
+enum class SubtitleColor(@StringRes val label: Int, val argb: Int) {
+    WHITE(R.string.sub_colour_white, 0xFFFFFFFF.toInt()),
+    YELLOW(R.string.sub_colour_yellow, 0xFFFFE600.toInt()),
+    GREEN(R.string.sub_colour_green, 0xFF7CFC6A.toInt()),
+    CYAN(R.string.sub_colour_cyan, 0xFF7FE9FF.toInt()),
+    GREY(R.string.sub_colour_grey, 0xFFBDBDBD.toInt()),
+}
+
+/** The subtitle sizes offered, in percent of the normal size. */
+val SUBTITLE_SIZES = listOf(50, 75, 100, 125, 150, 200)
+
 /** How long the app can be in the background before the app lock asks again. -1: only after a restart. */
 enum class LockTimeout(@StringRes val label: Int, val millis: Long) {
     IMMEDIATELY(R.string.lock_again_immediately, 0L),
@@ -70,6 +82,11 @@ data class AppSettings(
     val downloadLimitGb: Int = 0,
     val musicBitrateKbps: Int = 320,
     val hwDecoding: Boolean = true,
+    /** Text subtitle size in percent of the normal size (one of [SUBTITLE_SIZES]). */
+    val subtitleSizePercent: Int = 100,
+    val subtitleColor: SubtitleColor = SubtitleColor.WHITE,
+    /** Send Dolby and DTS sound undecoded to an output that takes it (HDMI or USB receiver). */
+    val audioPassthrough: Boolean = false,
     /** The app lock is on (the PIN itself lives in LockVault). */
     val appLock: Boolean = false,
     val lockTimeout: LockTimeout = LockTimeout.IMMEDIATELY,
@@ -103,6 +120,9 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val downloadLimit = intPreferencesKey("download_limit_gb")
         val musicBitrate = intPreferencesKey("music_bitrate")
         val hwDec = booleanPreferencesKey("hw_decoding")
+        val subSize = intPreferencesKey("subtitle_size")
+        val subColor = stringPreferencesKey("subtitle_color")
+        val passthrough = booleanPreferencesKey("audio_passthrough")
         val appLock = booleanPreferencesKey("app_lock")
         val lockTimeout = stringPreferencesKey("lock_timeout")
         /** The single "Hide in screenshots and recent apps" switch of the previous version: "on" carries over to both. */
@@ -143,6 +163,9 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         downloadLimitGb = (this[K.downloadLimit] ?: 0).coerceAtLeast(0),
         musicBitrateKbps = this[K.musicBitrate] ?: 320,
         hwDecoding = this[K.hwDec] ?: true,
+        subtitleSizePercent = (this[K.subSize] ?: 100).takeIf { it in SUBTITLE_SIZES } ?: 100,
+        subtitleColor = enumOr(this[K.subColor], SubtitleColor.WHITE),
+        audioPassthrough = this[K.passthrough] ?: false,
         appLock = this[K.appLock] ?: false,
         lockTimeout = enumOr(this[K.lockTimeout], LockTimeout.IMMEDIATELY),
         hideScreenshots = this[K.hideScreenshots] ?: this[K.hideScreens] ?: false,
@@ -169,6 +192,9 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             p[K.downloadLimit] = s.downloadLimitGb
             p[K.musicBitrate] = s.musicBitrateKbps
             p[K.hwDec] = s.hwDecoding
+            p[K.subSize] = s.subtitleSizePercent
+            p[K.subColor] = s.subtitleColor.name
+            p[K.passthrough] = s.audioPassthrough
             // "Protect the server dashboard" (before 0.2.3) is covered by the two switches now.
             p.remove(booleanPreferencesKey("protect_admin_screens"))
             p[K.appLock] = s.appLock

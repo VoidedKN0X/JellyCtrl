@@ -60,6 +60,12 @@ interface PlayerEngine {
     fun selectSubtitle(selection: SubSelection)
     /** Side-loads one more external subtitle file into what's playing now and switches to it. */
     fun addExternalSubtitle(sub: ExternalSub)
+    /** Size ([scale], 1 = normal) and colour of text subtitles. Picture subtitles are drawn as they are. */
+    fun setSubtitleStyle(scale: Float, argb: Int)
+    /** Whether [setSubtitleDelay] does anything in this engine. */
+    val supportsSubtitleDelay: Boolean
+    /** Shows subtitles [ms] later (positive) or earlier (negative) than their own timing. */
+    fun setSubtitleDelay(ms: Long)
     fun release()
 
     @Composable

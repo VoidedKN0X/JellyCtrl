@@ -19,9 +19,17 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
+import androidx.media3.ui.SubtitleView
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -38,8 +46,18 @@ import okhttp3.OkHttpClient
 import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
 
-class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
+/**
+ * [passthrough]: Dolby and DTS sound goes undecoded to an output that reports it can take it (Media3 checks
+ * the connected output itself). Off: the audio output is treated as plain PCM only, so everything is decoded
+ * on the phone (or, without a decoder for it, by mpv or the server).
+ */
+class Media3Engine(context: Context, http: OkHttpClient, passthrough: Boolean = false) : PlayerEngine {
     override val name = "Media3"
+
+    // Read by the video view, which applies them again when they change.
+    private var subScale by mutableFloatStateOf(1f)
+    private var subColor by mutableIntStateOf(android.graphics.Color.WHITE)
+    override val supportsSubtitleDelay = false
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val _state = MutableStateFlow(EngineState())
@@ -51,7 +69,7 @@ class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
 
     val player: ExoPlayer = ExoPlayer.Builder(context)
         .setRenderersFactory(
-            DefaultRenderersFactory(context)
+            PassthroughRenderers(context, passthrough)
                 .setEnableDecoderFallback(true)
                 .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
         )
@@ -162,6 +180,14 @@ class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
         player.prepare()
     }
 
+    override fun setSubtitleStyle(scale: Float, argb: Int) {
+        subScale = scale
+        subColor = argb
+    }
+
+    /** Media3 has no subtitle delay; the player offers the mpv engine for it instead. */
+    override fun setSubtitleDelay(ms: Long) = Unit
+
     private fun subtitleConfig(s: ExternalSub): MediaItem.SubtitleConfiguration =
         MediaItem.SubtitleConfiguration.Builder(Uri.parse(s.url))
             .setId(EXT_PREFIX + s.jellyfinIndex)
@@ -219,6 +245,22 @@ class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
             },
             update = { view ->
                 view.player = player
+                // Outlined text in the chosen colour and size, the same look mpv draws.
+                val scale = subScale
+                val color = subColor
+                view.subtitleView?.let { subs ->
+                    subs.setStyle(
+                        CaptionStyleCompat(
+                            color,
+                            android.graphics.Color.TRANSPARENT,
+                            android.graphics.Color.TRANSPARENT,
+                            CaptionStyleCompat.EDGE_TYPE_OUTLINE,
+                            android.graphics.Color.BLACK,
+                            null,
+                        )
+                    )
+                    subs.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * scale)
+                }
                 view.resizeMode = when (resizeMode) {
                     ResizeMode.FIT -> AspectRatioFrameLayout.RESIZE_MODE_FIT
                     ResizeMode.ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
@@ -228,6 +270,19 @@ class Media3Engine(context: Context, http: OkHttpClient) : PlayerEngine {
             onRelease = { it.player = null },
             modifier = modifier,
         )
+    }
+
+    /** The stock renderers, except that the audio output only takes undecoded Dolby/DTS when [passthrough] is on. */
+    private class PassthroughRenderers(context: Context, private val passthrough: Boolean) : DefaultRenderersFactory(context) {
+        override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink? {
+            if (passthrough) return super.buildAudioSink(context, enableFloatOutput, enableAudioTrackPlaybackParams)
+            // Without a context the sink assumes a plain PCM output: no encoded passthrough.
+            @Suppress("DEPRECATION")
+            return DefaultAudioSink.Builder()
+                .setEnableFloatOutput(enableFloatOutput)
+                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                .build()
+        }
     }
 
     companion object {

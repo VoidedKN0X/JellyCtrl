@@ -10,6 +10,7 @@ import com.vknxworks.jellyctrl.AppContainer
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Request
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
+import com.vknxworks.jellyctrl.data.api.ChapterInfo
 import com.vknxworks.jellyctrl.data.api.ItemQuery
 import com.vknxworks.jellyctrl.data.api.MediaSegment
 import com.vknxworks.jellyctrl.data.api.MediaStream
@@ -61,6 +62,12 @@ data class PlayerArgs(
 /** How many redirects on the signed-in server are followed for mpv before giving up. */
 private const val MAX_MPV_REDIRECTS = 5
 
+/** [PlayerViewModel.setSleepTimer]: nothing plays after the current video. */
+const val SLEEP_AT_END = -1
+
+/** Subtitle timing can be moved at most this far either way. */
+const val MAX_SUBTITLE_DELAY_MS = 60_000L
+
 class PlayerViewModel(
     private val c: AppContainer,
     private val appContext: Context,
@@ -91,6 +98,20 @@ class PlayerViewModel(
         private set
     var notice by mutableStateOf<String?>(null)
 
+    /** Sleep timer: when it pauses, as a [android.os.SystemClock.elapsedRealtime] time; null when not counting down. */
+    var sleepAt by mutableStateOf<Long?>(null)
+        private set
+    /** Sleep timer set to "when this video ends": nothing plays after it. */
+    var sleepAtEnd by mutableStateOf(false)
+        private set
+    /** The sleep timer paused playback: the screen may turn off until something plays again. */
+    var sleepPaused by mutableStateOf(false)
+        private set
+
+    /** Subtitles shown this much later (positive) or earlier than their own timing; for this video only. */
+    var subtitleDelayMs by mutableStateOf(0L)
+        private set
+
     private val _engine = MutableStateFlow<PlayerEngine?>(null)
     val engine: StateFlow<PlayerEngine?> = _engine.asStateFlow()
 
@@ -111,6 +132,10 @@ class PlayerViewModel(
         viewModelScope.launch { buildQueueAndStart() }
         viewModelScope.launch { tickLoop() }
         viewModelScope.launch { watchEngine() }
+        // Subtitle size and colour follow the settings while the player is open (the sheet changes them live).
+        viewModelScope.launch {
+            c.settings.settings.collect { st -> _engine.value?.setSubtitleStyle(st.subtitleSizePercent / 100f, st.subtitleColor.argb) }
+        }
     }
 
     // ---------- queue ----------
@@ -174,6 +199,8 @@ class PlayerViewModel(
             activeSegment = null
             skippedSegments.clear()
             triedFallback = false
+            // Another video: its subtitles have their own timing.
+            subtitleDelayMs = 0
             try {
                 val local = c.downloads.completedFile(id)
                 val cl = client
@@ -187,6 +214,7 @@ class PlayerViewModel(
                 val runtime = it.runTimeTicks?.ticksToMs() ?: 0L
                 val start = startMs ?: if (resumeMs > 0 && (runtime == 0L || resumeMs < runtime * 0.95)) resumeMs else 0L
 
+                refreshPassthrough()
                 val resolved = if (local != null && mediaSourceId == null) {
                     offlinePlayback(it, local.absolutePath, engineOverride ?: settings.engine)
                 } else {
@@ -237,17 +265,30 @@ class PlayerViewModel(
             )
         )
         engine.setSpeed(1f)
+        engine.setSubtitleStyle(settings.subtitleSizePercent / 100f, settings.subtitleColor.argb)
+        // mpv keeps the delay across files, so it is always set; Media3 has none (the delay stays 0 there).
+        if (!engine.supportsSubtitleDelay) subtitleDelayMs = 0
+        engine.setSubtitleDelay(subtitleDelayMs)
         loading = false
     }
 
     private fun createEngine(kind: EngineKind): PlayerEngine = when (kind) {
-        EngineKind.MEDIA3 -> Media3Engine(appContext, c.http)
+        EngineKind.MEDIA3 -> Media3Engine(appContext, c.http, settings.audioPassthrough)
         EngineKind.MPV -> try {
-            MpvEngine(appContext, settings.hwDecoding, ::mpvAuthHeader)
+            val spdif = if (settings.audioPassthrough) AudioPassthrough.supported(appContext).map { it.mpv } else emptyList()
+            MpvEngine(appContext, settings.hwDecoding, ::mpvAuthHeader, spdif)
         } catch (e: Throwable) {
             notice = e.message?.let { str(R.string.mpv_unavailable_x_using_media3, it) } ?: str(R.string.mpv_unavailable_using_media3)
-            Media3Engine(appContext, c.http)
+            Media3Engine(appContext, c.http, settings.audioPassthrough)
         }
+    }
+
+    /**
+     * Tells the format check which undecoded sound formats the output takes right now, before the server is
+     * asked how to play something. Empty while "Audio passthrough" is off.
+     */
+    private fun refreshPassthrough() {
+        CodecSupport.passthrough = if (settings.audioPassthrough) AudioPassthrough.jellyfinCodecs(appContext) else emptySet()
     }
 
     /**
@@ -348,13 +389,69 @@ class PlayerViewModel(
         _engine.value?.setSpeed(speed)
     }
 
-    fun skipSegment() {
+    // ---------- chapters ----------
+
+    /** The chapters of what's playing, in order; empty for live TV and for files with fewer than two. */
+    val chapters: List<ChapterInfo>
+        get() {
+            val it = item ?: return emptyList()
+            if (playback?.source?.isInfiniteStream == true || it.type == "TvChannel" || it.type == "Program") return emptyList()
+            return it.chapters.takeIf { ch -> ch.size > 1 }.orEmpty()
+        }
+
+    fun seekToChapter(index: Int) {
+        val ch = chapters.getOrNull(index) ?: return
+        seekTo(ch.startPositionTicks.ticksToMs())
+    }
+
+    fun nextChapter() {
+        val pos = _engine.value?.state?.value?.positionMs ?: return
+        chapterAfter(chapters.map { it.startPositionTicks.ticksToMs() }, pos)?.let { seekToChapter(it) }
+    }
+
+    /** Back to the start of this chapter, or to the one before when it has only just begun. */
+    fun previousChapter() {
+        val pos = _engine.value?.state?.value?.positionMs ?: return
+        chapterBefore(chapters.map { it.startPositionTicks.ticksToMs() }, pos)?.let { seekToChapter(it) }
+    }
+
+    // ---------- sleep timer ----------
+
+    /** [minutes] > 0: pause after that long; [SLEEP_AT_END]: nothing plays after this video; null: off. */
+    fun setSleepTimer(minutes: Int?) {
+        sleepAt = minutes?.takeIf { it > 0 }?.let { android.os.SystemClock.elapsedRealtime() + it * 60_000L }
+        sleepAtEnd = minutes == SLEEP_AT_END
+    }
+
+    private fun sleepNow() {
+        sleepAt = null
+        sleepAtEnd = false
+        _engine.value?.pause()
+        sleepPaused = true
+        notice = str(R.string.sleep_paused)
+    }
+
+    // ---------- subtitle timing ----------
+
+    fun setSubtitleDelay(ms: Long) {
+        val e = _engine.value ?: return
+        if (!e.supportsSubtitleDelay) return
+        subtitleDelayMs = ms.coerceIn(-MAX_SUBTITLE_DELAY_MS, MAX_SUBTITLE_DELAY_MS)
+        e.setSubtitleDelay(subtitleDelayMs)
+    }
+
+    /** [auto]: skipped by the "skip automatically" setting, not by a tap. */
+    fun skipSegment(auto: Boolean = false) {
         val seg = activeSegment ?: return
         skippedSegments += seg.key()
         activeSegment = null
         val end = seg.endTicks.ticksToMs()
         val dur = _engine.value?.state?.value?.durationMs ?: 0L
-        if (seg.type == "Outro" && nextItem != null && (dur == 0L || end >= dur - 5_000)) playNext() else seekTo(end)
+        if (seg.type == "Outro" && nextItem != null && (dur == 0L || end >= dur - 5_000)) {
+            // Credits that run to the end: skipping them starts the next episode, unless the sleep timer says
+            // nothing plays after this video (a tap still goes on).
+            if (auto && sleepAtEnd) sleepNow() else playNext()
+        } else seekTo(end)
     }
 
     fun playNext() {
@@ -522,6 +619,7 @@ class PlayerViewModel(
             error = null
             try {
                 val cl = client ?: throw IllegalStateException(str(R.string.not_signed_in))
+                refreshPassthrough()
                 val resolved = PlaybackResolver.resolve(
                     cl, id, engineOverride ?: settings.engine, currentMaxBitrate(), pos,
                     sourceId, audioIndex, subtitleIndex,
@@ -542,6 +640,8 @@ class PlayerViewModel(
         engine.flatMapLatest { e -> e?.state ?: flowOf(EngineState()) }
             .distinctUntilChangedBy { Triple(it.error, it.playWhenReady, it.ended) }
             .collectLatest { st ->
+                // Playing again (by any button, the notification or a remote): the sleep timer's pause is over.
+                if (st.playWhenReady && !st.ended) sleepPaused = false
                 val pb = playback ?: return@collectLatest
                 if (st.error != null) onEngineError(pb, st.error)
                 else if (st.ended) onEnded()
@@ -587,6 +687,14 @@ class PlayerViewModel(
 
     private fun onEnded() {
         reportStop()
+        if (sleepAtEnd) {
+            // "When this video ends": nothing plays next, and the screen may turn off.
+            sleepAtEnd = false
+            sleepAt = null
+            sleepPaused = true
+            finished = true
+            return
+        }
         if (nextItem != null && settings.autoplayNext) playNext() else finished = true
     }
 
@@ -597,6 +705,8 @@ class PlayerViewModel(
             val e = _engine.value ?: continue
             val st = e.state.value
             if (playback == null || loading) continue
+
+            sleepAt?.let { at -> if (android.os.SystemClock.elapsedRealtime() >= at) sleepNow() }
 
             if (!reportedStart && !st.buffering && st.durationMs > 0 || !reportedStart && st.positionMs > 0) {
                 reportedStart = true
@@ -617,7 +727,7 @@ class PlayerViewModel(
                 seg == null -> activeSegment = null
                 mode == SkipSegmentMode.AUTO -> {
                     activeSegment = seg
-                    skipSegment()
+                    skipSegment(auto = true)
                 }
                 mode == SkipSegmentMode.ASK -> activeSegment = seg
                 else -> activeSegment = null

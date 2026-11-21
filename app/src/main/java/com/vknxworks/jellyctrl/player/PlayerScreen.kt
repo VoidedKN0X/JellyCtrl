@@ -123,6 +123,14 @@ import com.vknxworks.jellyctrl.R
 import com.vknxworks.jellyctrl.str
 import com.vknxworks.jellyctrl.ui.components.CtrlSheet
 import com.vknxworks.jellyctrl.ui.components.CtrlSwitch
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.runtime.rememberCoroutineScope
+import com.vknxworks.jellyctrl.data.settings.SUBTITLE_SIZES
+import com.vknxworks.jellyctrl.data.settings.SubtitleColor
+import kotlinx.coroutines.launch
 
 
 // The player is always dark (content first), so these use the dark palette whatever the phone uses.
@@ -286,6 +294,7 @@ fun PlayerScreen(
                 LaunchedEffect(Unit) { sheet = null }
             }
         }
+        "chapters" -> ChaptersSheet(vm, positionMs = { stState.value.positionMs }, onDismiss = { sheet = null })
         "settings" -> SettingsSheet(
             vm, speed,
             rotationLocked = rotationLocked,
@@ -478,7 +487,7 @@ private fun Controls(
 
         // Bottom: time, seek bar, next.
         SeekArea(
-            vm, st, scrubMs, onScrub, onSeek, onPoke,
+            vm, st, scrubMs, onScrub, onSeek, onPoke, { onSheet("chapters") },
             Modifier.align(Alignment.BottomCenter).fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 20.dp, vertical = 8.dp),
         )
     }
@@ -497,6 +506,7 @@ private fun SeekArea(
     onScrub: (Long) -> Unit,
     onSeek: (Long) -> Unit,
     onPoke: () -> Unit,
+    onChapters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val item = vm.item
@@ -527,10 +537,35 @@ private fun SeekArea(
         } else {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(formatClock(shown), color = Color.White, style = CtrlType.MonoMedium)
-                Spacer(Modifier.weight(1f))
-                val chapter = item?.chapters?.lastOrNull { it.startPositionTicks.ticksToMs() <= shown }?.name
-                if (chapter != null && (item?.chapters?.size ?: 0) > 1) {
-                    Text(chapter, color = CtrlColors.Muted, style = CtrlType.Mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val chapters = vm.chapters
+                if (chapters.isNotEmpty()) {
+                    // Previous chapter, the chapter's name (tap for the list), next chapter.
+                    val current = chapters.indexOfLast { it.startPositionTicks.ticksToMs() <= shown }.coerceAtLeast(0)
+                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { vm.previousChapter(); onPoke() }, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.previous_chapter), tint = Color.White)
+                        }
+                        Text(
+                            chapters[current].name?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chapter_x, (current + 1).toString()),
+                            color = CtrlColors.Muted,
+                            style = CtrlType.Mono,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .clip(CtrlShapes.Chip)
+                                .clickable(onClickLabel = stringResource(R.string.chapters)) { onChapters() }
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                        )
+                        IconButton(onClick = { vm.nextChapter(); onPoke() }, enabled = current < chapters.lastIndex, modifier = Modifier.size(40.dp)) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                stringResource(R.string.next_chapter),
+                                tint = if (current < chapters.lastIndex) Color.White else Color.White.copy(alpha = 0.3f),
+                            )
+                        }
+                    }
+                } else {
                     Spacer(Modifier.weight(1f))
                 }
                 Text("−" + formatClock((duration - shown).coerceAtLeast(0)), color = CtrlColors.Muted, style = CtrlType.MonoMedium)
@@ -689,9 +724,94 @@ private fun TracksSheet(vm: PlayerViewModel, onDismiss: () -> Unit, onSearchSubt
                     )
                 }
             }
+            if (pb.subtitleStreams.isNotEmpty() || pb.externalSubs.isNotEmpty()) {
+                item { SubtitleLook(vm, onDismiss) }
+            }
         }
     }
 }
+
+/** Size and colour of text subtitles (saved as settings, for both players) and their timing for this video. */
+@Composable
+private fun SubtitleLook(vm: PlayerViewModel, onDismiss: () -> Unit) {
+    val c = LocalContext.current.container
+    val settings by c.settings.settings.collectAsState()
+    val scope = rememberCoroutineScope()
+    val engine by vm.engine.collectAsState()
+    Column {
+        SheetHeader(stringResource(R.string.subtitle_size))
+        ChipLine(SUBTITLE_SIZES.map { stringResource(R.string.subtitle_size_x, it) }, SUBTITLE_SIZES.indexOf(settings.subtitleSizePercent)) { i ->
+            scope.launch { c.settings.update { it.copy(subtitleSizePercent = SUBTITLE_SIZES[i]) } }
+        }
+        SheetHeader(stringResource(R.string.subtitle_colour))
+        ChipLine(SubtitleColor.entries.map { stringResource(it.label) }, settings.subtitleColor.ordinal) { i ->
+            scope.launch { c.settings.update { it.copy(subtitleColor = SubtitleColor.entries[i]) } }
+        }
+        SheetHeader(stringResource(R.string.subtitle_timing))
+        if (engine?.supportsSubtitleDelay == true) {
+            val delay = vm.subtitleDelayMs
+            Text(
+                when {
+                    delay == 0L -> stringResource(R.string.subtitle_timing_none)
+                    delay > 0 -> stringResource(R.string.subtitle_timing_later, formatSeconds(delay))
+                    else -> stringResource(R.string.subtitle_timing_earlier, formatSeconds(-delay))
+                },
+                color = CtrlColors.Text,
+                style = CtrlType.MonoMedium,
+                modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 10.dp),
+            )
+            val steps = listOf(-500L, -100L, 100L, 500L)
+            ChipLine(steps.map { (if (it > 0) "+" else "−") + formatSeconds(abs(it)) + " s" } + stringResource(R.string.subtitle_timing_reset), -1) { i ->
+                vm.setSubtitleDelay(if (i < steps.size) vm.subtitleDelayMs + steps[i] else 0L)
+            }
+            Text(
+                stringResource(R.string.subtitle_timing_hint),
+                color = CtrlColors.Muted,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
+            )
+        } else {
+            // Media3 can't move subtitle timing; mpv can.
+            GroupRow(
+                stringResource(R.string.subtitle_timing),
+                stringResource(R.string.subtitle_timing_mpv_only),
+                icon = Icons.Outlined.Timer,
+                onClick = { vm.switchEngine(); onDismiss() },
+            )
+        }
+        Text(
+            stringResource(R.string.subtitle_look_footer),
+            color = CtrlColors.Muted,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
+        )
+    }
+}
+
+/** 1500 -> "1.5", 100 -> "0.1": tenths of a second, in the phone's number format. */
+private fun formatSeconds(ms: Long): String = String.format(java.util.Locale.getDefault(), "%.1f", ms / 1000.0)
+
+@Composable
+private fun ChaptersSheet(vm: PlayerViewModel, positionMs: () -> Long, onDismiss: () -> Unit) {
+    val chapters = vm.chapters
+    // Where playback was when the list opened; the list doesn't need to follow every position report.
+    val current = remember { chapters.indexOfLast { it.startPositionTicks.ticksToMs() <= positionMs() }.coerceAtLeast(0) }
+    CtrlSheet(onDismissRequest = onDismiss) {
+        LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
+            item { SheetHeader(stringResource(R.string.chapters)) }
+            items(chapters.size, key = { it }) { i ->
+                val ch = chapters[i]
+                CheckRow(
+                    ch.name?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chapter_x, (i + 1).toString()),
+                    formatClock(ch.startPositionTicks.ticksToMs()),
+                    i == current,
+                ) { vm.seekToChapter(i); onDismiss() }
+            }
+        }
+    }
+}
+
+private val SLEEP_MINUTES = listOf(15, 30, 45, 60, 90, 120)
 
 private val QUALITY: List<Pair<Long?, String>>
     get() = listOf<Pair<Long?, String>>(null to str(R.string.best_available)) +
@@ -711,6 +831,7 @@ private fun SettingsSheet(
 ) {
     val pb = vm.playback
     var quality by remember { mutableStateOf(false) }
+    var sleep by remember { mutableStateOf(false) }
     CtrlSheet(onDismissRequest = onDismiss) {
         LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
@@ -732,6 +853,21 @@ private fun SettingsSheet(
                         onClick = { quality = true },
                     )
                 }
+            }
+            item {
+                val sleepAt = vm.sleepAt
+                GroupRow(
+                    stringResource(R.string.sleep_timer),
+                    when {
+                        vm.sleepAtEnd -> stringResource(R.string.sleep_at_end)
+                        // Worked out when the sheet opens or the timer changes; whole minutes are enough here.
+                        sleepAt != null -> stringResource(R.string.sleep_x_left, formatClock((sleepAt - android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0)))
+                        else -> stringResource(R.string.sleep_off)
+                    },
+                    icon = Icons.Outlined.Bedtime,
+                    showChevron = true,
+                    onClick = { sleep = true },
+                )
             }
             item {
                 GroupRow(stringResource(R.string.picture_in_picture), icon = Icons.Outlined.PictureInPictureAlt, onClick = onPip)
@@ -771,6 +907,17 @@ private fun SettingsSheet(
                     )
                 }
             }
+        }
+    }
+    if (sleep) {
+        // 0 stands for "off" here; the timer itself takes null for that.
+        val options = listOf(0 to stringResource(R.string.sleep_off)) +
+            SLEEP_MINUTES.map { it to stringResource(R.string.sleep_x_min, it) } +
+            listOf(SLEEP_AT_END to stringResource(R.string.sleep_end_of_video))
+        ChoiceSheet(stringResource(R.string.sleep_timer), options, if (vm.sleepAtEnd) SLEEP_AT_END else if (vm.sleepAt == null) 0 else null, onDismiss = { sleep = false }) {
+            vm.setSleepTimer(it.takeIf { m -> m != 0 })
+            sleep = false
+            onDismiss()
         }
     }
     if (quality) {

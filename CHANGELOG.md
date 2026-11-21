@@ -8,10 +8,25 @@ To publish a new version: bump `versionCode` and `versionName` in `app/build.gra
 
 Changes on `main` that aren't in a release yet. They ship with the next version.
 
+### Changed
+
+- **Subtitles in the Media3 player are drawn as outlined text**, without the black box behind them, so they look the same as in mpv and follow the new size and colour settings.
+- **With "Audio passthrough" off, Media3 always decodes sound on the phone.** Until now Media3 would pass Dolby or DTS through by itself when a connected HDMI or USB output reported support for it; that now only happens with the switch on.
+
+### New
+
+- **Request in SeerrCtrl.** When SeerrCtrl (the Ctrl app for Seerr and Jellyseerr) is installed, the ⋯ menu on a movie or series page has **Request in SeerrCtrl**. It opens that title's page in SeerrCtrl, where you can request it (more seasons of a show, or a 4K copy). JellyCtrl only passes the title's TMDB id, and only to SeerrCtrl; nothing is requested until you do it there. The row isn't shown when SeerrCtrl isn't installed or Jellyfin has no TMDB id for the title. Built by CI only; not yet run on a phone.
+- **Chapter skipping in the video player.** When a film or episode has chapters, the player shows the current chapter's name above the seek bar with an arrow on each side: the left one goes back to the start of this chapter (or to the chapter before it when this one began less than three seconds ago), the right one jumps to the next chapter. Tapping the name opens the list of all chapters with their times, to jump straight to one. Works the same in both players (Media3 and mpv) and for downloads; live TV has no chapters. Built by CI only; not yet run on a phone.
+- **Sleep timer in the video player.** Playback options (the sliders button) › **Sleep timer**: pause after 15, 30, 45, 60, 90 or 120 minutes, or **When this video ends**, which stops the next episode from starting on its own. When the timer pauses the video, the screen is allowed to turn off again; it stays on as before once you press play. The timer belongs to the player you have open and is gone when you close it. Works in both players. Built by CI only; not yet run on a phone.
+- **Subtitle size and colour.** Settings › **Subtitle look**, and the audio and subtitles sheet in the player: six sizes (50% to 200%) and five colours (white, yellow, green, light blue, grey), remembered for every video. Applies to text subtitles in both players; picture subtitles (PGS, DVD) are drawn as they are, and styled ASS subtitles in mpv keep their own colours. Built by CI only; not yet run on a phone.
+- **Subtitle timing, in the mpv player.** In the player's audio and subtitles sheet, subtitles can be shown earlier or later in steps of 0.1 and 0.5 seconds (up to a minute either way), with **Reset**. It applies to the video you're watching and starts at zero for the next one. Media3 has no way to shift subtitles, so there the sheet shows a row that switches this video to mpv instead of a control that does nothing. Built by CI only; not yet run on a phone.
+- **Audio passthrough.** Settings › Player › **Audio passthrough** (off by default) sends Dolby Digital, Dolby Digital Plus, DTS, DTS-HD and Dolby TrueHD sound undecoded to a TV, receiver or soundbar connected over HDMI or USB, but only the formats Android says the connected output takes; the row under the switch shows which those are right now. In mpv those formats are passed through and everything else is decoded as before; in Media3 they are played without a decoder on the phone. On the phone's speaker, wired or Bluetooth headphones nothing changes. Built by CI only and not run on any device; it needs a real receiver to confirm.
+
 ### Project
 
 - **Checksum list regenerated without the old entries.** `gradle/verification-metadata.xml` was regenerated on CI with the fixed workflow and committed exactly as printed (its SHA-256 matches the log). It now lists only the 471 components the build downloads today; the leftovers from earlier library and build-tool versions are gone.
 - **The checksum list no longer collects old entries.** The hand-started workflow that regenerates `gradle/verification-metadata.xml` used to add the new checksums to the existing file, so entries for library versions that are no longer used stayed in it. It now clears the old entries first and writes only what the build uses, and prints the file's SHA-256 so the copy that gets committed can be checked against the log. Nothing in the app changes.
+
 ## v0.8.0 (2026-11-21)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published. It is the first release built with the new build tools (Android Gradle Plugin 9, stricter code shrinking), so update over your installed version and check that your data and settings are still there.

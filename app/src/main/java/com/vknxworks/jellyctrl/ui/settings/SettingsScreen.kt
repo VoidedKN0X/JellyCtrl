@@ -145,6 +145,28 @@ fun SettingsScreen() {
                 GroupSwitch(stringResource(R.string.picture_in_picture_when_you_leave), checked = s.autoPip) { v -> update { it.copy(autoPip = v) } }
                 GroupChoice(stringResource(R.string.video_player), PlayerEngineChoice.entries.map { it to it.label }, s.engine) { v -> update { it.copy(engine = v) } }
                 GroupSwitch(stringResource(R.string.hardware_decoding_in_mpv), stringResource(R.string.turn_off_if_mpv_shows_a), s.hwDecoding) { v -> update { it.copy(hwDecoding = v) } }
+                GroupSwitch(stringResource(R.string.audio_passthrough), stringResource(R.string.audio_passthrough_summary), s.audioPassthrough) { v -> update { it.copy(audioPassthrough = v) } }
+                if (s.audioPassthrough) {
+                    // What the output connected right now reports; asked again each time this screen is opened.
+                    val formats = remember { com.vknxworks.jellyctrl.player.AudioPassthrough.supported(context).map { it.label } }
+                    GroupRow(
+                        if (formats.isEmpty()) stringResource(R.string.audio_passthrough_now_none)
+                        else stringResource(R.string.audio_passthrough_now_x, formats.joinToString(", ")),
+                    )
+                }
+            }
+
+            Group(stringResource(R.string.subtitle_look), footer = stringResource(R.string.subtitle_look_footer)) {
+                GroupChoice(
+                    stringResource(R.string.subtitle_size),
+                    com.vknxworks.jellyctrl.data.settings.SUBTITLE_SIZES.map { it to stringResource(R.string.subtitle_size_x, it) },
+                    s.subtitleSizePercent,
+                ) { v -> update { it.copy(subtitleSizePercent = v) } }
+                GroupChoice(
+                    stringResource(R.string.subtitle_colour),
+                    com.vknxworks.jellyctrl.data.settings.SubtitleColor.entries.map { it to stringResource(it.label) },
+                    s.subtitleColor,
+                ) { v -> update { it.copy(subtitleColor = v) } }
             }
 
             val cfg = userCfg.value

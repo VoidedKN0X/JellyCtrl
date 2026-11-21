@@ -36,6 +36,12 @@ object CodecSupport {
     val dts by lazy { hasDecoder("audio/vnd.dts") }
     val truehd by lazy { hasDecoder("audio/true-hd") }
 
+    /**
+     * Codecs (Jellyfin names) the sound output takes undecoded right now, set by the player when "Audio
+     * passthrough" is on. Media3 then plays these without a decoder on the phone.
+     */
+    @Volatile var passthrough: Set<String> = emptySet()
+
     fun media3VideoCodecs(): List<String> = buildList {
         add("h264")
         if (hevc) add("hevc")
@@ -52,6 +58,7 @@ object CodecSupport {
         if (eac3) add("eac3")
         if (dts) { add("dts"); add("dca") }
         if (truehd) add("truehd")
+        passthrough.forEach { if (it !in this) add(it) }
     }
 
     private val media3Containers = setOf("mp4", "m4v", "mov", "mkv", "webm", "matroska", "ts", "mpegts", "m2ts", "mts", "flv", "avi", "mpeg", "mpg", "ogg", "mp3", "aac", "flac", "wav", "m4a", "3gp", "hls")

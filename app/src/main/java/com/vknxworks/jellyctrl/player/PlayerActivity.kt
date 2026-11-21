@@ -91,6 +91,11 @@ class PlayerActivity : ComponentActivity() {
             JellyCtrlTheme(dark = true) {
                 KeepPipParams()
                 LaunchedEffect(vm.finished) { if (vm.finished) finish() }
+                // The sleep timer paused the video: let the screen turn off. Playing again keeps it on as before.
+                LaunchedEffect(vm.sleepPaused) {
+                    if (vm.sleepPaused) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    else window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
                 val settings by c.settings.settings.collectAsState()
                 val stored by c.settings.stored.collectAsState(initial = null)
                 // Until the settings are read, trust the synchronous read made at start-up.
