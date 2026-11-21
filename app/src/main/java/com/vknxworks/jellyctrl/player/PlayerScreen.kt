@@ -710,7 +710,7 @@ private fun TracksSheet(vm: PlayerViewModel, onDismiss: () -> Unit, onSearchSubt
             items(pb.subtitleStreams, key = { "s" + it.index }) { s ->
                 CheckRow(
                     s.displayTitle ?: s.language ?: stringResource(R.string.track_x, s.index),
-                    listOfNotNull(s.codec?.uppercase(), if (s.isExternal) stringResource(R.string.external_file) else null, if (s.isForced) "forced" else null).joinToString(", "),
+                    listOfNotNull(s.codec?.uppercase(), if (s.isExternal) stringResource(R.string.external_file) else null, if (s.isForced) stringResource(R.string.sub_forced) else null).joinToString(", "),
                     pb.subtitleIndex == s.index,
                 ) { vm.selectSubtitle(s.index); onDismiss() }
             }
@@ -914,7 +914,7 @@ private fun SettingsSheet(
                             video?.let { v -> listOfNotNull(v.codec?.uppercase(), v.width?.let { "${it}×${v.height}" }, v.videoRangeType).joinToString(" ") },
                             audio?.let { a -> listOfNotNull(a.codec?.uppercase(), a.channelLayout).joinToString(" ") },
                             pb.source.bitrate?.let { stringResource(R.string.x_mbps, it / 1_000_000) },
-                            if (pb.offline) "downloaded" else null,
+                            if (pb.offline) stringResource(R.string.playing_downloaded) else null,
                         ).joinToString(", "),
                         icon = Icons.Outlined.Info,
                         iconTint = MaterialTheme.colorScheme.onSurfaceVariant,

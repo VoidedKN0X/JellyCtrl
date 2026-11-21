@@ -62,19 +62,29 @@ import androidx.compose.ui.res.pluralStringResource
 
 private val BITRATES: List<Pair<Int, String>>
     get() = listOf(0 to str(R.string.best_available)) + listOf(80, 40, 20, 10, 8, 4, 2, 1).map { it to str(R.string.x_mbps, it) }
-private val LANGS = listOf(
-    "" to "Whatever the file uses", "eng" to "English", "spa" to "Spanish", "fre" to "French", "ger" to "German",
-    "ita" to "Italian", "por" to "Portuguese", "dut" to "Dutch", "jpn" to "Japanese", "kor" to "Korean", "chi" to "Chinese",
-    "rus" to "Russian", "ara" to "Arabic", "hin" to "Hindi", "tur" to "Turkish", "pol" to "Polish", "swe" to "Swedish",
-    "nor" to "Norwegian", "dan" to "Danish", "fin" to "Finnish",
+/** ISO 639-2 codes Jellyfin stores for a preferred language, with the two-letter code Android names them by. */
+private val LANG_CODES = listOf(
+    "eng" to "en", "spa" to "es", "fre" to "fr", "ger" to "de", "ita" to "it", "por" to "pt", "dut" to "nl",
+    "jpn" to "ja", "kor" to "ko", "chi" to "zh", "rus" to "ru", "ara" to "ar", "hin" to "hi", "tur" to "tr",
+    "pol" to "pl", "swe" to "sv", "nor" to "no", "dan" to "da", "fin" to "fi",
 )
-private val SUB_MODES = listOf(
-    "Default" to "As set in the file",
-    "Always" to "Always show",
-    "OnlyForced" to "Only forced subtitles",
-    "Smart" to "When the audio is in another language",
-    "None" to "Never show",
-)
+
+/** The language choices, named in the phone's language. */
+private val LANGS: List<Pair<String, String>>
+    get() {
+        val phone = java.util.Locale.getDefault()
+        return listOf("" to str(R.string.lang_whatever_the_file_uses)) + LANG_CODES.map { (code, two) ->
+            code to java.util.Locale.forLanguageTag(two).getDisplayLanguage(phone).replaceFirstChar { it.titlecase(phone) }
+        }
+    }
+private val SUB_MODES: List<Pair<String, String>>
+    get() = listOf(
+        "Default" to str(R.string.sub_mode_default),
+        "Always" to str(R.string.sub_mode_always),
+        "OnlyForced" to str(R.string.sub_mode_only_forced),
+        "Smart" to str(R.string.sub_mode_smart),
+        "None" to str(R.string.sub_mode_none),
+    )
 
 @Composable
 fun SettingsScreen() {
@@ -189,14 +199,14 @@ fun SettingsScreen() {
                     GroupChoice(stringResource(R.string.audio_language), LANGS, cfg.str("AudioLanguagePreference").orEmpty(), fallbackLabel = cfg.str("AudioLanguagePreference").orEmpty()) { v ->
                         saveCfg(mapOf("AudioLanguagePreference" to v))
                     }
-                    GroupSwitch("Prefer the file's default audio", checked = cfg.flag("PlayDefaultAudioTrack", true)) { v -> saveCfg(mapOf("PlayDefaultAudioTrack" to v)) }
+                    GroupSwitch(stringResource(R.string.prefer_default_audio), checked = cfg.flag("PlayDefaultAudioTrack", true)) { v -> saveCfg(mapOf("PlayDefaultAudioTrack" to v)) }
                     GroupChoice(stringResource(R.string.subtitle_language), LANGS, cfg.str("SubtitleLanguagePreference").orEmpty(), fallbackLabel = cfg.str("SubtitleLanguagePreference").orEmpty()) { v ->
                         saveCfg(mapOf("SubtitleLanguagePreference" to v))
                     }
-                    GroupChoice("Show subtitles", SUB_MODES, cfg.str("SubtitleMode") ?: "Default") { v -> saveCfg(mapOf("SubtitleMode" to v)) }
-                    GroupSwitch("Remember my audio choices", checked = cfg.flag("RememberAudioSelections", true)) { v -> saveCfg(mapOf("RememberAudioSelections" to v)) }
-                    GroupSwitch("Remember my subtitle choices", checked = cfg.flag("RememberSubtitleSelections", true)) { v -> saveCfg(mapOf("RememberSubtitleSelections" to v)) }
-                    GroupSwitch("Hide watched items in New", checked = cfg.flag("HidePlayedInLatest", true)) { v -> saveCfg(mapOf("HidePlayedInLatest" to v)) }
+                    GroupChoice(stringResource(R.string.show_subtitles), SUB_MODES, cfg.str("SubtitleMode") ?: "Default") { v -> saveCfg(mapOf("SubtitleMode" to v)) }
+                    GroupSwitch(stringResource(R.string.remember_audio_choices), checked = cfg.flag("RememberAudioSelections", true)) { v -> saveCfg(mapOf("RememberAudioSelections" to v)) }
+                    GroupSwitch(stringResource(R.string.remember_subtitle_choices), checked = cfg.flag("RememberSubtitleSelections", true)) { v -> saveCfg(mapOf("RememberSubtitleSelections" to v)) }
+                    GroupSwitch(stringResource(R.string.hide_watched_in_new), checked = cfg.flag("HidePlayedInLatest", true)) { v -> saveCfg(mapOf("HidePlayedInLatest" to v)) }
                 }
             }
 

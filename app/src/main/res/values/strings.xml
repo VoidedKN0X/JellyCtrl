@@ -889,4 +889,18 @@
         <item quantity="one">%1$d person</item>
         <item quantity="other">%1$d people</item>
     </plurals>
+    <!-- Text that used to be fixed in the code -->
+    <string name="lang_whatever_the_file_uses">Whatever the file uses</string>
+    <string name="sub_mode_default">As set in the file</string>
+    <string name="sub_mode_always">Always show</string>
+    <string name="sub_mode_only_forced">Only forced subtitles</string>
+    <string name="sub_mode_smart">When the audio is in another language</string>
+    <string name="sub_mode_none">Never show</string>
+    <string name="prefer_default_audio">Prefer the file\'s default audio</string>
+    <string name="show_subtitles">Show subtitles</string>
+    <string name="remember_audio_choices">Remember my audio choices</string>
+    <string name="remember_subtitle_choices">Remember my subtitle choices</string>
+    <string name="hide_watched_in_new">Hide watched items in New</string>
+    <string name="sub_forced">forced</string>
+    <string name="playing_downloaded">downloaded</string>
 </resources>

@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import com.vknxworks.jellyctrl.data.api.ServerAuthInterceptor
+import com.vknxworks.jellyctrl.data.api.postCapabilities
 import com.vknxworks.jellyctrl.data.auth.SessionManager
 import com.vknxworks.jellyctrl.data.crypto.DataKeyStore
 import com.vknxworks.jellyctrl.data.crypto.KeystoreWrapper
