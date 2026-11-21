@@ -313,11 +313,11 @@ class SyncPlayManager(private val c: AppContainer) {
         val received = System.currentTimeMillis()
         val serverIn = isoToEpochMs(time.requestReceptionTime) ?: return
         val serverOut = isoToEpochMs(time.responseTransmissionTime) ?: return
-        val roundTrip = ((received - sent) - (serverOut - serverIn)).coerceAtLeast(0)
+        val roundTrip = SyncClock.roundTripMs(sent, serverIn, serverOut, received)
         // The measurement with the least delay on the way is the most exact one: keep that.
         if (roundTrip <= bestRoundTripMs) {
             bestRoundTripMs = roundTrip
-            offsetMs = ((serverIn - sent) + (serverOut - received)) / 2
+            offsetMs = SyncClock.offsetMs(sent, serverIn, serverOut, received)
         }
         runCatching { api.postUnit("SyncPlay/Ping", body = buildJsonObject { put("Ping", roundTrip / 2) }) }
     }

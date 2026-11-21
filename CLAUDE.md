@@ -43,3 +43,9 @@ Every library and plugin download is checked against `gradle/verification-metada
 - AGP 9 has built-in Kotlin: there is no `org.jetbrains.kotlin.android` plugin any more. The Kotlin version is pinned by the `kotlin-gradle-plugin` classpath entry in the root `build.gradle.kts`; the Compose and serialization compiler plugins use the same `kotlin` version. Don't re-add the Kotlin Android plugin.
 - AGP 9's R8 is stricter (`-keep class X` without a member block no longer keeps the constructor; resources are shrunk together with code). Keep rules in `proguard-rules.pro` must name the members they need, and resources must be referenced through `R`, never by name.
 - Any change here needs the dependency verification procedure (see "Dependency verification").
+
+## Languages
+
+- The app follows the phone's language: English in `app/src/main/res/values/strings.xml`, Dutch (Belgian, informal "je") in `values-nl/strings.xml`. There is no in-app language picker; `res/xml/locales_config.xml` lists the two for Android's own per-app language setting.
+- Every user-visible text comes from resources (`stringResource`, or `str()`/`plural()` outside composables). A new string goes into both files in the same push, with the same placeholders. Technical names, units and the app name stay untranslated.
+- The names of server configuration fields in the dashboard are made from Jellyfin's own field names and stay English.
