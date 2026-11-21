@@ -358,6 +358,7 @@ private fun AppNavHost(navController: androidx.navigation.NavHostController) {
         composable<PhotoRoute> { val r = it.toRoute<PhotoRoute>(); PhotoViewerScreen(r.parentId, r.startId) }
         composable<LiveTvRoute> { LiveTvScreen() }
         composable<SettingsRoute> { SettingsScreen() }
+        composable<HomeLayoutRoute> { com.vknxworks.jellyctrl.ui.settings.HomeLayoutScreen() }
         composable<AccountsRoute> { AccountsScreen() }
         composable<AddAccountRoute> {
             ServerSetupFlow(onDone = { navController.popBackStack(HomeRoute, false) }, onCancel = {

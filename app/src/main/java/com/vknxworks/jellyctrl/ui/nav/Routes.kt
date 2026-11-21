@@ -24,6 +24,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class PhotoRoute(val parentId: String, val startId: String)
 @Serializable data object LiveTvRoute
 @Serializable data object SettingsRoute
+@Serializable data object HomeLayoutRoute
 @Serializable data object AccountsRoute
 @Serializable data object AddAccountRoute
 @Serializable data object RemoteRoute

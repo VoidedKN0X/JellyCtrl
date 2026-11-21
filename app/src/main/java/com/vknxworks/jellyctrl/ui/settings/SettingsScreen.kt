@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Password
@@ -80,6 +81,7 @@ fun SettingsScreen() {
     val context = LocalContext.current
     val c = context.container
     val scope = rememberCoroutineScope()
+    val nav = com.vknxworks.jellyctrl.ui.nav.LocalNavigator.current
     val s by c.settings.settings.collectAsStateWithLifecycle()
     fun update(t: (AppSettings) -> AppSettings) { scope.launch { c.settings.update(t) } }
 
@@ -125,6 +127,17 @@ fun SettingsScreen() {
                         trailing = { TextButton(onClick = { notifications.request() }) { Text(stringResource(R.string.allow)) } },
                     )
                 }
+            }
+
+            Group(stringResource(R.string.home_layout)) {
+                val shownRows = s.homeOrder.count { it !in s.homeHidden }
+                GroupRow(
+                    stringResource(R.string.home_layout_row),
+                    stringResource(R.string.home_layout_row_summary, shownRows, s.homeOrder.size),
+                    Icons.Outlined.Home,
+                    showChevron = true,
+                    onClick = { nav.navigate(com.vknxworks.jellyctrl.ui.nav.HomeLayoutRoute) },
+                )
             }
 
             Group(stringResource(R.string.watching)) {
@@ -214,6 +227,8 @@ fun SettingsScreen() {
                     fallbackLabel = stringResource(R.string.x_gb, s.downloadLimitGb),
                 ) { v -> update { it.copy(downloadLimitGb = v) } }
             }
+
+            BackupGroup()
 
         }
     }

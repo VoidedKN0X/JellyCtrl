@@ -70,6 +70,8 @@ import com.vknxworks.jellyctrl.container
 import com.vknxworks.jellyctrl.data.api.BaseItemDto
 import com.vknxworks.jellyctrl.data.api.JellyfinClient
 import com.vknxworks.jellyctrl.data.api.latest
+import com.vknxworks.jellyctrl.data.api.upcomingEpisodes
+import com.vknxworks.jellyctrl.data.settings.HomeSection
 import com.vknxworks.jellyctrl.data.api.liveTvChannels
 import com.vknxworks.jellyctrl.data.api.nextUp
 import com.vknxworks.jellyctrl.data.api.resumeItems
@@ -107,7 +109,26 @@ private data class HomeData(
     val nextUp: List<BaseItemDto>,
     val latest: List<Pair<BaseItemDto, List<BaseItemDto>>>,
     val liveNow: List<BaseItemDto>,
+    val upcoming: List<BaseItemDto>,
+    /** Whether the upcoming episodes were asked for (the row was switched on when this was loaded). */
+    val upcomingLoaded: Boolean,
 )
+
+/** "S2 E4 · today", "S2 E4 · tomorrow" or "S2 E4 · Fri 27 Nov" for an episode that airs soon. */
+private fun upcomingLine(item: BaseItemDto, today: java.time.LocalDate): String? {
+    val code = item.episodeCode()
+    val day = com.vknxworks.jellyctrl.ui.components.isoToEpochMs(item.premiereDate)?.let { ms ->
+        // Air dates are whole days stored at midnight UTC: read as that day, not shifted by the phone's time zone.
+        val date = java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneOffset.UTC).toLocalDate()
+        when (java.time.temporal.ChronoUnit.DAYS.between(today, date)) {
+            -1L -> str(R.string.upcoming_yesterday)
+            0L -> str(R.string.upcoming_today)
+            1L -> str(R.string.upcoming_tomorrow)
+            else -> date.format(java.time.format.DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.getDefault()))
+        }
+    }
+    return listOfNotNull(code, day).joinToString(" · ").ifBlank { null }
+}
 
 @Composable
 fun HomeScreen() {
@@ -116,9 +137,17 @@ fun HomeScreen() {
     val session by c.sessions.active.collectAsStateWithLifecycle()
     val client = session?.client ?: return
     var menuItem by remember { mutableStateOf<BaseItemDto?>(null) }
+    val settings by c.settings.settings.collectAsStateWithLifecycle()
+    // The rows that are switched on, top to bottom (Settings > Home screen).
+    val sections = settings.homeOrder.filter { it !in settings.homeHidden }
 
     val loader = rememberLoader("home") {
         coroutineScope {
+            // Read when loading starts: a row that's switched off isn't asked for.
+            val shown = c.settings.settings.value.let { st -> st.homeOrder.filter { it !in st.homeHidden }.toSet() }
+            val upcoming = async {
+                if (HomeSection.UPCOMING in shown) runCatching { client.upcomingEpisodes() }.getOrDefault(emptyList()) else emptyList()
+            }
             // These three don't depend on the list of libraries, so they start before it is fetched, not after.
             val resume = async { runCatching { client.resumeItems("Video") }.getOrDefault(emptyList()) }
             val resumeAudio = async { runCatching { client.resumeItems("Audio", 12) }.getOrDefault(emptyList()) }
@@ -140,7 +169,7 @@ fun HomeScreen() {
                 .let { lists -> (0 until 4).flatMap { i -> lists.mapNotNull { it.getOrNull(i) } } }
                 .distinctBy { it.id }
                 .take(6)
-            HomeData(views, featured, resume.await(), resumeAudio.await(), next.await(), latestAll, live.await())
+            HomeData(views, featured, resume.await(), resumeAudio.await(), next.await(), latestAll, live.await(), upcoming.await(), HomeSection.UPCOMING in shown)
         }
     }
 
@@ -161,38 +190,58 @@ fun HomeScreen() {
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp + LocalBottomClearance.current)) {
                     item("topbar") { TopActions(Modifier.statusBarsPadding()) }
-                    data.resume.firstOrNull()?.let { first ->
-                        item("resume-hero") { ResumeHeroCard(first, client) }
+                    val today = java.time.LocalDate.now()
+                    sections.forEach { section ->
+                        when (section) {
+                            HomeSection.CONTINUE_CARD -> data.resume.firstOrNull()?.let { first ->
+                                item("resume-hero") { ResumeHeroCard(first, client) }
+                            }
+                            HomeSection.FEATURED -> if (data.featured.isNotEmpty()) {
+                                item("hero") { Hero(data.featured, client) }
+                            }
+                            HomeSection.CONTINUE_WATCHING -> item("resume") {
+                                ItemRow(
+                                    stringResource(R.string.continue_watching), data.resume, client, nav::openItem, landscape = true,
+                                    onMore = if (data.resume.size > 6) ({ nav.navigate(ListRoute(str(R.string.continue_watching), "resume")) }) else null,
+                                    onLongItem = { menuItem = it },
+                                )
+                            }
+                            HomeSection.NEXT_UP -> item("nextup") {
+                                ItemRow(
+                                    stringResource(R.string.next_up), data.nextUp, client, nav::openItem, landscape = true,
+                                    onMore = if (data.nextUp.size > 6) ({ nav.navigate(ListRoute(str(R.string.next_up), "nextup")) }) else null,
+                                    onLongItem = { menuItem = it },
+                                )
+                            }
+                            HomeSection.UPCOMING -> item("upcoming") {
+                                ItemRow(
+                                    stringResource(R.string.upcoming_episodes), data.upcoming, client, nav::openItem, landscape = true,
+                                    subtitleOf = { upcomingLine(it, today) },
+                                )
+                            }
+                            HomeSection.LIVE_TV -> item("live") {
+                                ItemRow(stringResource(R.string.on_tv_now), data.liveNow, client, nav::openItem, landscape = true, onMore = { nav.navigate(LiveTvRoute) })
+                            }
+                            HomeSection.CONTINUE_LISTENING -> item("resumeAudio") {
+                                ItemRow(stringResource(R.string.keep_listening), data.resumeAudio, client, nav::openItem, onLongItem = { menuItem = it })
+                            }
+                            HomeSection.LATEST -> items(data.latest, key = { "latest-" + it.first.id }) { (view, items) ->
+                                ItemRow(
+                                    stringResource(R.string.new_in_x, view.name.orEmpty()), items, client, nav::openItem,
+                                    onMore = { nav.openItem(view) },
+                                    onLongItem = { menuItem = it },
+                                )
+                            }
+                        }
                     }
-                    if (data.featured.isNotEmpty()) {
-                        item("hero") { Hero(data.featured, client) }
-                    }
-                    item("resume") {
-                        ItemRow(
-                            stringResource(R.string.continue_watching), data.resume, client, nav::openItem, landscape = true,
-                            onMore = if (data.resume.size > 6) ({ nav.navigate(ListRoute(str(R.string.continue_watching), "resume")) }) else null,
-                            onLongItem = { menuItem = it },
-                        )
-                    }
-                    item("nextup") {
-                        ItemRow(
-                            stringResource(R.string.next_up), data.nextUp, client, nav::openItem, landscape = true,
-                            onMore = if (data.nextUp.size > 6) ({ nav.navigate(ListRoute(str(R.string.next_up), "nextup")) }) else null,
-                            onLongItem = { menuItem = it },
-                        )
-                    }
-                    item("live") {
-                        ItemRow(stringResource(R.string.on_tv_now), data.liveNow, client, nav::openItem, landscape = true, onMore = { nav.navigate(LiveTvRoute) })
-                    }
-                    item("resumeAudio") {
-                        ItemRow(stringResource(R.string.keep_listening), data.resumeAudio, client, nav::openItem, onLongItem = { menuItem = it })
-                    }
-                    items(data.latest, key = { "latest-" + it.first.id }) { (view, items) ->
-                        ItemRow(
-                            stringResource(R.string.new_in_x, view.name.orEmpty()), items, client, nav::openItem,
-                            onMore = { nav.openItem(view) },
-                            onLongItem = { menuItem = it },
-                        )
+                    if (sections.isEmpty()) {
+                        item("empty") {
+                            MessageView(
+                                Icons.Outlined.VideoLibrary,
+                                stringResource(R.string.home_all_hidden),
+                                stringResource(R.string.home_all_hidden_body),
+                            )
+                        }
                     }
                 }
             }
@@ -201,6 +250,11 @@ fun HomeScreen() {
 
     // Also catches changes made on a detail page: Continue Watching and Next Up drop finished items.
     com.vknxworks.jellyctrl.ui.components.OnUserDataChange("home") { loader.reload(silent = true) }
+    // A row switched on in Settings > Home screen may not have been asked for yet: load it now.
+    val wantsUpcoming = HomeSection.UPCOMING in sections
+    androidx.compose.runtime.LaunchedEffect(wantsUpcoming) {
+        if (wantsUpcoming && loader.value?.upcomingLoaded == false) loader.reload(silent = true)
+    }
     menuItem?.let { ItemActionsSheet(it, onDismiss = { menuItem = null }) }
 }
 

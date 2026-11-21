@@ -97,6 +97,23 @@ suspend fun JellyfinClient.nextUp(limit: Int = 24, seriesId: String? = null): Li
         ),
     ).items
 
+/**
+ * Episodes that air from yesterday on, soonest first (GET /Shows/Upcoming). The server lists what it knows:
+ * episodes already in the library with a future date and, when a library keeps "missing episodes", the ones
+ * that aren't there yet.
+ */
+suspend fun JellyfinClient.upcomingEpisodes(limit: Int = 30): List<BaseItemDto> =
+    get<ItemsResult>(
+        "Shows/Upcoming",
+        mapOf(
+            "userId" to requireUserId(),
+            "limit" to limit,
+            "fields" to LIST_FIELDS,
+            "enableImageTypes" to "Primary,Backdrop,Thumb",
+            "imageTypeLimit" to 1,
+        ),
+    ).items
+
 suspend fun JellyfinClient.latest(parentId: String, limit: Int = 20): List<BaseItemDto> =
     get(
         "Items/Latest",

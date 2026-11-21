@@ -13,7 +13,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 ## Features
 
 - **Plays almost anything directly**: Media3 player with an automatic mpv fallback for difficult formats and subtitles
-- **Home screen** with Continue watching, Next up and the latest from each library
+- **Home screen** with Continue watching, Next up, upcoming episodes and the latest from each library; you choose which rows show and their order
 - **Skip intro, recap and credits**, next-episode autoplay and scrubbing previews
 - **Chapter skipping** (previous and next chapter, and a chapter list) and a **sleep timer** in the video player
 - **Subtitle size and colour** in both players, and subtitle timing (earlier or later) in mpv
@@ -30,6 +30,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Finds servers on your network**; Quick Connect sign-in, and approve Quick Connect codes for other devices; several accounts
 - **Open in ArrCtrl** from movie and series pages, to manage them in Radarr and Sonarr
 - **Request in SeerrCtrl** from movie and series pages (shown when SeerrCtrl is installed), to request more of a title in Seerr or Jellyseerr
+- **Back up and restore** the app's settings to a file (settings only, never sign-ins or the PIN)
 - Picture-in-picture, swipe gestures, audio and subtitle language preferences, a separate quality limit for mobile data
 
 ## Requirements

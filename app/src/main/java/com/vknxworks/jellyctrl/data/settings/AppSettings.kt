@@ -87,6 +87,10 @@ data class AppSettings(
     val subtitleColor: SubtitleColor = SubtitleColor.WHITE,
     /** Send Dolby and DTS sound undecoded to an output that takes it (HDMI or USB receiver). */
     val audioPassthrough: Boolean = false,
+    /** The Home screen's rows from top to bottom (always every [HomeSection] once). */
+    val homeOrder: List<HomeSection> = HomeSection.entries,
+    /** Rows of the Home screen that are switched off. */
+    val homeHidden: Set<HomeSection> = emptySet(),
     /** The app lock is on (the PIN itself lives in LockVault). */
     val appLock: Boolean = false,
     val lockTimeout: LockTimeout = LockTimeout.IMMEDIATELY,
@@ -123,6 +127,8 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val subSize = intPreferencesKey("subtitle_size")
         val subColor = stringPreferencesKey("subtitle_color")
         val passthrough = booleanPreferencesKey("audio_passthrough")
+        val homeOrder = stringPreferencesKey("home_order")
+        val homeHidden = stringPreferencesKey("home_hidden")
         val appLock = booleanPreferencesKey("app_lock")
         val lockTimeout = stringPreferencesKey("lock_timeout")
         /** The single "Hide in screenshots and recent apps" switch of the previous version: "on" carries over to both. */
@@ -166,6 +172,8 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         subtitleSizePercent = (this[K.subSize] ?: 100).takeIf { it in SUBTITLE_SIZES } ?: 100,
         subtitleColor = enumOr(this[K.subColor], SubtitleColor.WHITE),
         audioPassthrough = this[K.passthrough] ?: false,
+        homeOrder = homeOrderFrom(this[K.homeOrder]),
+        homeHidden = homeHiddenFrom(this[K.homeHidden]),
         appLock = this[K.appLock] ?: false,
         lockTimeout = enumOr(this[K.lockTimeout], LockTimeout.IMMEDIATELY),
         hideScreenshots = this[K.hideScreenshots] ?: this[K.hideScreens] ?: false,
@@ -195,6 +203,8 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             p[K.subSize] = s.subtitleSizePercent
             p[K.subColor] = s.subtitleColor.name
             p[K.passthrough] = s.audioPassthrough
+            p[K.homeOrder] = s.homeOrder.joinToString(",") { it.name }
+            p[K.homeHidden] = s.homeHidden.joinToString(",") { it.name }
             // "Protect the server dashboard" (before 0.2.3) is covered by the two switches now.
             p.remove(booleanPreferencesKey("protect_admin_screens"))
             p[K.appLock] = s.appLock

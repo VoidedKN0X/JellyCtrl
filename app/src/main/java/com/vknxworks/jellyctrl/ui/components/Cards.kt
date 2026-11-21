@@ -147,6 +147,8 @@ fun PosterCard(
     landscape: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     showSubtitle: Boolean = true,
+    /** Replaces the usual second line (episode number, time left) when set. */
+    subtitle: String? = null,
 ) {
     val aspect = if (landscape) 16f / 9f else item.posterAspect()
     val url = if (landscape) client.landscapeImage(item) else client.primaryImage(item)
@@ -171,7 +173,7 @@ fun PosterCard(
             overflow = TextOverflow.Ellipsis,
         )
         if (showSubtitle) {
-            val sub = if (landscape) listOfNotNull(item.episodeCode(), item.timeLeft()).joinToString("  ").ifBlank { item.subtitleLine() }
+            val sub = subtitle ?: if (landscape) listOfNotNull(item.episodeCode(), item.timeLeft()).joinToString("  ").ifBlank { item.subtitleLine() }
             else item.subtitleLine()
             if (!sub.isNullOrBlank()) {
                 Text(
@@ -226,6 +228,8 @@ fun ItemRow(
     landscape: Boolean = false,
     onMore: (() -> Unit)? = null,
     onLongItem: ((BaseItemDto) -> Unit)? = null,
+    /** The second line under each card, instead of the usual one. */
+    subtitleOf: ((BaseItemDto) -> String?)? = null,
 ) {
     if (items.isEmpty()) return
     SectionHeader(title, onMore = onMore)
@@ -244,6 +248,7 @@ fun ItemRow(
                 onClick = { onItem(item) },
                 landscape = landscape,
                 onLongClick = onLongItem?.let { { it(item) } },
+                subtitle = subtitleOf?.invoke(item),
             )
         }
     }
