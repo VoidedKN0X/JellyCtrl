@@ -67,6 +67,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import com.vknxworks.jellyctrl.ui.components.SubtitleSearchSheet
 import com.vknxworks.jellyctrl.ui.nav.ArrCtrlLink
+import com.vknxworks.jellyctrl.ui.nav.SeerrCtrlLink
 import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Movie
@@ -522,6 +523,8 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
     // Subtitle providers on the server work on movies, episodes and other videos that have a file.
     val canSearchSubs = isVideo && item.type !in setOf("TvChannel", "Program", "Recording") && item.locationType != "Virtual" && sources.isNotEmpty()
     val arrLink = remember(item.id, item.providerIds) { ArrCtrlLink.linkFor(item)?.takeIf { ArrCtrlLink.installed(context) } }
+    // Only offered when SeerrCtrl is installed and Jellyfin knows the title's TMDB id.
+    val seerrLink = remember(item.id, item.providerIds) { SeerrCtrlLink.linkFor(item)?.takeIf { SeerrCtrlLink.installed(context) } }
 
     // Success needs no reload here: setPlayed/setFavorite announce the change and the page refreshes itself.
     fun toggle(undo: () -> Unit, block: suspend () -> Unit) {
@@ -725,6 +728,10 @@ private fun ActionsBlock(d: Detail, reload: () -> Unit) {
                 if (!ArrCtrlLink.open(context, arrLink)) Toast.makeText(context, str(R.string.arrctrl_open_failed), Toast.LENGTH_SHORT).show()
                 Unit
             }),
+            onRequestInSeerr = if (seerrLink == null) null else ({
+                if (!SeerrCtrlLink.open(context, seerrLink)) Toast.makeText(context, str(R.string.seerrctrl_open_failed), Toast.LENGTH_SHORT).show()
+                Unit
+            }),
             onChanged = reload,
             onDismiss = { more = false },
         )
@@ -802,6 +809,7 @@ private fun MoreSheet(
     onPlayFromStart: () -> Unit,
     onSearchSubtitles: (() -> Unit)?,
     onOpenInArr: (() -> Unit)?,
+    onRequestInSeerr: (() -> Unit)?,
     onChanged: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -837,6 +845,7 @@ private fun MoreSheet(
             if (item.type == "Episode" && item.seriesId != null) SheetAction(Icons.Outlined.Tv, stringResource(R.string.go_to_show)) { act { nav.navigate(ItemRoute(item.seriesId)) } }
             if (onSearchSubtitles != null) SheetAction(Icons.Outlined.Search, stringResource(R.string.subs_search_action)) { act(onSearchSubtitles) }
             if (onOpenInArr != null) SheetAction(Icons.AutoMirrored.Outlined.OpenInNew, stringResource(R.string.open_in_arrctrl)) { act(onOpenInArr) }
+            if (onRequestInSeerr != null) SheetAction(Icons.AutoMirrored.Outlined.OpenInNew, stringResource(R.string.request_in_seerrctrl)) { act(onRequestInSeerr) }
             if (isAdmin) {
                 SheetAction(Icons.Outlined.Edit, stringResource(R.string.edit_details)) { act { nav.navigate(EditMetadataRoute(item.id)) } }
                 SheetAction(Icons.Outlined.Refresh, stringResource(R.string.refresh_metadata)) {

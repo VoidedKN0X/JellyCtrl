@@ -21,12 +21,18 @@
          whether the phone has a strong fingerprint sensor. Without it the fingerprint option never shows. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
-    <!-- Package visibility for "Open in ArrCtrl" on movie and series pages: only ArrCtrl's arrctrl:// links. -->
+    <!-- Package visibility for "Open in ArrCtrl" and "Request in SeerrCtrl" on movie and series pages: only
+         ArrCtrl's arrctrl:// links and SeerrCtrl's seerrctrl:// links. -->
     <queries>
         <package android:name="com.vknxworks.arrctrl" />
+        <package android:name="com.vknxworks.seerrctrl" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="arrctrl" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="seerrctrl" />
         </intent>
     </queries>
 
