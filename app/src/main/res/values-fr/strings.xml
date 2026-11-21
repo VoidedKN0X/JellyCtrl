@@ -90,7 +90,7 @@
     <string name="downloading_x">Téléchargement de %1$s</string>
     <string name="downloading">Téléchargement</string>
     <string name="no_tracks_found">Aucun titre trouvé</string>
-    <string name="added_x_to_queue">%1$s ajouté à la file d\'attente</string>
+    <string name="added_x_to_queue">Ajouté à la file d\'attente : %1$s</string>
     <string name="no_instant_mix_available">Aucun mix instantané disponible</string>
     <string name="pause">Pause</string>
     <string name="play">Lire</string>
