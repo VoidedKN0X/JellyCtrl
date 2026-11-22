@@ -28,7 +28,9 @@ import kotlin.coroutines.cancellation.CancellationException
  * the WebSocket; only the commands listed in [COMMANDS] are announced to it.
  *
  * Nothing new starts while the app is locked, and a message is never shown then: only what is already
- * playing can be paused, moved or stopped, the same as from its notification.
+ * playing can be paused, moved or stopped, the same as from its notification. Of the general commands only
+ * muting and turning the volume down work while locked ([generalAllowedWhileLocked]): the volume can't be
+ * raised and audio or subtitle tracks can't be switched.
  */
 class RemoteControlTarget(private val c: AppContainer) {
     private val context: Context get() = c.context
@@ -126,14 +128,15 @@ class RemoteControlTarget(private val c: AppContainer) {
             "Seek" -> seekTicks?.let { music.seekTo(it.ticksToMs()) }
             "NextTrack" -> music.next()
             "PreviousTrack" -> music.previous()
-            "Rewind" -> music.seekTo((music.state.value.positionMs - SKIP_MS).coerceAtLeast(0))
-            "FastForward" -> music.seekTo(music.state.value.positionMs + SKIP_MS)
+            "Rewind" -> music.seekTo((music.currentPositionMs() - SKIP_MS).coerceAtLeast(0))
+            "FastForward" -> music.seekTo(music.currentPositionMs() + SKIP_MS)
         }
     }
 
     // ---------- GeneralCommand ----------
 
     private fun general(name: String, args: JsonObject?) {
+        if (locked && !generalAllowedWhileLocked(name)) return
         val audio = context.getSystemService(AudioManager::class.java)
         when (name) {
             "VolumeUp" -> audio?.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, 0)
@@ -171,3 +174,9 @@ class RemoteControlTarget(private val c: AppContainer) {
         private const val SKIP_MS = 10_000L
     }
 }
+
+/**
+ * The general commands another device may send while JellyCtrl is locked: only ones that make the phone
+ * quieter. Raising or setting the volume and switching audio or subtitle tracks wait until it's unlocked.
+ */
+internal fun generalAllowedWhileLocked(name: String): Boolean = name in setOf("Mute", "Unmute", "ToggleMute", "VolumeDown")

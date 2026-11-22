@@ -66,7 +66,7 @@
     <string name="app_lock_subtitle">Vraag een app-pincode (en als je wilt je vingerafdruk) bij het openen van JellyCtrl. Zolang de app vergrendeld is, blijven je aanmeldingen versleuteld met de pincode.</string>
     <string name="app_lock_footer">Muziek die al speelt en downloads die bezig zijn, lopen door terwijl JellyCtrl vergrendeld is, met hun bediening in de melding en op het vergrendelscherm. Ze houden de aanmelding die ze nodig hebben in het geheugen tot ze stoppen; voor al het nieuwe moet je ontgrendelen.</string>
     <string name="lock_prompt_subtitle">Je Jellyfin-bibliotheek</string>
-    <string name="lock_forgot_body">De pincode kan niet worden hersteld, omdat ze je aanmeldingen versleutelt. JellyCtrl verwijdert elk account en elke server, en wist de downloads en de bewaarde afbeeldingen op deze telefoon. Op je Jellyfin-server verandert er niets.</string>
+    <string name="lock_forgot_body">De pincode kan niet worden hersteld, omdat ze je aanmeldingen versleutelt. JellyCtrl verwijdert elk account en elke server, en wist de downloads en de bewaarde afbeeldingen op deze telefoon. Op je Jellyfin-server verandert er niets. Heeft je telefoon een schermvergrendeling, dan bevestig je eerst daarmee.</string>
     <string name="lock_forgot_confirm">Accounts verwijderen en resetten</string>
     <string name="lock_migrate_intro">De app-vergrendeling van JellyCtrl heeft een eigen pincode, los van die van je telefoon. Je aanmeldingen zijn ermee versleuteld zolang de app vergrendeld is.</string>
     <string name="lock_enable_intro">Minstens %1$d cijfers, anders dan de pincode van je telefoon. Als je ze vergeet, kun je alleen nog binnen door je opnieuw aan te melden bij je servers.</string>
@@ -903,4 +903,7 @@
     <string name="hide_watched_in_new">Bekeken items verbergen in Nieuw</string>
     <string name="sub_forced">geforceerd</string>
     <string name="playing_downloaded">gedownload</string>
+    <string name="lock_reset_prompt_title">App-vergrendeling van JellyCtrl resetten</string>
+    <string name="lock_reset_prompt_subtitle">Bevestig met de schermvergrendeling van je telefoon dat jij het bent</string>
+    <string name="lock_reset_prompt_failed">De schermvergrendeling kon niet getoond worden</string>
 </resources>

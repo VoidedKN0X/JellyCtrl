@@ -180,7 +180,9 @@ class AppContainer(val context: Context) {
     init {
         AppLock.onLocked = { onLocked() }
         sessions.mediaBusy = { MusicService.running || PlayerActivity.visible > 0 || downloads.busy() }
-        sessions.remoteControl = { settings.settings.value.remoteControl }
+        // The stored value, not the placeholder default: a cold start (music service, worker) may come before the
+        // settings are read, and must not tell the server this phone can be controlled when that's switched off.
+        sessions.remoteControl = { settings.stored.first().remoteControl }
         // The live connection is open only while it is of use: JellyCtrl is on screen (or its music service is
         // running) and either other devices may control this phone, or SyncPlay is in use. It follows the
         // signed-in session, so it closes when the app locks and drops that session.
@@ -189,7 +191,8 @@ class AppContainer(val context: Context) {
                 sessions.active,
                 foreground,
                 MusicService.runningFlow,
-                settings.settings.map { it.remoteControl }.distinctUntilChanged(),
+                // Stored values only: nothing connects before the settings are read.
+                settings.stored.map { it.remoteControl }.distinctUntilChanged(),
                 combine(syncPlay.group, syncPlay.screenOpen) { g, open -> g != null || open },
             ) { session, onScreen, music, remote, sync ->
                 session?.client?.takeIf { (onScreen || music) && (remote || sync) }
@@ -201,7 +204,7 @@ class AppContainer(val context: Context) {
         }
         // The switch was flipped: tell the server straight away whether this phone can be controlled.
         appScope.launch {
-            settings.settings.map { it.remoteControl }.distinctUntilChanged().collect { on ->
+            settings.stored.map { it.remoteControl }.distinctUntilChanged().collect { on ->
                 sessions.active.value?.client?.postCapabilities(on)
             }
         }

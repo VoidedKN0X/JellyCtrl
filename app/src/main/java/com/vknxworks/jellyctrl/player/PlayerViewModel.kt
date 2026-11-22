@@ -350,7 +350,9 @@ class PlayerViewModel(
                 val wait = at - System.currentTimeMillis()
                 if (wait > 0) {
                     if (target != null && kotlin.math.abs(position() - target) > SYNC_TOLERANCE_MS) _engine.value?.seekTo(target)
-                    delay(wait)
+                    // At most 10 s, like Pause: before the first clock measurement, or with a phone clock that is
+                    // minutes off, the wait could otherwise leave this phone paused while the group plays.
+                    delay(wait.coerceAtMost(10_000))
                 } else if (target != null) {
                     // Late: go to where the group is by now.
                     val nowAt = target - wait

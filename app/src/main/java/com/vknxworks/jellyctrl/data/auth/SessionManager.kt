@@ -87,7 +87,7 @@ class SessionManager(
     @Volatile var mediaBusy: () -> Boolean = { false }
 
     /** Set by the app: whether "Let other devices control this phone" is on (announced to the server at sign-in). */
-    @Volatile var remoteControl: () -> Boolean = { true }
+    @Volatile var remoteControl: suspend () -> Boolean = { true }
 
     private var installId: String = ""
 

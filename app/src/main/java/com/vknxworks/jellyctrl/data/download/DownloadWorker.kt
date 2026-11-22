@@ -74,11 +74,13 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         if (converted) part.delete()
         val playSessionId = java.util.UUID.randomUUID().toString().replace("-", "")
 
-        val limit = c.settings.settings.value.downloadLimitGb * GIB
+        // The stored limit: a worker can start the app cold, before the settings are read (the default is "no limit").
+        val limitGb = c.settings.stored.first().downloadLimitGb
+        val limit = limitGb * GIB
         val othersBytes = repo.entries.value.filter { it.itemId != itemId && it.status == DownloadStatus.DONE }.sumOf { it.totalBytes }
         val expected = DownloadPlan.expectedBytes(item, entry.bitrate)
         if (DownloadPlan.exceedsLimit(othersBytes, expected, limit)) {
-            return@withContext fail(itemId, str(R.string.download_limit_reached, str(R.string.x_gb, c.settings.settings.value.downloadLimitGb)))
+            return@withContext fail(itemId, str(R.string.download_limit_reached, str(R.string.x_gb, limitGb)))
         }
         try {
             val existing = if (part.exists()) part.length() else 0L
@@ -108,7 +110,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         if (limit > 0 && othersBytes + written > limit) {
                             out.close()
                             part.delete()
-                            return@withContext fail(itemId, str(R.string.download_limit_reached, str(R.string.x_gb, c.settings.settings.value.downloadLimitGb)))
+                            return@withContext fail(itemId, str(R.string.download_limit_reached, str(R.string.x_gb, limitGb)))
                         }
                         val now = System.currentTimeMillis()
                         if (now - lastUpdate > 1000) {

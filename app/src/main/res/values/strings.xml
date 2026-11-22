@@ -66,7 +66,7 @@
     <string name="app_lock_subtitle">Ask for an app PIN (and optionally your fingerprint) when opening JellyCtrl. While locked, your sign-ins stay encrypted with the PIN.</string>
     <string name="app_lock_footer">Music that\'s already playing and downloads in progress carry on while JellyCtrl is locked, with their controls in the notification and on the lock screen. They keep the sign-in they need in memory until they stop; anything new needs an unlock.</string>
     <string name="lock_prompt_subtitle">Your Jellyfin library</string>
-    <string name="lock_forgot_body">The PIN can\'t be recovered, because it encrypts your sign-ins. JellyCtrl will remove every account and server, and delete the downloads and cached pictures kept on this phone. Nothing changes on your Jellyfin server.</string>
+    <string name="lock_forgot_body">The PIN can\'t be recovered, because it encrypts your sign-ins. JellyCtrl will remove every account and server, and delete the downloads and cached pictures kept on this phone. Nothing changes on your Jellyfin server. If your phone has a screen lock, you\'ll confirm with it first.</string>
     <string name="lock_forgot_confirm">Remove accounts and reset</string>
     <string name="lock_migrate_intro">JellyCtrl\'s app lock has its own PIN, separate from your phone\'s. Your sign-ins are encrypted with it while the app is locked.</string>
     <string name="lock_enable_intro">At least %1$d digits, different from your phone\'s PIN. If you forget it, the only way back in is to sign in to your servers again.</string>
@@ -903,4 +903,7 @@
     <string name="hide_watched_in_new">Hide watched items in New</string>
     <string name="sub_forced">forced</string>
     <string name="playing_downloaded">downloaded</string>
+    <string name="lock_reset_prompt_title">Reset JellyCtrl\'s app lock</string>
+    <string name="lock_reset_prompt_subtitle">Use your phone\'s screen lock to confirm it\'s you</string>
+    <string name="lock_reset_prompt_failed">Couldn\'t show the screen lock prompt</string>
 </resources>

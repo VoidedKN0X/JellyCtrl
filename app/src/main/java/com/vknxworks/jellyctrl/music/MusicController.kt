@@ -116,11 +116,31 @@ class MusicController(private val context: Context, private val c: AppContainer)
                     delay(500)
                     continue
                 }
-                refresh()
+                if (!c.foreground.value) {
+                    // Nobody looks at the position while the app is in the background: sleep until it's back.
+                    // Track, queue and play/pause changes still arrive through onEvents.
+                    c.foreground.first { it }
+                    continue
+                }
+                refreshPosition()
                 delay(500)
             }
         }
     }
+
+    /** Only the moving parts (position, buffering), for the twice-a-second tick; the queue is rebuilt in [refresh]. */
+    private fun refreshPosition() {
+        val p = controller ?: return
+        val position = p.currentPosition.coerceAtLeast(0)
+        val buffering = p.playbackState == Player.STATE_BUFFERING
+        val duration = p.duration.coerceAtLeast(0)
+        val current = _state.value
+        if (current.positionMs == position && current.buffering == buffering && current.durationMs == duration) return
+        _state.value = current.copy(positionMs = position, buffering = buffering, durationMs = duration)
+    }
+
+    /** The live play position, straight from the player (the state's position is only kept fresh on screen). */
+    fun currentPositionMs(): Long = controller?.currentPosition?.coerceAtLeast(0) ?: _state.value.positionMs
 
     private fun refresh() {
         val p = controller ?: return

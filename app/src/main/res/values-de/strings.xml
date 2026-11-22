@@ -64,7 +64,7 @@
     <string name="app_lock_subtitle">Beim Öffnen von JellyCtrl nach einer App-PIN (und optional deinem Fingerabdruck) fragen. Solange die App gesperrt ist, bleiben deine Anmeldungen mit der PIN verschlüsselt.</string>
     <string name="app_lock_footer">Bereits laufende Musik und laufende Downloads gehen weiter, während JellyCtrl gesperrt ist, mit ihren Steuerelementen in der Benachrichtigung und auf dem Sperrbildschirm. Sie behalten die nötige Anmeldung im Speicher, bis sie enden; alles Neue erfordert ein Entsperren.</string>
     <string name="lock_prompt_subtitle">Deine Jellyfin-Mediathek</string>
-    <string name="lock_forgot_body">Die PIN kann nicht wiederhergestellt werden, da sie deine Anmeldungen verschlüsselt. JellyCtrl entfernt alle Konten und Server und löscht die Downloads und zwischengespeicherten Bilder auf diesem Handy. Auf deinem Jellyfin-Server ändert sich nichts.</string>
+    <string name="lock_forgot_body">Die PIN kann nicht wiederhergestellt werden, da sie deine Anmeldungen verschlüsselt. JellyCtrl entfernt alle Konten und Server und löscht die Downloads und zwischengespeicherten Bilder auf diesem Handy. Auf deinem Jellyfin-Server ändert sich nichts. Wenn dein Handy eine Displaysperre hat, bestätigst du zuerst damit.</string>
     <string name="lock_forgot_confirm">Konten entfernen und zurücksetzen</string>
     <string name="lock_migrate_intro">Die App-Sperre von JellyCtrl hat eine eigene PIN, getrennt von der deines Handys. Deine Anmeldungen werden damit verschlüsselt, solange die App gesperrt ist.</string>
     <string name="lock_enable_intro">Mindestens %1$d Ziffern, anders als die PIN deines Handys. Wenn du sie vergisst, musst du dich erneut bei deinen Servern anmelden.</string>
@@ -890,4 +890,7 @@
     <string name="hide_watched_in_new">Gesehenes in Neu ausblenden</string>
     <string name="sub_forced">erzwungen</string>
     <string name="playing_downloaded">heruntergeladen</string>
+    <string name="lock_reset_prompt_title">App-Sperre von JellyCtrl zurücksetzen</string>
+    <string name="lock_reset_prompt_subtitle">Bestätige mit der Displaysperre deines Handys, dass du es bist</string>
+    <string name="lock_reset_prompt_failed">Displaysperre konnte nicht angezeigt werden</string>
 </resources>

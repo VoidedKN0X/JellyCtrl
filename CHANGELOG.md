@@ -4,6 +4,24 @@ What changed in each JellyCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+Built and checked by CI only: nothing here has been run on a phone yet.
+
+### Fixed
+
+- **Watch together no longer hangs on "play".** When the group pressed play, JellyCtrl waited until the moment the server named, measured on the phone's own clock. Right after joining (before the phone had compared its clock with the server's), or on a phone whose clock is minutes off, that could leave your phone paused while everyone else was already watching. It now waits at most 10 seconds, the same limit "pause" already had, and then starts playing.
+- **Settings are read before the app acts on them after a cold start.** When Android started JellyCtrl in the background (a download continuing, or the music service), a download could check the size limit before your settings were read, and so ignore a limit you had set; and the phone could briefly tell your server it can be controlled by other devices even with **Let other devices control this phone** switched off. Both now wait for your saved settings.
+
+### Changed
+
+- **Less battery use while music plays in the background.** The music screens were updated twice a second with the whole queue (up to hundreds of tracks), also with the screen off and JellyCtrl in the background where nothing shows it. Now only the play position is updated, only while JellyCtrl is on screen; the track, queue and play/pause state still change the moment they change. You shouldn't notice anything apart from the battery.
+
+### Security
+
+- **A remote control can no longer turn the volume up or switch tracks while JellyCtrl is locked.** Another device signed in to your account could set the phone's volume to 100% or change the audio or subtitle track of the video while the app was locked. Now, while locked, only muting, unmuting and turning the volume down work, alongside the pause, seek, skip and stop that already did. Everything works again once you unlock.
+- **"Forgot PIN?" now asks for your phone's screen lock first.** Resetting removes your accounts and downloads, so it's no longer open to anyone who picks up your unlocked phone: after you confirm, JellyCtrl asks for your phone's own PIN, pattern, password or fingerprint before it resets. If your phone has no screen lock, the reset works as before, with just the confirmation.
+
 ## v0.10.0 (2026-11-21)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published.
